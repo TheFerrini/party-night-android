@@ -4,7 +4,7 @@ Party Night v1.68.0 és una app de jocs per a grups, creada amb React, Vite i Ca
 
 ## Descarregar
 
-Les versions publicades i les seves APK es troben a la pàgina [Releases](https://github.com/TheFerrini/party-night-android/releases). Descarrega l'artefacte APK de la versió que vulguis, descomprimeix el ZIP i instal·la `app-debug.apk` al dispositiu Android.
+Les versions publicades i les seves APK es troben a la pàgina [Releases](https://github.com/TheFerrini/party-night-android/releases). Descarrega `app-debug.apk` directament dels recursos de la Release i instal·la'l al dispositiu Android. L'artefacte separat de GitHub Actions es descarrega en ZIP.
 
 ## Compilació automàtica i releases
 

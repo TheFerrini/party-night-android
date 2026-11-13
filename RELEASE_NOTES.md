@@ -15,8 +15,10 @@ Primera actualització després de preparar l'APK Android.
 - **La Bomba:** validació perquè el temps mínim no superi el màxim.
 
 ### Instal·lació Android
-1. Descarrega `party-night-debug-apk.zip` als recursos d'aquesta Release.
-2. Descomprimeix-lo i obre `app-debug.apk` al dispositiu Android.
+1. Descarrega `app-debug.apk` directament als recursos d'aquesta Release.
+2. Obre l'APK al dispositiu Android.
 3. Autoritza la instal·lació des d'aquesta font quan Android ho demani.
+
+Nota: l'artefacte de GitHub Actions `party-night-debug-apk` sí que es descarrega en ZIP; el fitxer adjunt a la Release és l'APK directament.
 
 Aquesta és una APK **debug**, pensada per instal·lar i provar. No és encara una publicació signada per Google Play.
