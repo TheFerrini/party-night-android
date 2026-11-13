@@ -68,7 +68,10 @@ jobs:
 
       - name: Read app version
         id: app-version
-        run: echo "version=$(node -p \"JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).version\")" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          VERSION="$(node -e 'console.log(JSON.parse(require("fs").readFileSync("package.json", "utf8")).version)')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub Release with APK
         env:
