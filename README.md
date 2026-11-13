@@ -53,3 +53,8 @@ L'APK es genera a `android/app/build/outputs/apk/debug/app-debug.apk`.
 - Tipus de compilació: debug APK
 
 L'APK debug serveix per instal·lar i provar l'app. Per publicar-la a Google Play caldrà configurar una signatura de producció i generar un AAB signat.
+
+
+## Historial de compilació
+
+- 2026-11-13: actualitzat el pas de configuració de l'Android SDK a `android-actions/setup-android@v4` per evitar el paquet obsolet `tools`.
