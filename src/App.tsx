@@ -337,6 +337,35 @@ const PENALTY_LEVELS = [
   { value: 'fallo', title: 'AL FALLO', subtitle: '(2-5 Tragos)', min: 2, max: 5, colorClass: 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] animate-pulse' }
 ];
 
+// Índex dels reptes per categoria i entorn. Els pesos del selector determinen
+// quantes vegades entra cada grup al sorteig, sense duplicar les frases al fitxer.
+const DARE_CATEGORY_INDEXES = {
+  casa: {
+    chill: [0, 2, 5, 8],
+    ridiculo: [3, 6, 7],
+    picante: [1, 9],
+    movil: [4]
+  },
+  bar: {
+    chill: [0, 4],
+    ridiculo: [0, 1, 2, 6],
+    picante: [3, 5, 9],
+    movil: [7, 8]
+  },
+  discoteca: {
+    chill: [2],
+    ridiculo: [0, 1, 6, 8],
+    picante: [3, 4, 7],
+    movil: [5, 9]
+  },
+  parque: {
+    chill: [1, 3, 8],
+    ridiculo: [0, 4, 5, 7],
+    picante: [2, 9],
+    movil: [6]
+  }
+};
+
 // --- RENDERIZADOR AVANZADO DE TEXTO
 const RenderFormattedText = ({ text, isVor = false }) => {
   if (!text) return null;
@@ -875,16 +904,22 @@ export default function App() {
       const config = choice === 'verdad' ? vorTruthConfig : vorDareConfig;
       const basePool = choice === 'verdad' ? PHRASES.verdad : (PHRASES.reto[environment] || PHRASES.reto.casa);
 
-      Object.entries(config).forEach(([category, weight]) => {
-        if (weight > 0 && basePool[category]) {
-          for (let i = 0; i < weight; i++) pool = pool.concat(basePool[category]);
-        }
-      });
-
-      // Els reptes de cada entorn són una llista plana a PHRASES.reto.
-      // Si hi ha alguna potència activada, fem servir tota la llista com a fallback.
-      if (pool.length === 0 && choice === 'reto' && Array.isArray(basePool) && Object.values(config).some(weight => weight > 0)) {
-        pool = [...basePool];
+      if (choice === 'verdad') {
+        Object.entries(config).forEach(([category, weight]) => {
+          if (weight > 0 && basePool[category]) {
+            for (let i = 0; i < weight; i++) pool = pool.concat(basePool[category]);
+          }
+        });
+      } else {
+        const categoryIndexes = DARE_CATEGORY_INDEXES[environment] || DARE_CATEGORY_INDEXES.casa;
+        Object.entries(config).forEach(([category, weight]) => {
+          const indexes = categoryIndexes[category] || [];
+          for (let i = 0; i < weight; i++) {
+            indexes.forEach(index => {
+              if (basePool[index]) pool.push(basePool[index]);
+            });
+          }
+        });
       }
 
       if (pool.length === 0) return;

@@ -7,7 +7,7 @@ Primera actualització després de preparar l'APK Android.
 - **Ordre de jugadors tàctil:** fletxes amunt/avall a la configuració i al gestor, sense dependre exclusivament del drag & drop.
 
 ### Correccions
-- **Veritat o Repte:** arreglat un desajust entre les claus de configuració i les llistes de reptes per entorn que podia deixar RETO sense frases.
+- **Veritat o Repte:** els filtres de reptes ara funcionen de debò: cada categoria selecciona els reptes corresponents a casa, bar, discoteca o parc, i els pesos controlen la freqüència amb què apareixen.
 - **Filtres desactivats:** es gestiona correctament la selecció d'una modalitat sense categories actives.
 - **Yo Nunca:** correcció del control de frases utilitzades amb noms aleatoris.
 - **Gestió de jugadors:** protecció del mínim de dos jugadors durant una partida i neteja de dades associades en eliminar-ne un.

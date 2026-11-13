@@ -10,7 +10,7 @@ Totes les versions publicades de Party Night, amb un resum dels canvis principal
 - Les Releases de GitHub inclouen l'APK debug descarregable i les notes de cada versió.
 
 ### Correccions
-- Veritat o Repte: correcció del selector de reptes. Les frases estaven guardades com a llistes planes per entorn, però el selector les buscava com si fossin subcategories; en conseqüència, el joc podia quedar sense cap repte disponible.
+- Veritat o Repte: ara les categories Tranqui/Físic, Dar el Cante, Contacte Físic i Perill Digital filtren realment els reptes de cada entorn i respecten els pesos del selector. Abans les llistes planes no coincidien amb les subcategories esperades.
 - Veritat o Repte: si una modalitat té tots els filtres desactivats, ara es mostra el missatge corresponent en lloc d'entrar en una pantalla buida.
 - Yo Nunca: les frases amb noms substituïts es registren amb la plantilla original per evitar que es repeteixin abans d'hora.
 - Gestió de jugadors: en una partida no es pot baixar de dos jugadors des del gestor, evitant quedar atrapat dins del modal.
