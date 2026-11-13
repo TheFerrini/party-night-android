@@ -4,7 +4,7 @@ import {
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
   Laugh, Music, History, Info, Dices, TreePine, Settings, Cctv, Clock, BellRing, Trophy,
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
-  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper
+  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 // --- BASE DE DATOS MASIVA DE FRASES V1.67 (100% RENOVADA)
@@ -423,6 +423,7 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
 };
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(true);
   const [screen, setScreen] = useState('setup');
   const [closingScreen, setClosingScreen] = useState(false);
   const [players, setPlayers] = useState([]);
@@ -500,6 +501,12 @@ export default function App() {
   const [ianBoxOptions, setIanBoxOptions] = useState([]);
   const [activeIanPerk, setActiveIanPerk] = useState(null);
   const [showIanModeInfo, setShowIanModeInfo] = useState(false);
+
+  // La careta es tanca sola, però també es pot saltar tocant la pantalla.
+  useEffect(() => {
+    const introTimer = window.setTimeout(() => setShowIntro(false), 2800);
+    return () => window.clearTimeout(introTimer);
+  }, []);
 
   const exitPhrasesPool = [
     "¿Seguro que quieres salir de la partida actual? Perderás el progreso de la partida.",
@@ -614,14 +621,39 @@ export default function App() {
   // --- GESTIÓN DE JUGADORES Y DRAG&DROP
   const addPlayer = (e) => {
     e.preventDefault();
-    if (newPlayer.trim() && !players.includes(newPlayer.trim().toUpperCase())) {
-      setPlayers([...players, newPlayer.trim().toUpperCase()]);
+    const normalizedName = newPlayer.trim().toUpperCase();
+    if (normalizedName) {
+      setPlayers(prev => prev.includes(normalizedName) ? prev : [...prev, normalizedName]);
     }
     setNewPlayer("");
   };
 
-  const removePlayer = (playerToRemove) => {
-    setPlayers(players.filter(p => p !== playerToRemove));
+  const removePlayer = (playerToRemove, minimumPlayers = 0) => {
+    if (players.length <= minimumPlayers) return;
+
+    const removedIndex = players.indexOf(playerToRemove);
+    const nextPlayers = players.filter(p => p !== playerToRemove);
+    setPlayers(nextPlayers);
+    setDrinkCounts(prev => { const next = { ...prev }; delete next[playerToRemove]; return next; });
+    setGlobalStrikes(prev => { const next = { ...prev }; delete next[playerToRemove]; return next; });
+    setYnDrinkers(prev => prev.filter(p => p !== playerToRemove));
+    setFbiEvents(prev => prev.filter(ev => ev.player !== playerToRemove));
+    setFbiAlerts(prev => prev.filter(ev => ev.player !== playerToRemove));
+    if (supremePenaltyPlayer === playerToRemove) setSupremePenaltyPlayer(null);
+    setCurrentPlayerIndex(prev => {
+      const adjustedIndex = removedIndex < prev ? prev - 1 : prev;
+      return nextPlayers.length ? Math.min(adjustedIndex, nextPlayers.length - 1) : 0;
+    });
+  };
+
+  const movePlayer = (index, offset) => {
+    const targetIndex = index + offset;
+    if (targetIndex < 0 || targetIndex >= players.length) return;
+    setPlayers(prev => {
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
   };
 
   const addDefaultPlayers = () => {
@@ -721,7 +753,7 @@ export default function App() {
       let val = w==='un'||w==='uno'||w==='una'?1: parseInt(w)||2;
       amount = roundMatch[3].toLowerCase().startsWith('ronda') ? val * players.length : val;
     }
-    setFbiEvents([...fbiEvents, { id: Date.now(), player, phrase, type, remaining: amount }]);
+    setFbiEvents(prev => [...prev, { id: Date.now(), player, phrase, type, remaining: amount }]);
   };
 
   const triggerIanBoxes = () => {
@@ -781,13 +813,15 @@ export default function App() {
       setUsedPhrases([]);
     }
 
-    let phraseTemplate = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+    const rawPhraseTemplate = availablePhrases[Math.floor(Math.random() * availablePhrases.length)];
+    let phraseTemplate = rawPhraseTemplate;
     if (phraseTemplate.includes('[Player]')) {
       const randomTarget = getRandomPlayer();
       phraseTemplate = phraseTemplate.replace(/\[Player\]/g, `|||${randomTarget}|||`);
     }
 
-    setUsedPhrases(prev => [...prev, phraseTemplate]);
+    // Guardem la plantilla original, no el nom aleatori que s'hi hagi substituït.
+    setUsedPhrases(prev => [...prev, rawPhraseTemplate]);
 
     if (animate) {
       setIsAnimatingYN(true);
@@ -847,6 +881,12 @@ export default function App() {
         }
       });
 
+      // Els reptes de cada entorn són una llista plana a PHRASES.reto.
+      // Si hi ha alguna potència activada, fem servir tota la llista com a fallback.
+      if (pool.length === 0 && choice === 'reto' && Array.isArray(basePool) && Object.values(config).some(weight => weight > 0)) {
+        pool = [...basePool];
+      }
+
       if (pool.length === 0) return;
 
       let availablePhrases = pool.filter(p => !usedPhrases.includes(p));
@@ -873,6 +913,11 @@ export default function App() {
   };
 
   const handleVorChoice = (choice) => {
+    const config = choice === 'verdad' ? vorTruthConfig : vorDareConfig;
+    if (!Object.values(config).some(weight => weight > 0)) {
+      triggerEasterEgg();
+      return;
+    }
     generateVORPhrase(choice, players[currentPlayerIndex]);
     setTurnState('showing');
   };
@@ -952,7 +997,6 @@ export default function App() {
      handleNavigate('game-duelo');
      triggerNewDuelo();
   };
-
   const triggerNewDuelo = () => {
      const p1 = getRandomPlayer();
      const p2 = getRandomPlayer(p1);
@@ -997,7 +1041,8 @@ export default function App() {
      // MODO REY IAN INVASION (cada 2 rondas)
      const nextCount = encuestaRoundCount + 1;
      setEncuestaRoundCount(nextCount);
-     if (isIansBirthday && players.includes('IAN') && nextCount % 2 === 0) {         triggerIanBoxes();
+     if (isIansBirthday && players.includes('IAN') && nextCount % 2 === 0) {
+         triggerIanBoxes();
      }
   };
 
@@ -1223,7 +1268,103 @@ export default function App() {
         .delay-100 { animation-delay: 100ms; }
         .delay-200 { animation-delay: 200ms; }
         .delay-300 { animation-delay: 300ms; }
+
+        @keyframes pn-intro-beer {
+          0% { opacity: 0; transform: translateY(42px) rotate(-16deg) scale(.62); }
+          55% { opacity: 1; transform: translateY(-8px) rotate(7deg) scale(1.12); }
+          75% { transform: translateY(3px) rotate(-3deg) scale(.96); }
+          100% { transform: translateY(0) rotate(0) scale(1); }
+        }
+        @keyframes pn-intro-title {
+          0% { opacity: 0; transform: translateY(22px); letter-spacing: .38em; }
+          100% { opacity: 1; transform: translateY(0); letter-spacing: -.045em; }
+        }
+        @keyframes pn-intro-progress {
+          from { transform: scaleX(0); }
+          to { transform: scaleX(1); }
+        }
+        @keyframes pn-intro-glow {
+          0%, 100% { opacity: .45; transform: scale(.92); }
+          50% { opacity: .9; transform: scale(1.12); }
+        }
+        @keyframes pn-intro-confetti {
+          0% { opacity: 0; transform: translate3d(0, 24px, 0) rotate(0deg) scale(.4); }
+          18% { opacity: 1; }
+          100% { opacity: 0; transform: translate3d(18px, -115vh, 0) rotate(540deg) scale(1); }
+        }
+        @keyframes pn-intro-ring {
+          0% { opacity: 0; transform: scale(.35); }
+          40% { opacity: .65; }
+          100% { opacity: 0; transform: scale(1.7); }
+        }
+        @keyframes pn-intro-exit {
+          to { opacity: 0; visibility: hidden; transform: scale(1.025); }
+        }
+        .party-intro {
+          position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+          overflow: hidden; color: white; text-align: center; cursor: pointer;
+          padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+          background: radial-gradient(ellipse at 50% 42%, #4a1742 0%, #211025 38%, #090a12 78%);
+          animation: pn-intro-exit .38s ease-in 2.38s forwards;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .party-intro__glow {
+          position: absolute; width: min(82vw, 390px); aspect-ratio: 1; border-radius: 9999px;
+          background: radial-gradient(circle, rgba(236,72,153,.35), rgba(249,115,22,.10) 46%, transparent 70%);
+          filter: blur(10px); animation: pn-intro-glow 1.8s ease-in-out infinite;
+        }
+        .party-intro__beer {
+          position: relative; z-index: 2; font-size: clamp(92px, 27vw, 142px); line-height: 1;
+          filter: drop-shadow(0 16px 28px rgba(249,115,22,.28));
+          animation: pn-intro-beer .82s cubic-bezier(.2,.85,.25,1.2) both;
+        }
+        .party-intro__ring {
+          position: absolute; z-index: 1; width: 180px; height: 180px; border-radius: 9999px;
+          border: 2px solid rgba(251,191,36,.7); animation: pn-intro-ring 1.3s ease-out .35s both;
+        }
+        .party-intro__title {
+          opacity: 0; animation: pn-intro-title .62s cubic-bezier(.2,.8,.2,1) .58s forwards;
+          text-shadow: 0 4px 28px rgba(236,72,153,.25);
+        }
+        .party-intro__confetti {
+          position: absolute; z-index: 1; bottom: -24px; border-radius: 3px; opacity: 0;
+          animation-name: pn-intro-confetti; animation-timing-function: linear; animation-iteration-count: infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .party-intro, .party-intro * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+        }
       `}</style>
+
+      {showIntro && (
+        <div className="party-intro" role="button" tabIndex={0} aria-label="Saltar la careta de Party Night" onClick={() => setShowIntro(false)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setShowIntro(false); }}>
+          {Array.from({ length: 18 }).map((_, index) => (
+            <span key={index} className="party-intro__confetti" style={{
+              left: `${(index * 37 + 7) % 100}%`,
+              width: `${5 + (index % 4) * 2}px`,
+              height: `${9 + (index % 4) * 3}px`,
+              backgroundColor: ['#fbbf24', '#fb7185', '#a78bfa', '#f97316', '#f8fafc'][index % 5],
+              animationDuration: `${1.7 + (index % 4) * 0.25}s`,
+              animationDelay: `${(index % 7) * -0.24}s`,
+            }} />
+          ))}
+          <div className="party-intro__glow" />
+          <div className="relative z-10 flex w-full max-w-sm flex-col items-center">
+            <div className="relative mb-7 flex h-44 w-44 items-center justify-center">
+              <div className="party-intro__ring" />
+              <div className="party-intro__beer">🍻</div>
+            </div>
+            <div className="party-intro__title text-5xl sm:text-6xl font-black uppercase leading-none">
+              <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-red-500 bg-clip-text text-transparent">Party Night</span>
+            </div>
+            <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '850ms', animationFillMode: 'forwards' }}>La noche acaba de empezar</p>
+            <div className="mt-12 h-1.5 w-36 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.35s linear both' }} />
+            </div>
+            <p className="mt-4 text-[10px] font-bold uppercase tracking-[.2em] text-white/45">Toca para saltar</p>
+          </div>
+          <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>Juega con cabeza · Bebe con responsabilidad</p>
+        </div>
+      )}
 
       {/* FONDO DE CONFETI PARA MODO REY IAN */}
       {isIansBirthday && screen !== 'setup' && <ConfettiBackground />}
@@ -1387,16 +1528,20 @@ export default function App() {
             ) : (
               <div className="flex flex-col gap-2 justify-center pb-2">
                 {players.map((player, idx) => (
-                  <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-3 bg-gray-700/60 px-4 py-2.5 rounded-xl border border-gray-600 backdrop-blur-sm shadow-sm cursor-move animate-expand transition-transform hover:scale-[1.02]">
+                  <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-2 bg-gray-700/60 px-3 py-2.5 rounded-xl border border-gray-600 backdrop-blur-sm shadow-sm cursor-move animate-expand">
                     <GripHorizontal size={18} className="text-gray-500 shrink-0" />
                     <span className="font-black text-gray-500 w-4 text-right">{idx + 1}.</span>
                     <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide drop-shadow-md select-none flex-1 truncate">{player}</span>
-                    <button onClick={() => removePlayer(player)} className="text-red-400 hover:text-red-300 p-1 rounded-full hover:bg-gray-600 transition-colors shrink-0"><X size={16} /></button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <button type="button" disabled={idx === 0} aria-label={`Mou ${player} amunt`} onClick={() => movePlayer(idx, -1)} className="rounded-lg p-1 text-gray-300 disabled:opacity-25"><ChevronUp size={18} /></button>
+                      <button type="button" disabled={idx === players.length - 1} aria-label={`Mou ${player} avall`} onClick={() => movePlayer(idx, 1)} className="rounded-lg p-1 text-gray-300 disabled:opacity-25"><ChevronDown size={18} /></button>
+                      <button type="button" disabled={players.length <= 2} aria-label={`Elimina ${player}`} onClick={() => removePlayer(player, 2)} className="text-red-400 hover:text-red-300 p-1 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-25 shrink-0"><X size={16} /></button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">Mantén pulsado un nombre para cambiar el orden</p>}
+            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">Usa las flechas para cambiar el orden. En partida, conserva mínimo 2 jugadores.</p>}
           </div>
           <button disabled={players.length < 2} onClick={() => { if (currentPlayerIndex >= players.length) setCurrentPlayerIndex(0); setShowPlayerManager(false); }} className={`w-full py-4 rounded-xl font-black text-lg transition-all shrink-0 ${players.length >= 2 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg active:scale-95' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>Guardar y Volver</button>
         </div>
@@ -1502,6 +1647,17 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v1.68.0 (First Round Edition)</h3>
+              <p className="text-sm text-gray-400">
+                - <b>Careta animada:</b> nova entrada Party Night amb brindis, confeti i opció de saltar-la.<br/>
+                - <b>Veritat o Repte:</b> corregida la selecció de reptes, que podia quedar sense cap frase disponible.<br/>
+                - <b>Yo Nunca:</b> millor control de frases repetides quan inclouen noms aleatoris.<br/>
+                - <b>Jugadors:</b> reordenació amb controls tàctils i neteja de puntuacions/registres en eliminar algú.<br/>
+                - <b>FBI:</b> registre d'esdeveniments més robust quan s'afegeixen diversos controls seguits.
+              </p>
+            </div>
+            <div className="relative pl-4 border-l-2 border-orange-500">
+              <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
               <h3 className="text-lg font-black text-white mb-1">v1.67.1 (The Six Seven Edition)</h3>
               <p className="text-sm text-gray-400 space-y-1">
                 - <b>Modo Dios Mejorado:</b> La interfaz del Modo Ian ahora tiene confeti real en todos los juegos, es oscuro para leerse perfectamente.<br/>
@@ -1531,7 +1687,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v1.67.1 • THE 6/7 EDITION <Sparkles size={12} className="text-yellow-300" />
+                  v1.68.0 • FIRST ROUND EDITION <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">para estudiantes con pretensiones alcohólicas</p>
@@ -1549,10 +1705,12 @@ export default function App() {
               ) : (
                 <div className="flex flex-wrap gap-2 justify-center pb-2">
                   {players.map((player, idx) => (
-                    <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-1.5 bg-gray-700/60 px-3 py-1.5 rounded-full border border-gray-600 backdrop-blur-sm shadow-sm cursor-move animate-expand transition-transform hover:scale-105">
-                      <GripHorizontal size={14} className="text-gray-500" />
+                    <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-1 bg-gray-700/60 px-2.5 py-1.5 rounded-full border border-gray-600 backdrop-blur-sm shadow-sm animate-expand">
+                      <GripHorizontal size={13} className="text-gray-500" />
                       <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide drop-shadow-md select-none">{idx + 1}. {player}</span>
-                      <button onClick={() => removePlayer(player)} className="text-red-400 hover:text-red-300 p-0.5 rounded-full hover:bg-gray-600 transition-colors"><X size={14} /></button>
+                      <button type="button" disabled={idx === 0} aria-label={`Mou ${player} amunt`} onClick={() => movePlayer(idx, -1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronUp size={14} /></button>
+                      <button type="button" disabled={idx === players.length - 1} aria-label={`Mou ${player} avall`} onClick={() => movePlayer(idx, 1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronDown size={14} /></button>
+                      <button type="button" aria-label={`Elimina ${player}`} onClick={() => removePlayer(player)} className="text-red-400 hover:text-red-300 p-0.5 rounded-full hover:bg-gray-600 transition-colors"><X size={14} /></button>
                     </div>
                   ))}
                 </div>
@@ -1744,12 +1902,12 @@ export default function App() {
                       <div className="flex items-center gap-4">
                         <div className="flex-1 flex flex-col items-center">
                           <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">Mínimo (s)</span>
-                          <input type="number" min="5" max="100" value={bombaConfig.minTime} onChange={(e) => setBombaConfig({ ...bombaConfig, minTime: parseInt(e.target.value) || 5 })} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
+                          <input type="number" min="5" max="100" value={bombaConfig.minTime} onChange={(e) => { const parsed = Number.parseInt(e.target.value, 10); const value = Number.isFinite(parsed) ? Math.min(100, Math.max(5, parsed)) : 5; setBombaConfig(prev => ({ ...prev, minTime: Math.min(value, prev.maxTime) })); }} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
                         </div>
                         <span className="text-gray-500 font-bold mt-4">-</span>
                         <div className="flex-1 flex flex-col items-center">
                           <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">Máximo (s)</span>
-                          <input type="number" min="10" max="120" value={bombaConfig.maxTime} onChange={(e) => setBombaConfig({ ...bombaConfig, maxTime: parseInt(e.target.value) || 10 })} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
+                          <input type="number" min="10" max="120" value={bombaConfig.maxTime} onChange={(e) => { const parsed = Number.parseInt(e.target.value, 10); const value = Number.isFinite(parsed) ? Math.min(120, Math.max(10, parsed)) : 10; setBombaConfig(prev => ({ ...prev, maxTime: Math.max(value, prev.minTime) })); }} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
                         </div>
                       </div>
                     </div>
@@ -1838,8 +1996,7 @@ export default function App() {
                       <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde estamos?</p>
                       <EnvironmentSelector currentEnv={encuestaEnvironment} setEnv={setEncuestaEnvironment} />
                     </div>
-                    <div className="shrink-0 relative z-10">
-                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">Castigo para el más votado</p>
+                    <div className="shrink-0 relative z-10">                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">Castigo para el más votado</p>
                       <PenaltySelector currentLevel={encuestaPenaltyLevel} setLevel={setEncuestaPenaltyLevel} />
                     </div>
                     <button onClick={startEncuesta} className="w-full py-4 mt-2 rounded-xl font-black text-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex justify-center items-center gap-3 text-white shrink-0 relative z-10">
@@ -1996,7 +2153,8 @@ export default function App() {
                   <div className={`bg-gray-800/90 border-2 border-gray-700 shadow-2xl p-6 md:p-8 pt-8 md:pt-10 pb-6 md:pb-8 rounded-3xl w-full text-center relative mt-4 animate-expand`} style={{ animationFillMode: 'both' }}>
                     <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] whitespace-nowrap ${header.color}`}>
                       {header.text}
-                    </div>                    <RenderFormattedText text={currentPhrase} isVor={true} />
+                    </div>
+                    <RenderFormattedText text={currentPhrase} isVor={true} />
                   </div>
 
                   {currentPenalty && (

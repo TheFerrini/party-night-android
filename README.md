@@ -1,25 +1,20 @@
 # Party Night — Android
 
-Projecte de **Party Night v1.67.1** convertit a una app Android amb React, Vite i Capacitor 8.
+Party Night v1.68.0 és una app de jocs per a grups, creada amb React, Vite i Capacitor 8 i empaquetada com a APK Android.
 
-## Què inclou
+## Descarregar
 
-- Codi original de Party Night a `src/App.tsx`.
-- Interfície adaptada al WebView Android.
-- Dependències de React, Tailwind CSS, Lucide i Capacitor.
-- Compilació automàtica de l'APK amb GitHub Actions.
+Les versions publicades i les seves APK es troben a la pàgina [Releases](https://github.com/TheFerrini/party-night-android/releases). Descarrega l'artefacte APK de la versió que vulguis, descomprimeix el ZIP i instal·la `app-debug.apk` al dispositiu Android.
 
-## Compilació automàtica
+## Compilació automàtica i releases
 
-El workflow **Build Android APK** s'executa automàticament quan hi ha un push a `main`. També es pot iniciar manualment des de la pestanya **Actions** amb **Run workflow**.
+El workflow **Build Android APK** s'executa a cada push a `main` o manualment des de **Actions**. Si la compilació acaba correctament:
 
-Quan la compilació acaba correctament:
+1. Desa l'APK com a artefacte de GitHub Actions.
+2. Llegeix la versió de `package.json`.
+3. Crea o actualitza la Release `v<versió>` amb `RELEASE_NOTES.md` i adjunta l'APK.
 
-1. Obre el workflow completat a **Actions**.
-2. Baixa l'artefacte **party-night-debug-apk**.
-3. Descomprimeix el ZIP i instal·la `app-debug.apk` al dispositiu Android.
-
-Els artefactes es conserven durant 30 dies.
+Per cada nova actualització, cal incrementar `version` a `package.json`, afegir un apartat a `CHANGELOG.md` i substituir `RELEASE_NOTES.md` per les notes de la nova versió. La pàgina Releases queda així com a historial de versions descarregables.
 
 ## Desenvolupament web
 
@@ -52,9 +47,8 @@ L'APK es genera a `android/app/build/outputs/apk/debug/app-debug.apk`.
 - Web directory: `dist`
 - Tipus de compilació: debug APK
 
-L'APK debug serveix per instal·lar i provar l'app. Per publicar-la a Google Play caldrà configurar una signatura de producció i generar un AAB signat.
+L'APK debug serveix per instal·lar i provar. Per publicar a Google Play caldrà configurar una signatura de producció i generar un AAB signat.
 
+## Historial de canvis
 
-## Historial de compilació
-
-- 2026-11-13: actualitzat el pas de configuració de l'Android SDK a `android-actions/setup-android@v4` per evitar el paquet obsolet `tools`.
+Consulta [`CHANGELOG.md`](CHANGELOG.md) per al resum general de totes les versions i [`RELEASE_NOTES.md`](RELEASE_NOTES.md) per a la versió que s'està preparant.
