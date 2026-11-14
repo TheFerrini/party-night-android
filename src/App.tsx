@@ -2325,16 +2325,16 @@ export default function App() {
       {/* POP-UP D'ACTUALITZACIÓ */}
       <AnimatedModal isOpen={showDeleteDataConfirm} onClose={() => setShowDeleteDataConfirm(false)} zIndex="z-[190]">
         <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-gray-900 p-6 shadow-2xl">
-          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><AlertOctagon size={24}/></div><h2 className="text-xl font-black text-white">{t('Esborrar totes les dades?')}</h2></div>
-          <p className="text-sm leading-relaxed text-gray-300">{t('S’esborraran jugadors, sessions, historial, estadístiques i configuració guardada en aquest dispositiu. Aquesta acció no es pot desfer. Exporta una còpia abans si vols conservar les dades.')}</p>
-          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancel·lar')}</button><button type="button" onClick={() => { Object.keys(localStorage).filter(key => key.startsWith('pn-')).forEach(key => localStorage.removeItem(key)); window.location.reload(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Esborrar dades')}</button></div>
+          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><AlertOctagon size={24}/></div><h2 className="text-xl font-black text-white">{t('Borrar todos los datos?')}</h2></div>
+          <p className="text-sm leading-relaxed text-gray-300">{t('Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => { Object.keys(localStorage).filter(key => key.startsWith('pn-')).forEach(key => localStorage.removeItem(key)); window.location.reload(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Esborrar dades')}</button></div>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showFinishSessionConfirm} onClose={() => setShowFinishSessionConfirm(false)} zIndex="z-[190]">
         <div className="w-full max-w-sm rounded-3xl border border-amber-500/40 bg-gray-900 p-6 shadow-2xl">
-          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-amber-500/15 p-3 text-amber-300"><Flag size={24}/></div><h2 className="text-xl font-black text-white">{t('Finalitzar la sessió?')}</h2></div>
-          <p className="text-sm leading-relaxed text-gray-300">{t('La sessió es desarà a l’historial i tornareu al menú principal. Segur que la vols finalitzar?')}</p>
-          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowFinishSessionConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Continuar jugant')}</button><button type="button" onClick={() => { setShowFinishSessionConfirm(false); finishSession(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Finalitzar sessió')}</button></div>
+          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-amber-500/15 p-3 text-amber-300"><Flag size={24}/></div><h2 className="text-xl font-black text-white">{t('¿Finalizar la sesión?')}</h2></div>
+          <p className="text-sm leading-relaxed text-gray-300">{t('La sesión se guardará en el historial y volveréis al menú principal. ¿Seguro que quieres finalizarla?')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowFinishSessionConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Seguir jugando')}</button><button type="button" onClick={() => { setShowFinishSessionConfirm(false); finishSession(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Finalitzar sessió')}</button></div>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showUpdatePopup} onClose={() => setShowUpdatePopup(false)} zIndex="z-[150]">
@@ -2494,7 +2494,7 @@ export default function App() {
               {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
               <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
             </div>
-            <button type="button" onClick={() => setShowDeleteDataConfirm(true)} className="w-full rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-left text-sm font-black text-red-300 active:scale-[.99]">{t('Esborrar totes les dades')}</button>
+            <button type="button" onClick={() => setShowDeleteDataConfirm(true)} className="w-full rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-left text-sm font-black text-red-300 active:scale-[.99]">{t('Borrar todos los datos')}</button>
           </div>
           <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>
         </div>
