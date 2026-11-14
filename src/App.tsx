@@ -2570,8 +2570,7 @@ export default function App() {
                 const wins = allGames.filter((game: any) => (game.winners || []).includes(player)).length;
                 return { player, penalties, gamesPlayed, wins };
               }).sort((a, b) => (playerSort === 'most' ? b.penalties - a.penalties : a.penalties - b.penalties) || a.player.localeCompare(b.player));
-
-              if (statisticsPage === 'overview') {
+              const overviewPanel = (() => {
                 const mostPlayed = Object.entries(allGames.reduce((acc: any, game: any) => {
                   const key = game.key || game.title || 'unknown';
                   acc[key] = (acc[key] || 0) + 1;
@@ -2604,9 +2603,8 @@ export default function App() {
                     </div>
                   </>
                 );
-              }
-
-              if (statisticsPage === 'games') {
+              })();
+              const gamesPanel = (() => {
                 return (
                   <div className="space-y-3">
                     {allGames.length ? allGames.map((game: any) => (
@@ -2628,9 +2626,8 @@ export default function App() {
                     )) : <p className="text-sm text-gray-500">{t('Quan acabeu una partida, aquí apareixeran els resultats.')}</p>}
                   </div>
                 );
-              }
-
-              if (selectedPlayerProfile) {
+              })();
+              const playersPanel = selectedPlayerProfile ? (() => {
                 const player = playerRows.find(item => item.player === selectedPlayerProfile);
                 const playerGameGroups = allGames.map((game: any) => {
                   const sourceEvents = game.events && game.events.length ? game.events : allEvents.filter((event: any) => event.gameId === game.id);
@@ -2674,9 +2671,7 @@ export default function App() {
                     ) : <p className="text-sm text-gray-500">{t('Encara no hi ha penalitzacions registrades per aquest jugador.')}</p>}
                   </div>
                 );
-              }
-
-              return (
+              })() : (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setPlayerSort('most')} aria-pressed={playerSort === 'most'}
@@ -2696,6 +2691,13 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+              );
+              return (
+                <>
+                  <div className="pn-stats-page">{overviewPanel}</div>
+                  <div className="pn-stats-page">{gamesPanel}</div>
+                  <div className="pn-stats-page">{playersPanel}</div>
+                </>
               );
                 })()}
               </div>
