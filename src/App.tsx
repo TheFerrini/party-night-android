@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Browser } from '@capacitor/browser';
 import { APP_VERSION } from './version';
-import { translateText, type AppLanguage } from './localization';
-import { translatePrompt } from './prompt-translations';
+import { translateText, translateUiText, type AppLanguage } from './localization';
 import {
   Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart, Globe, Flag,
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
@@ -10,6 +9,34 @@ import {
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
   GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload
 } from 'lucide-react';
+
+
+const LocalizedUi = ({ language, children }: { language: AppLanguage; children: React.ReactNode }) => {
+  const translateNode = (node: React.ReactNode): React.ReactNode => {
+    if (typeof node === 'string') return translateUiText(language, node);
+    if (Array.isArray(node)) {
+      const mapped = node.map(child => translateNode(child));
+      return mapped.some((child, index) => child !== node[index]) ? mapped : node;
+    }
+    if (!React.isValidElement(node)) return node;
+    const props = node.props as Record<string, unknown>;
+    const nextProps: Record<string, unknown> = {};
+    let changed = false;
+    for (const key of ['placeholder', 'aria-label', 'title', 'alt', 'label']) {
+      const value = props[key];
+      if (typeof value === 'string') {
+        const translated = translateUiText(language, value);
+        if (translated !== value) { nextProps[key] = translated; changed = true; }
+      }
+    }
+    if (props.children !== undefined) {
+      const translatedChildren = translateNode(props.children as React.ReactNode);
+      if (translatedChildren !== props.children) { nextProps.children = translatedChildren; changed = true; }
+    }
+    return changed ? React.cloneElement(node as React.ReactElement<any>, nextProps) : node;
+  };
+  return <>{translateNode(children)}</>;
+};
 
 // --- BASE DE DATOS MASIVA DE FRASES V1.67 (100% RENOVADA)
 const PHRASES = {
@@ -381,8 +408,6 @@ const RenderFormattedText = ({ text, isVor = false, language = 'es' }) => {
     mainText = parts[0].trim();
     explanation = parts[1].replace('}}', '').trim();
   }
-  mainText = translatePrompt(language, mainText);
-  if (explanation) explanation = translatePrompt(language, explanation);
 
   const renderNames = (str) => {
     const parts = str.split('|||');
@@ -459,14 +484,14 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
 
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => {
-    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'es'; } catch { return 'es'; }
   });
   const [pendingLanguage, setPendingLanguage] = useState<AppLanguage>(() => {
-    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'es'; } catch { return 'es'; }
   });
   // El selector només s'obre voluntàriament des de la pantalla Jugar.
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
@@ -651,8 +676,8 @@ export default function App() {
       localStorage.setItem('pn-language', pendingLanguage);
       localStorage.removeItem('pn-languageChosen');
     } catch {}
-    setLanguage(pendingLanguage);
-    setShowLanguagePicker(false);
+    // Reinicia l'app perquè el nou idioma s'apliqui a totes les pantalles.
+    window.location.reload();
   };
 
   const updateWinnerMode = (nextMode: 'least' | 'most') => {
@@ -1695,7 +1720,7 @@ export default function App() {
         break;
       case 'prompt':
         title = 'Targeta o repte';
-        description = translatePrompt(language, event.text || '');
+        description = event.text || '';
         if (event.player) description = t('Torn de') + ' ' + event.player + ': ' + description;
         break;
       case 'penalty':
@@ -1800,6 +1825,7 @@ export default function App() {
   };
 
   return (
+    <LocalizedUi language={language}>
     <div className={`app-root relative min-h-screen overflow-hidden font-sans ${isIansBirthday && screen !== 'setup' ? 'bg-gray-950' : 'bg-gray-900'}`}>
       <style>{`
         @keyframes expand-in { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -2211,7 +2237,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.2 (The Party Re-Rebuild)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.3 (The Party Re-Rebuild)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Android:")}</b> {t("espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.")}<br/>
                 - <b>{t("Careta:")}</b> {t("animació més lleugera, sense botó per saltar i amb inici més net.")}<br/>
@@ -2338,12 +2364,12 @@ export default function App() {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
             <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">{t("Party Night · Language")}</p>
             <h2 className="text-2xl font-black text-white">{t('Tria l’idioma')}</h2>
-            <p className="mt-2 text-xs text-gray-400">{t('Elige el idioma de la aplicación. El cambio se aplica inmediatamente.')}</p>
+            <p className="mt-2 text-xs text-gray-400">{t('El cambio se aplicará al volver a iniciar la app.')}</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
             <button type="button" aria-pressed={pendingLanguage === 'ca'} onClick={() => chooseLanguage('ca')}
               className={pendingLanguage === 'ca' ? "pn-language-option pn-flag-ca is-selected" : "pn-language-option pn-flag-ca"}>
-              <span className="relative z-10 rounded-lg bg-black/55 px-4 py-2 text-left text-lg font-black text-white">{t('Català')} <small className="block text-[10px] font-bold uppercase tracking-widest text-white/80">{t("Catalunya")}</small></span>
+              <span className="relative z-10 rounded-lg bg-black/55 px-4 py-2 text-left text-lg font-black text-white">Català</span>
               {pendingLanguage === 'ca' && <span className="absolute right-3 top-3 z-10 rounded-full bg-white px-2 py-1 text-[9px] font-black uppercase text-gray-900">✓ {t('Seleccionat')}</span>}
             </button>
             <button type="button" aria-pressed={pendingLanguage === 'es'} onClick={() => chooseLanguage('es')}
@@ -2359,14 +2385,14 @@ export default function App() {
           </div>
           <button type="button" onClick={confirmLanguageChange}
             className="mt-5 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-4 font-black uppercase tracking-wider text-white shadow-lg active:scale-[.98]">
-            {t('Guardar idioma')}
+            {t('Guardar idioma y reiniciar')}
           </button>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.2</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.3</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2434,7 +2460,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.2 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.3 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
@@ -2481,7 +2507,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.2</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.3</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2644,7 +2670,7 @@ export default function App() {
       {screen === 'setup' && mainTab === 'history' && (
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.2</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.3</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (
@@ -3223,7 +3249,7 @@ export default function App() {
                 <div className="w-full flex flex-col items-center animate-expand relative z-10" style={{ animationFillMode: 'both' }}>
                   <div className="bg-gray-800/90 border-2 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)] p-6 rounded-3xl w-full mb-8 relative">
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-red-600 text-white border-red-400">{t("TEMA A HABLAR")}</div>
-                    <h2 className="text-2xl md:text-3xl font-black text-white mt-2 leading-tight uppercase">{translatePrompt(language, bombaState.topic || '')}</h2>
+                    <h2 className="text-2xl md:text-3xl font-black text-white mt-2 leading-tight uppercase">{bombaState.topic || ''}</h2>
                   </div>
 
                   {bombaConfig.showTable ? (
@@ -3339,7 +3365,7 @@ export default function App() {
                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-teal-600 text-white border-teal-400">
                           EL DESAFÍO
                        </div>
-                       <p className="text-2xl font-black leading-tight">{translatePrompt(language, dueloState.challenge || '')}</p>
+                       <p className="text-2xl font-black leading-tight">{dueloState.challenge || ''}</p>
                     </div>
 
                     <div className="w-full flex flex-col gap-3 animate-slide-up">
@@ -3428,7 +3454,7 @@ export default function App() {
                        <span className="text-xs font-bold text-gray-300 bg-gray-900/50 px-3 py-1 rounded-full uppercase tracking-widest block mb-2">{t("Votando:")} <span className="text-pink-400">{players[encuestaState.currentVoterIndex]}</span></span>
                     </div>
                     <div className="bg-gray-800/90 border-2 border-pink-500/50 shadow-[0_0_30px_rgba(236,72,153,0.2)] p-6 rounded-3xl w-full text-center mb-6">
-                       <p className="text-2xl font-black leading-tight text-white">{translatePrompt(language, encuestaState.question || '')}</p>
+                       <p className="text-2xl font-black leading-tight text-white">{encuestaState.question || ''}</p>
                     </div>
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-widest w-full text-left mb-3 bg-gray-900/50 pl-2 rounded">{t("Elige a alguien en secreto:")}</p>
                     <div className="w-full flex flex-col gap-2 overflow-y-auto max-h-[40vh] custom-scrollbar pr-2">
@@ -3466,7 +3492,7 @@ export default function App() {
                  return (
                     <div className="w-full flex flex-col items-center animate-expand" style={{ animationFillMode: 'both' }}>
                        <div className="bg-gray-800/90 border-2 border-gray-600 p-6 rounded-3xl w-full text-center mb-6 opacity-80">
-                          <p className="text-lg font-bold text-gray-300 italic">"{translatePrompt(language, encuestaState.question || '')}"</p>
+                          <p className="text-lg font-bold text-gray-300 italic">"{encuestaState.question || ''}"</p>
                        </div>
                        
                        <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 mb-6 uppercase text-center bg-gray-900/50 px-6 py-2 rounded-xl">
@@ -3507,5 +3533,6 @@ export default function App() {
       )}
 
     </div>
+    </LocalizedUi>
   );
 }

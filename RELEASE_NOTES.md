@@ -1,4 +1,15 @@
-## Party Night v2.0.2b — Localization hotfix
-- Corregida la referència `EXTRA_UI_TRANSLATIONS` no definida; els blocs de traducció ara amplien `UI_TRANSLATIONS`.
-- Solucionat l'error JavaScript que impedia iniciar la interfície.
-- Es manté la signatura persistent de la 2.0.2. Aquesta versió s'ha de poder instal·lar directament a sobre sense desinstal·lar.
+## Party Night v2.0.3 — The Comeback Intro & Full UI Language
+
+### 🎬 Careta
+- Recuperada la careta animada al abrir la app y después de cambiar el idioma.
+
+### 🌐 Idiomas
+- Español como idioma predeterminado para instalaciones sin preferencia guardada.
+- El selector ya no muestra «Catalunya» debajo de Català.
+- Guardar el idioma reinicia la app para aplicarlo de forma uniforme en todas las pantallas.
+- Traductor común para textos estáticos, elementos anidados y etiquetas accesibles.
+- Interfaz disponible en español, catalán e inglés.
+- Las frases, preguntas y retos de juego permanecen en su idioma original por ahora.
+
+### 📦 Actualización
+- Se mantiene la firma persistente de la 2.0.2: instala directamente encima, sin desinstalar.

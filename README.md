@@ -1,31 +1,25 @@
 # Party Night — Android
 
-**Party Night v2.0.2b · Localization hotfix**
+**Party Night v2.0.3 · The Comeback Intro & Full UI Language**
 
-App de jocs per a grups, feta amb React, Vite i Capacitor 8.
+## Novedades
+- Careta animada recuperada al iniciar.
+- Español predeterminado para instalaciones nuevas.
+- Selector de idioma solo en la pantalla principal, sin el subtítulo «Catalunya».
+- Guardar idioma reinicia la app y aplica la preferencia a toda la interfaz.
+- Textos estáticos y etiquetas accesibles traducidos en español, catalán e inglés.
+- Las frases y retos de los juegos permanecen en su idioma original por ahora.
+- Se conserva la importación y exportación de copias JSON.
+- Se conserva la clave de firma Android persistente.
 
-## Novetats de la 2.0.2b
-- Corregit el nom del mapa de traduccions que causava `EXTRA_UI_TRANSLATIONS is not defined`.
+## Actualizar
+La 2.0.3 mantiene el mismo package ID y la misma clave de firma persistente que la 2.0.2. Se puede instalar directamente encima, sin desinstalar.
 
-## Novetats de la 2.0.2
-- Recursos Vite amb rutes relatives per al WebView Android.
-- Watchdog HTML per mostrar errors abans del muntatge de React.
-- Català per defecte; selector d'idioma només a la pantalla principal.
-- Canvi d'idioma immediat, sense reiniciar.
-- Eliminada tota la funcionalitat de vibració i el plugin Haptics.
-- Comprovador que obre directament l'APK de la darrera release.
-- Clau de signatura Android persistent i explícita, amb verificació del certificat després del build.
-- Cache de signatura refrescada setmanalment per evitar-ne l'expiració.
-- Importació i exportació de còpies JSON conservades.
-
-## Actualitzar
-Cal desinstal·lar la 2.0.1b i instal·lar la 2.0.2 una vegada: les APK antigues no van conservar la mateixa clau de signatura. A partir de la 2.0.2, GitHub Actions reutilitza una clau persistent per a totes les versions següents.
-
-## Dades
-Les còpies poden contenir noms, sessions, historial, preguntes, vots, penalitzacions i resultats. La desinstal·lació elimina les dades locals de l'aplicació; exporta una còpia abans de fer-ho si l'app encara permet obrir-se.
+## Datos
+Las copias pueden contener nombres, sesiones, historial, preguntas, votos, penalizaciones y resultados. Desinstalar la app elimina sus datos locales.
 
 ## Compilar
-Cal Node.js 22+, Java 21 i Android SDK.
+Requiere Node.js 22+, Java 21 y Android SDK.
 
 ```bash
 npm install
