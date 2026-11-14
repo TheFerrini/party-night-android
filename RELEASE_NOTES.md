@@ -1,11 +1,11 @@
-## Party Night v2.0.5b — Full Canvas Navigation
+## Party Night v2.0.5c — Confirmacions & Refinament
 
-### 🧭 Navegació
-- El llenç principal llisca entre Estadístiques, Jugar i Historial.
-- L'indicador de la barra inferior també es mou lateralment amb la mateixa desacceleració.
+### 🛡️ Accions protegides
+- Confirmació abans d'esborrar totes les dades de l'app.
+- Confirmació abans de finalitzar una sessió.
 
-### ✨ Animacions
-- Eliminat el zoom d'entrada de la pantalla principal de Jugar.
-- Les targetes de sessions de l'Historial entren de baix cap amunt, esglaonadament.
-- L'alçada del llenç s'adapta al contingut de la secció activa.
-- Les transicions respecten la preferència de reduir animacions.
+### ✨ Interfície i animacions
+- Avís de nova versió amb retard de 0,5 segons.
+- Icones d'importació i exportació corregides.
+- Llenç d'Estadístiques ajustat per evitar que les subpàgines se solapin durant el desplaçament.
+- Desplegables de l'Historial animats; només una sessió oberta alhora.
