@@ -1032,6 +1032,31 @@ Object.assign(UI_TRANSLATIONS.ca, {
   "Consultant les releases públiques de GitHub...": "Consultant les versions públiques de GitHub..."
 });
 
+Object.assign(UI_TRANSLATIONS.ca, {
+  "Comprovant...": "Comprovant...",
+  "Cercar actualitzacions": "Cercar actualitzacions",
+  "Versió ": "Versió ",
+  "ja tens l'última.": "ja tens l'última.",
+  "Hi ha una actualització disponible.": "Hi ha una actualització disponible.",
+  "Consulta les versions publicades a GitHub.": "Consulta les versions publicades a GitHub."
+});
+Object.assign(UI_TRANSLATIONS.es, {
+  "Comprovant...": "Comprobando...",
+  "Cercar actualitzacions": "Buscar actualizaciones",
+  "Versió ": "Versión ",
+  "ja tens l'última.": "ya tienes la última.",
+  "Hi ha una actualització disponible.": "Hay una actualización disponible.",
+  "Consulta les versions publicades a GitHub.": "Consulta las versiones publicadas en GitHub."
+});
+Object.assign(UI_TRANSLATIONS.en, {
+  "Comprovant...": "Checking...",
+  "Cercar actualitzacions": "Check for updates",
+  "Versió ": "Version ",
+  "ja tens l'última.": "you have the latest.",
+  "Hi ha una actualització disponible.": "An update is available.",
+  "Consulta les versions publicades a GitHub.": "Check the releases published on GitHub."
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   // Les frases i reptes de joc es mantenen en castellà per ara.
