@@ -58,10 +58,16 @@ jobs:
         shell: bash
         run: |
           VERSION="$(node -e 'const s=require("fs").readFileSync("src/version.ts","utf8"); const m=s.match(/APP_VERSION\s*=\s*["\x27]([^"\x27]+)["\x27]/); if (!m) process.exit(1); console.log(m[1]);')"
-          BASE_VERSION="${VERSION%b}"
-          SUFFIX=""
-          if [[ "${VERSION}" == *b ]]; then SUFFIX="b"; fi
-          CODE="$(node -e 'const [a,b,c] = process.argv[1].split(".").map(Number); console.log(a * 1000000 + b * 10000 + c * 10 + (process.argv[2] === "b" ? 1 : 0))' "$BASE_VERSION" "$SUFFIX")"
+          CODE="$(node -e '
+            const match = process.argv[1].match(/^(\\d+)\\.(\\d+)\\.(\\d+)([a-z]?)$/);
+            if (!match) { console.error("Invalid APP_VERSION: " + process.argv[1]); process.exit(1); }
+            const suffixCodes = { "": 0, b: 1, c: 2 };
+            if (suffixCodes[match[4]] === undefined) { console.error("Unsupported version suffix: " + match[4]); process.exit(1); }
+            const [major, minor, patch] = match.slice(1, 4).map(Number);
+            const code = major * 1000000 + minor * 10000 + patch * 10 + suffixCodes[match[4]];
+            if (!Number.isSafeInteger(code) || code <= 0 || code > 2100000000) { console.error("Invalid Android versionCode: " + code); process.exit(1); }
+            console.log(code);
+          ' "$VERSION")"
           sed -i -E "s/versionCode [0-9]+/versionCode ${CODE}/" android/app/build.gradle
           sed -i -E "s/versionName \"[^\"]+\"/versionName \"${VERSION}\"/" android/app/build.gradle
 
