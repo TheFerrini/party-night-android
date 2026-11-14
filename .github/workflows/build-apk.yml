@@ -59,12 +59,10 @@ jobs:
         run: |
           VERSION="$(node -e 'const s=require("fs").readFileSync("src/version.ts","utf8"); const m=s.match(/APP_VERSION\s*=\s*["\x27]([^"\x27]+)["\x27]/); if (!m) process.exit(1); console.log(m[1]);')"
           CODE="$(node -e '
-            const match = process.argv[1].match(/^(\d+)\.(\d+)\.(\d+)([a-z]?)$/);
-            if (!match) { console.error("Invalid APP_VERSION: " + process.argv[1]); process.exit(1); }
-            const suffixCodes = { "": 0, b: 1, c: 2 };
-            if (suffixCodes[match[4]] === undefined) { console.error("Unsupported version suffix: " + match[4]); process.exit(1); }
-            const [major, minor, patch] = match.slice(1, 4).map(Number);
-            const code = major * 1000000 + minor * 10000 + patch * 10 + suffixCodes[match[4]];
+            const match = process.argv[1].match(/^(\d+)\.(\d+)\.(\d+)$/);
+            if (!match) { console.error("APP_VERSION must be numeric (for example 2.0.6): " + process.argv[1]); process.exit(1); }
+            const [major, minor, patch] = match.slice(1).map(Number);
+            const code = major * 1000000 + minor * 10000 + patch * 10;
             if (!Number.isSafeInteger(code) || code <= 0 || code > 2100000000) { console.error("Invalid Android versionCode: " + code); process.exit(1); }
             console.log(code);
           ' "$VERSION")"
