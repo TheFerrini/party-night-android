@@ -1057,6 +1057,26 @@ Object.assign(UI_TRANSLATIONS.en, {
   "Consulta les versions publicades a GitHub.": "Check the releases published on GitHub."
 });
 
+Object.assign(UI_TRANSLATIONS.ca, {
+  "Borrar todos los datos": "Esborrar totes les dades",
+  "¿Borrar todos los datos?": "Vols esborrar totes les dades?",
+  "Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.": "S'esborraran els jugadors, les sessions, l'historial, les estadístiques i els ajustos desats en aquest dispositiu. Aquesta acció no es pot desfer. Exporta una còpia abans si vols conservar les dades.",
+  "Cancelar": "Cancel·lar",
+  "¿Finalizar la sesión?": "Vols finalitzar la sessió?",
+  "La sesión se guardará en el historial y volveréis al menú principal. ¿Seguro que quieres finalizarla?": "La sessió es desarà a l'historial i tornareu al menú principal. Segur que la vols finalitzar?",
+  "Seguir jugando": "Continuar jugant"
+});
+
+Object.assign(UI_TRANSLATIONS.en, {
+  "Borrar todos los datos": "Delete all data",
+  "¿Borrar todos los datos?": "Delete all data?",
+  "Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.": "Players, sessions, history, statistics and settings saved on this device will be deleted. This action cannot be undone. Export a backup first if you want to keep your data.",
+  "Cancelar": "Cancel",
+  "¿Finalizar la sesión?": "Finish the session?",
+  "La sesión se guardará en el historial y volveréis al menú principal. ¿Seguro que quieres finalizarla?": "The session will be saved to history and you'll return to the main menu. Are you sure you want to finish?",
+  "Seguir jugando": "Keep playing"
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   // Les frases i reptes de joc es mantenen en castellà per ara.
