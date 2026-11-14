@@ -1782,6 +1782,18 @@ export default function App() {
             </h2>
             <button onClick={() => setIsChangelogOpen(false)} className="text-gray-400 hover:text-white bg-gray-700/50 hover:bg-gray-600 p-2 rounded-lg transition-colors"><X size={20} /></button>
           </div>
+          <button
+            type="button"
+            onClick={() => checkForUpdates(true)}
+            disabled={updateCheckStatus === 'checking'}
+            className="w-full mb-4 flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-black uppercase tracking-wider text-cyan-300 transition-colors hover:bg-cyan-500/20 disabled:opacity-60"
+          >
+            <RefreshCcw size={16} className={updateCheckStatus === 'checking' ? 'animate-spin' : ''} />
+            {updateCheckStatus === 'checking' ? 'Comprovant...' : 'Cercar actualitzacions'}
+          </button>
+          <p className="text-center text-[10px] text-gray-500 mb-3">
+            {updateCheckStatus === 'up-to-date' ? `Versió ${APP_VERSION}: ja tens l'última.` : updateCheckStatus === 'available' ? 'Hi ha una actualització disponible.' : 'Consulta les versions publicades a GitHub.'}
+          </p>
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
@@ -1817,6 +1829,63 @@ export default function App() {
               <p className="text-xs text-gray-400 space-y-1">- Fix de Rendimiento Móvil: Funciones de IA eliminadas.</p>
             </div>
           </div>
+        </div>
+      </AnimatedModal>
+
+      {/* POP-UP D'ACTUALITZACIÓ */}
+      <AnimatedModal isOpen={showUpdatePopup} onClose={() => setShowUpdatePopup(false)} zIndex="z-[150]">
+        <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-300 mb-2">Party Night · Actualitzacions</div>
+              <h2 className="text-2xl font-black text-white">
+                {updateCheckStatus === 'available' ? 'Nova versió disponible!' : updateCheckStatus === 'checking' ? 'Buscant versions...' : updateCheckStatus === 'error' ? 'No s’ha pogut comprovar' : 'Tot al dia!'}
+              </h2>
+            </div>
+            <button type="button" onClick={() => setShowUpdatePopup(false)} aria-label="Tancar" className="rounded-xl bg-gray-800 p-2 text-gray-300 hover:bg-gray-700">
+              <X size={20} />
+            </button>
+          </div>
+
+          {updateCheckStatus === 'checking' && (
+            <div className="py-7 text-center">
+              <Loader2 size={36} className="mx-auto mb-3 animate-spin text-cyan-400" />
+              <p className="text-sm text-gray-400">Consultant les releases públiques de GitHub...</p>
+            </div>
+          )}
+
+          {updateCheckStatus === 'available' && latestRelease && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <div className="text-[10px] uppercase tracking-widest text-emerald-300 font-bold mb-1">Instal·lada: v{APP_VERSION}</div>
+                <div className="text-xl font-black text-white">Disponible: {latestRelease.tag_name}</div>
+                <p className="text-xs text-gray-400 mt-1">{latestRelease.name}</p>
+              </div>
+              <p className="text-sm text-gray-300">Hi ha una versió més recent de Party Night. Obre la pàgina oficial de la release per consultar els canvis i descarregar l'APK.</p>
+              <button type="button" onClick={openLatestRelease} className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-4 font-black text-white shadow-lg transition-transform active:scale-[.98] flex items-center justify-center gap-2">
+                <ArrowRight size={18} /> Veure actualització a GitHub
+              </button>
+            </div>
+          )}
+
+          {updateCheckStatus === 'up-to-date' && (
+            <div className="py-5 text-center">
+              <div className="text-5xl mb-3">🥂</div>
+              <p className="text-white font-bold">Estàs utilitzant la versió més recent.</p>
+              <p className="text-xs text-gray-500 mt-2">Versió instal·lada: v{APP_VERSION}{latestRelease?.tag_name ? ` · GitHub: ${latestRelease.tag_name}` : ''}</p>
+            </div>
+          )}
+
+          {updateCheckStatus === 'error' && (
+            <div className="py-4">
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">{updateCheckError || 'Comprova la connexió i torna-ho a provar.'}</div>
+              <button type="button" onClick={() => checkForUpdates(true)} className="mt-4 w-full rounded-xl bg-gray-700 py-3 font-bold text-white hover:bg-gray-600">Tornar a provar</button>
+            </div>
+          )}
+
+          <button type="button" onClick={() => setShowUpdatePopup(false)} className="w-full mt-4 rounded-xl border border-gray-700 bg-gray-800 py-3 font-bold text-gray-300 hover:bg-gray-700">
+            Tancar
+          </button>
         </div>
       </AnimatedModal>
 
