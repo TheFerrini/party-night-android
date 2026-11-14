@@ -1,5 +1,20 @@
 # Changelog — Party Night
 
+## [2.0.5c] — 2026-11-14 · Confirmacions & Refinament
+
+### Actualitzacions i seguretat
+- L'avís automàtic de nova versió espera 0,5 segons després d'entrar a l'app.
+- Afegides confirmacions abans d'esborrar totes les dades i abans de finalitzar una sessió.
+- Les dades s'esborren només després de confirmar-ho i es reinicia l'app per aplicar-ho.
+
+### Còpies de seguretat
+- Corregides les icones: exportar mostra pujada i importar mostra baixada.
+
+### Animacions
+- Ajustada la mida i el conteniment de cada subpàgina del llenç d'Estadístiques per evitar solapaments visuals.
+- Els desplegables de sessions de l'Historial s'obren i es tanquen amb una transició suau; només es manté una sessió oberta alhora.
+
+
 ## [2.0.5b] — 2026-11-14 · Full Canvas Navigation
 
 ### Navegació
