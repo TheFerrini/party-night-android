@@ -1,0 +1,26 @@
+name: Keep Party Night signing key alive
+
+on:
+  schedule:
+    - cron: '23 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+
+jobs:
+  refresh:
+    name: Refresh persistent Android signing key cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore stable Android debug signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: party-night-android-debug-keystore-v2
+
+      - name: Verify that the signing key still exists
+        shell: bash
+        run: |
+          test -f "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null

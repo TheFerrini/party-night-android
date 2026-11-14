@@ -66,14 +66,70 @@ jobs:
           sed -i -E "s/versionName \"[^\"]+\"/versionName \"${VERSION}\"/" android/app/build.gradle
 
       - name: Restore stable Android debug signing key
-        uses: actions/cache@v4
+        id: debug-signing-key
+        uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
-          key: party-night-android-debug-keystore-v1
+          key: party-night-android-debug-keystore-v2
+
+      - name: Generate Android debug signing key on first build
+        if: steps.debug-signing-key.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" -noprompt
+
+      - name: Save stable Android debug signing key
+        if: steps.debug-signing-key.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: party-night-android-debug-keystore-v2
+
+      - name: Configure explicit stable Android debug signing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/app/build.gradle")
+          content = path.read_text()
+          if "partyNightStableDebug" not in content:
+              signing = """
+          android {
+              signingConfigs {
+                  partyNightStableDebug {
+                      storeFile file(System.getenv("HOME") + "/.android/debug.keystore")
+                      storePassword "android"
+                      keyAlias "androiddebugkey"
+                      keyPassword "android"
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.partyNightStableDebug
+                  }
+              }
+          }
+          """
+              path.write_text(content.rstrip() + "\n\n" + signing + "\n")
+          PY
+          test -f "$HOME/.android/debug.keystore"
+          keytool -list -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey >/dev/null
 
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK signature matches persistent key
+        shell: bash
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+          KEY_SHA="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | awk -F': ' '/SHA256:/{print $2; exit}' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          APK_SHA="$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" | awk -F': ' '/Signer #1 certificate SHA-256 digest:/{print $2; exit}' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test -n "$KEY_SHA"
+          test -n "$APK_SHA"
+          test "$KEY_SHA" = "$APK_SHA"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7

@@ -461,18 +461,12 @@ export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => {
     try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
   });
-  const [languageChosen, setLanguageChosen] = useState(() => {
-    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'; } catch { return false; }
-  });
   const [pendingLanguage, setPendingLanguage] = useState<AppLanguage>(() => {
     try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
   });
-  const [showLanguagePicker, setShowLanguagePicker] = useState(() => {
-    try { const value=localStorage.getItem('pn-language'); return !(value==='ca'||value==='es'||value==='en'); } catch { return true; }
-  });
-  const [showIntro, setShowIntro] = useState(() => {
-    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'; } catch { return false; }
-  });
+  // El selector només s'obre voluntàriament des de la pantalla Jugar.
+  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
   const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
@@ -492,9 +486,6 @@ export default function App() {
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
-  const [hapticsEnabled, setHapticsEnabled] = useState(() => {
-    try { return localStorage.getItem('pn-haptics') !== 'false'; } catch { return true; }
-  });
   const [reduceMotion, setReduceMotion] = useState(() => {
     try { return localStorage.getItem('pn-reduce-motion') === 'true'; } catch { return false; }
   });
@@ -640,11 +631,14 @@ export default function App() {
   };
 
   const openLatestRelease = async () => {
-    const url = latestRelease?.html_url || 'https://github.com/TheFerrini/party-night-android/releases/latest';
+    const apk = Array.isArray(latestRelease?.assets)
+      ? latestRelease.assets.find((asset: any) => typeof asset?.browser_download_url === 'string' && String(asset.name || '').toLowerCase().endsWith('.apk'))
+      : null;
+    const url = apk?.browser_download_url || latestRelease?.html_url || 'https://github.com/TheFerrini/party-night-android/releases/latest';
     try {
       await Browser.open({ url, toolbarColor: '#111827' });
     } catch {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.location.href = url;
     }
   };
 
@@ -655,11 +649,10 @@ export default function App() {
   const confirmLanguageChange = () => {
     try {
       localStorage.setItem('pn-language', pendingLanguage);
-      localStorage.setItem('pn-languageChosen', 'true');
+      localStorage.removeItem('pn-languageChosen');
     } catch {}
-    setLanguageChosen(true);
     setLanguage(pendingLanguage);
-    window.location.reload();
+    setShowLanguagePicker(false);
   };
 
   const updateWinnerMode = (nextMode: 'least' | 'most') => {
@@ -687,10 +680,10 @@ export default function App() {
   }, [showIntro]);
 
   useEffect(() => {
-    if (!languageChosen || showLanguagePicker || showIntro) return;
-    const updateTimer = window.setTimeout(() => checkForUpdates(false), 950);
+    if (showLanguagePicker || showIntro) return;
+    const updateTimer = window.setTimeout(() => checkForUpdates(false), 1500);
     return () => window.clearTimeout(updateTimer);
-  }, [showIntro, languageChosen, showLanguagePicker]);
+  }, [showIntro, showLanguagePicker]);
 
   useEffect(() => {
     try {
@@ -698,7 +691,8 @@ export default function App() {
       localStorage.setItem('pn-v2-active-session', JSON.stringify(activeSession));
       localStorage.setItem('pn-v2-players', JSON.stringify(players));
       localStorage.setItem('pn-v2-game-penalties', JSON.stringify(currentGamePenaltyCounts));
-      localStorage.setItem('pn-haptics', String(hapticsEnabled));
+      localStorage.removeItem('pn-haptics');
+      localStorage.removeItem('pn-languageChosen');
       localStorage.setItem('pn-reduce-motion', String(reduceMotion));
       localStorage.setItem('pn-accumulative-penalty', String(enableAccumulativePenalty));
       localStorage.setItem('pn-winner-mode', winnerMode);
@@ -706,7 +700,7 @@ export default function App() {
     } catch (error) {
       console.warn('No s’ha pogut desar el progrés local de Party Night.', error);
     }
-  }, [sessionHistory, activeSession, players, currentGamePenaltyCounts, hapticsEnabled, reduceMotion, enableAccumulativePenalty, winnerMode, playerSort]);
+  }, [sessionHistory, activeSession, players, currentGamePenaltyCounts, reduceMotion, enableAccumulativePenalty, winnerMode, playerSort]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('pn-reduce-motion', reduceMotion);
@@ -807,7 +801,7 @@ export default function App() {
     setActiveSession({
       id: `session-${Date.now()}`, startedAt: timestamp, updatedAt: timestamp,
       completedAt: null, status: 'active', players: [...players], language,
-      settings: { enableAccumulativePenalty, hapticsEnabled, reduceMotion, winnerMode }, games: [], events: [], currentGame: null
+      settings: { enableAccumulativePenalty, reduceMotion, winnerMode }, games: [], events: [], currentGame: null
     });
     setDrinkCounts({});
     setGlobalStrikes({});
@@ -853,24 +847,11 @@ export default function App() {
     setScreen('setup');
   };
 
-  const triggerHaptic = async (style: 'LIGHT' | 'MEDIUM' = 'LIGHT') => {
-    if (!hapticsEnabled) return;
-    try {
-      const { Haptics } = await import('@capacitor/haptics');
-      await Haptics.impact({ style });
-    } catch {
-      try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
-      } catch {}
-    }
-  };
-
   const processPenalty = (player, tragosCount = 1) => {
     const amount = Math.max(0, Number(tragosCount) || 0);
     setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     recordSessionEvent('penalty', { player, amount, game: mode || activeSession?.currentGame?.key || 'unknown' });
-    void triggerHaptic('LIGHT');
     if (enableAccumulativePenalty) {
        setGlobalStrikes(prev => {
           const currentStrikes = prev[player] || 0;
@@ -2230,7 +2211,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.1b (The Party Re-Rebuild)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.2 (The Party Re-Rebuild)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Android:")}</b> {t("espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.")}<br/>
                 - <b>{t("Careta:")}</b> {t("animació més lleugera, sense botó per saltar i amb inici més net.")}<br/>
@@ -2294,10 +2275,10 @@ export default function App() {
                 <div className="text-xl font-black text-white">Disponible: {latestRelease.tag_name}</div>
                 <p className="text-xs text-gray-400 mt-1">{latestRelease.name}</p>
               </div>
-              <p className="text-sm text-gray-300">{t("Hi ha una versió més recent de Party Night. Obre la pàgina oficial de la release per consultar els canvis i descarregar l'APK.")}</p>
+              <p className="text-sm text-gray-300">{t("Descarrega l’APK oficial. Després d’aquesta reinstal·lació inicial, les versions següents es podran instal·lar directament com a actualització.")}</p>
               {latestRelease.body && <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-700 bg-gray-950/70 p-3 text-left text-xs text-gray-300 whitespace-pre-wrap">{latestRelease.body}</div>}
               <button type="button" onClick={openLatestRelease} className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-4 font-black text-white shadow-lg transition-transform active:scale-[.98] flex items-center justify-center gap-2">
-                <ArrowRight size={18} /> Veure actualització a GitHub
+                <Download size={18} /> Descarregar APK i actualitzar
               </button>
             </div>
           )}
@@ -2351,13 +2332,13 @@ export default function App() {
         </div>
       </AnimatedModal>
 
-      <AnimatedModal isOpen={showLanguagePicker} onClose={() => { if (languageChosen) setShowLanguagePicker(false); }} zIndex="z-[180]">
+      <AnimatedModal isOpen={showLanguagePicker} onClose={() => setShowLanguagePicker(false)} zIndex="z-[180]">
         <div className="w-full max-w-sm rounded-3xl border border-cyan-400/30 bg-gray-900 p-5 shadow-2xl">
           <div className="mb-4 text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
             <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">{t("Party Night · Language")}</p>
             <h2 className="text-2xl font-black text-white">{t('Tria l’idioma')}</h2>
-            <p className="mt-2 text-xs text-gray-400">{t('Selecciona un idioma i confirma per reiniciar l’app.')}</p>
+            <p className="mt-2 text-xs text-gray-400">{t('Elige el idioma de la aplicación. El cambio se aplica inmediatamente.')}</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
             <button type="button" aria-pressed={pendingLanguage === 'ca'} onClick={() => chooseLanguage('ca')}
@@ -2378,14 +2359,14 @@ export default function App() {
           </div>
           <button type="button" onClick={confirmLanguageChange}
             className="mt-5 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-4 font-black uppercase tracking-wider text-white shadow-lg active:scale-[.98]">
-            {t('Confirmar i reiniciar l’app')}
+            {t('Guardar idioma')}
           </button>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.1b</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.2</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2406,14 +2387,6 @@ export default function App() {
                   {t('Rep més penalitzacions')}<span className="mt-1 block text-[9px] font-normal opacity-70">{t('Guanya qui rep més')}</span>
                 </button>
               </div>
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
-              <div><p className="font-bold text-white">{t('Vibració tàctil')}</p><p className="text-xs text-gray-400">{t('Resposta en registrar una penalització.')}</p></div>
-              <button type="button" role="switch" aria-checked={hapticsEnabled} onClick={() => {
-                const next = !hapticsEnabled;
-                setHapticsEnabled(next);
-                if (next) void triggerHaptic('MEDIUM', true);
-              }} className={hapticsEnabled ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
               <div><p className="font-bold text-white">{t('Reduir animacions')}</p><p className="text-xs text-gray-400">{t('Menys moviment en dispositius lents.')}</p></div>
@@ -2461,7 +2434,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.1b • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.2 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
@@ -2508,7 +2481,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1b</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.2</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2671,7 +2644,7 @@ export default function App() {
       {screen === 'setup' && mainTab === 'history' && (
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1b</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.2</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (

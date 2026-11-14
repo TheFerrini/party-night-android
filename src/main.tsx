@@ -24,4 +24,6 @@ class AppErrorBoundary extends React.Component<React.PropsWithChildren, Boundary
     return this.props.children;
   }
 }
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AppErrorBoundary><App /></AppErrorBoundary></React.StrictMode>);
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('No s’ha trobat el contenidor #root de Party Night.');
+ReactDOM.createRoot(rootElement).render(<React.StrictMode><AppErrorBoundary><App /></AppErrorBoundary></React.StrictMode>);

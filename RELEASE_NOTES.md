@@ -1,18 +1,21 @@
-## Party Night v2.0.1b — Hotfix & Backup
+## Party Night v2.0.2 — Boot & Update Fix
 
-### 🛠️ Estabilitat
-- Càrrega de la vibració nativa sota demanda per reduir dependències durant l’arrencada.
-- Validació de les dades locals abans d’inicialitzar jugadors, sessions i ajustos.
-- Pantalla d’error amb informació tècnica copiable en cas que falli el renderitzat.
+### 🛠️ Arrencada i WebView
+- Recursos de Vite amb rutes relatives per a Android/Capacitor.
+- Watchdog HTML independent de React: mostra errors de càrrega de JavaScript o timeout en lloc de pantalla negra.
+- Comprovació del contenidor principal abans de renderitzar.
 
-### 💾 Còpies de seguretat
-- Exporta jugadors, sessions, historial i preferències en un fitxer JSON.
-- A Android, s’obre el menú natiu per desar o compartir el fitxer.
-- Importa una còpia des de l’emmagatzematge del dispositiu.
-- Validació del fitxer abans de tocar les dades actuals.
-- La restauració només substitueix les dades de Party Night i demana confirmació.
-- Traduccions del panell corregides en els tres idiomes i `versionCode` preparat per a les versions futures.
+### 🌐 Idioma
+- Català per defecte.
+- Sense selector d'idioma durant el primer inici.
+- Selector només des de la pantalla principal i aplicació immediata, sense reiniciar.
 
-### 📱 Android
-- Es manté l’identificador `com.theferrini.partynight`.
-- `versionCode` incrementat i signatura persistent conservada: instal·lació directa sobre la 2.0.1, sense desinstal·lar.
+### 📦 Actualitzacions Android
+- El comprovador descarrega directament l'APK de la release.
+- Clau de signatura debug persistent, restaurada o generada explícitament.
+- Signatura configurada a Gradle i certificat de l'APK verificat contra la clau.
+- Cache de signatura refrescada setmanalment.
+- **Cal desinstal·lar la 2.0.1b i instal·lar la 2.0.2 una vegada.** Les versions posteriors es podran instal·lar directament sobre l'actual.
+
+### 💾 Dades
+- Es mantenen la importació i exportació de jugadors, sessions, historial i configuració en JSON.

@@ -573,6 +573,16 @@ Object.assign(EXTRA_UI_TRANSLATIONS.en, {
   "El archivo no es una copia válida de Party Night o no se ha podido leer.":"This is not a valid Party Night backup or the file could not be read."
 });
 
+Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+  "Elige el idioma de la aplicación. El cambio se aplica inmediatamente.":"Tria l’idioma de l’app. El canvi s’aplica immediatament.",
+  "Guardar idioma":"Desa l’idioma"
+});
+
+Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+  "Elige el idioma de la aplicación. El cambio se aplica inmediatamente.":"Choose the app language. The change applies immediately.",
+  "Guardar idioma":"Save language"
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   if (language === 'es') return value;

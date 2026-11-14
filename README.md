@@ -1,28 +1,27 @@
 # Party Night — Android
-Party Night és una app d'Android que consisteix en minijocs pensats per jugar amb amics i poder ampliar/enfortir amistats (o destruïr-les).
-Pensat per jugar amb alcohol de per mig.
 
-PENSAT PER A MAJORS D'EDAT - BEU RESPONSABLEMENT
+**Party Night v2.0.2 · Boot & Update Fix**
 
-# ÚLTIMA ACTUALITZACIÓ
-**Party Night v2.0.1b · Hotfix & Backup**
-Intent d'arreglar l'app, que no s'executa.
+App de jocs per a grups, feta amb React, Vite i Capacitor 8.
 
-## Navegació
-- **Jugar:** gestió de jugadors, sessions, idioma i configuració general.
-- **Estadístiques:** resum, resultats dels jocs i perfils de jugador.
-- **Historial:** sessions desades amb configuracions, esdeveniments i rànquings.
+## Novetats de la 2.0.2
+- Recursos Vite amb rutes relatives per al WebView Android.
+- Watchdog HTML per mostrar errors abans del muntatge de React.
+- Català per defecte; selector d'idioma només a la pantalla principal.
+- Canvi d'idioma immediat, sense reiniciar.
+- Eliminada tota la funcionalitat de vibració i el plugin Haptics.
+- Comprovador que obre directament l'APK de la darrera release.
+- Clau de signatura Android persistent i explícita, amb verificació del certificat després del build.
+- Cache de signatura refrescada setmanalment per evitar-ne l'expiració.
+- Importació i exportació de còpies JSON conservades.
 
-## Dades i privacitat
-Les dades es desen localment al dispositiu. **No s'envia cap dada a cap servidor.** 
-Les còpies poden contenir noms de jugadors, preguntes, vots, penalitzacions i resultats. No comparteixis el fitxer amb persones no autoritzades.
+## Actualitzar
+Cal desinstal·lar la 2.0.1b i instal·lar la 2.0.2 una vegada: les APK antigues no van conservar la mateixa clau de signatura. A partir de la 2.0.2, GitHub Actions reutilitza una clau persistent per a totes les versions següents.
 
-La importació substitueix totes les claus locals que comencen per `pn-` i conserva les dades d'altres aplicacions.
+## Dades
+Les còpies poden contenir noms, sessions, historial, preguntes, vots, penalitzacions i resultats. La desinstal·lació elimina les dades locals de l'aplicació; exporta una còpia abans de fer-ho si l'app encara permet obrir-se.
 
-## Idiomes
-Català, castellà i anglès.
-
-## Compilar localment
+## Compilar
 Cal Node.js 22+, Java 21 i Android SDK.
 
 ```bash

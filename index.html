@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="ca">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -7,9 +7,61 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <title>Party Night</title>
+    <style>
+      html,body,#root{min-height:100%;margin:0;background:#090a12}
+      #pn-boot-error{position:fixed;inset:0;z-index:2147483647;box-sizing:border-box;overflow:auto;padding:28px 20px;background:#090a12;color:#fff;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center}
+      #pn-boot-error>div{width:100%;max-width:520px}
+      #pn-boot-error h1{font-size:25px;margin:0 0 12px}
+      #pn-boot-error p{color:#aab0c0;line-height:1.5}
+      #pn-boot-error pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:14px;border-radius:12px;background:#171a27;color:#fca5a5;font-size:11px;max-height:40vh;overflow:auto}
+      #pn-boot-error button{width:100%;border:0;border-radius:12px;padding:15px;background:#7c3aed;color:white;font-weight:800;font-size:15px}
+    </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (() => {
+        let reported = false;
+        const report = (message) => {
+          if (reported || document.getElementById('pn-boot-error')) return;
+          reported = true;
+          const panel = document.createElement('div');
+          panel.id = 'pn-boot-error';
+          const content = document.createElement('div');
+          const icon = document.createElement('div');
+          icon.textContent = '⚠️';
+          icon.style.cssText = 'font-size:42px;margin-bottom:18px';
+          const title = document.createElement('h1');
+          title.textContent = 'Party Night no ha pogut carregar';
+          const explanation = document.createElement('p');
+          explanation.textContent = 'El WebView no ha pogut iniciar la interfície. Les dades locals no s’han esborrat. Aquest és el diagnòstic disponible:';
+          const details = document.createElement('pre');
+          details.textContent = String(message || 'No s’ha rebut cap detall tècnic.');
+          const reload = document.createElement('button');
+          reload.textContent = 'Torna-ho a provar';
+          reload.addEventListener('click', () => window.location.reload());
+          content.append(icon,title,explanation,details,reload);
+          panel.appendChild(content);
+          document.body.appendChild(panel);
+        };
+        window.addEventListener('error', (event) => {
+          const target = event.target;
+          if (target && target !== window && target.tagName === 'SCRIPT') {
+            report('No s’ha pogut carregar el mòdul JavaScript: ' + (target.src || 'script sense URL'));
+          } else if (event.message) {
+            report('Error JavaScript: ' + event.message + (event.filename ? '\n' + event.filename + ':' + event.lineno : ''));
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', (event) => {
+          const reason = event.reason;
+          report('Promesa rebutjada: ' + (reason && (reason.stack || reason.message) ? (reason.stack || reason.message) : String(reason)));
+        });
+        window.setTimeout(() => {
+          const root = document.getElementById('root');
+          if (!root || !root.firstElementChild) report('La interfície no s’ha muntat al cap de 12 segons. El fitxer principal podria no haver-se carregat o el WebView no ha pogut executar-lo.');
+        }, 12000);
+      })();
+    </script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
