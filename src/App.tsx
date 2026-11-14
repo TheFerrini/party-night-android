@@ -732,10 +732,15 @@ export default function App() {
   }, [showIntro]);
 
   useEffect(() => {
-    if (showLanguagePicker || showIntro) return;
-    const updateTimer = window.setTimeout(() => checkForUpdates(false), 1500);
+    // La comprovació automàtica només es fa en la primera entrada a Jugar.
+    if (screen !== 'setup' || mainTab !== 'play' || showLanguagePicker || showIntro) return;
+    let hasChecked = false;
+    try { hasChecked = sessionStorage.getItem('pn-update-checked-this-launch') === 'true'; } catch {}
+    if (hasChecked) return;
+    try { sessionStorage.setItem('pn-update-checked-this-launch', 'true'); } catch {}
+    const updateTimer = window.setTimeout(() => checkForUpdates(false), 1200);
     return () => window.clearTimeout(updateTimer);
-  }, [showIntro, showLanguagePicker]);
+  }, [screen, mainTab, showIntro, showLanguagePicker]);
 
   useEffect(() => {
     try {
