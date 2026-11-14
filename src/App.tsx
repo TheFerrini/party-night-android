@@ -167,13 +167,6 @@ const PHRASES = {
       "Yo nunca he enviado una captura al grupo equivocado y he tenido que improvisar.",
       "Yo nunca he cambiado mi plan de una noche porque quizá iba a aparecer alguien."
 ,
-      "¿Quién de aquí crees que tiene más facilidad para ligar sin darse cuenta?",
-      "¿A quién del grupo le confiarías la tarea de investigar un crush y por qué?",
-      "¿Has tenido alguna vez un flechazo con alguien que conociste por internet?",
-      "¿Qué conversación has releído más veces de las que admitirías?",
-      "¿Quién de aquí crees que sería el primero en volver con su ex?",
-      "¿Has mantenido alguna vez una conversación solo porque te gustaba recibir atención?",
-      "¿Qué señal de interés has interpretado mal de la forma más espectacular?",
       "¿A quién de aquí elegirías para organizar una cita sorpresa?"
 ],
     picante: [
@@ -197,13 +190,6 @@ const PHRASES = {
       "Yo nunca he tenido una cita que terminó con una conversación mucho más íntima de lo previsto.",
       "Yo nunca he tenido que improvisar una excusa para cortar un momento íntimo que no me apetecía."
 ,
-      "¿Qué detalle no sexual te resulta especialmente atractivo en otra persona?",
-      "¿Cuál ha sido el lugar más inesperado en el que has sentido química con alguien?",
-      "¿Qué experiencia íntima te gustaría probar alguna vez, siempre con confianza y consentimiento?",
-      "¿Qué gesto de una cita puede hacer que pierdas todo el interés al instante?",
-      "¿Has tenido alguna vez una tensión romántica que nadie más parecía notar?",
-      "¿Qué es lo que más te cuesta comunicar cuando empiezas a intimar con alguien?",
-      "¿Prefieres tomar la iniciativa o que la otra persona dé el primer paso? ¿Por qué?",
       "¿Qué cita ideal te daría un poco de vergüenza reconocer delante del grupo?"
 ],
     asco: [
@@ -356,7 +342,16 @@ const PHRASES = {
       "¿Alguna vez has vuelto a hablar con tu ex porque estabas caliente o solo/a? Cuenta la verdad.",
       "¿Qué persona que conocemos en común crees que posturea muchísimo en Instagram y es súper falsa en persona?",
       "Confiesa qué es lo más tóxico que has hecho por celos o inseguridad en una relación o rollo."
-    ],
+    ,
+      "¿Quién de aquí crees que tiene más facilidad para ligar sin darse cuenta?",
+      "¿A quién del grupo le confiarías la tarea de investigar un crush y por qué?",
+      "¿Has tenido alguna vez un flechazo con alguien que conociste por internet?",
+      "¿Qué conversación has releído más veces de las que admitirías?",
+      "¿Quién de aquí crees que sería el primero en volver con su ex?",
+      "¿Has mantenido alguna vez una conversación solo porque te gustaba recibir atención?",
+      "¿Qué señal de interés has interpretado mal de la forma más espectacular?",
+      "¿A quién de aquí elegirías para organizar una cita sorpresa?"
+],
     picante: [
       "¿Cuál es el lugar más arriesgado, público o prohibido en el que te has liado con alguien?",
       "Cuenta con detalle tu experiencia sexual o primer beso más desastroso e incómodo.",
@@ -368,7 +363,16 @@ const PHRASES = {
       "¿Alguna vez te han pillado con las manos en la masa? ¿Quién fue y cómo saliste de la situación?",
       "¿Cuál es tu técnica infalible o tu punto fuerte en la cama del que te sientes súper orgulloso/a?",
       "¿Te has liado o acostado con alguien que te caía fatal pero te ponía muchísimo físicamente?"
-    ],
+    ,
+      "¿Qué detalle no sexual te resulta especialmente atractivo en otra persona?",
+      "¿Cuál ha sido el lugar más inesperado en el que has sentido química con alguien?",
+      "¿Qué experiencia íntima te gustaría probar alguna vez, siempre con confianza y consentimiento?",
+      "¿Qué gesto de una cita puede hacer que pierdas todo el interés al instante?",
+      "¿Has tenido alguna vez una tensión romántica que nadie más parecía notar?",
+      "¿Qué es lo que más te cuesta comunicar cuando empiezas a intimar con alguien?",
+      "¿Prefieres tomar la iniciativa o que la otra persona dé el primer paso? ¿Por qué?",
+      "¿Qué cita ideal te daría un poco de vergüenza reconocer delante del grupo?"
+],
     oscuro: [
       "¿Has robado dinero o algún objeto de valor a un amigo o familiar y has disimulado como si nada?",
       "¿Alguna vez has manipulado o llorado de mentira a alguien para conseguir exactamente lo que querías?",
