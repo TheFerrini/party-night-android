@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Browser } from '@capacitor/browser';
 import { APP_VERSION } from './version';
 import { translateText, translateUiText, type AppLanguage } from './localization';
@@ -513,6 +513,9 @@ export default function App() {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
+  const mainTabIndex = mainTab === 'stats' ? 0 : mainTab === 'play' ? 1 : 2;
+  const mainCanvasRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const [mainCanvasHeight, setMainCanvasHeight] = useState(0);
   const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
@@ -730,6 +733,18 @@ export default function App() {
     const introTimer = window.setTimeout(() => setShowIntro(false), 3100);
     return () => window.clearTimeout(introTimer);
   }, [showIntro]);
+
+  useEffect(() => {
+    if (screen !== 'setup') return;
+    const activePage = mainCanvasRefs.current[mainTabIndex];
+    if (!activePage) return;
+    const measure = () => setMainCanvasHeight(Math.max(activePage.scrollHeight, window.innerHeight));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(activePage);
+    return () => observer.disconnect();
+  }, [screen, mainTabIndex, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId]);
 
   useEffect(() => {
     // La comprovació automàtica només es fa en la primera entrada a Jugar.
@@ -2270,7 +2285,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.5 (Smooth Canvas & Count-up)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.5b (Smooth Canvas & Count-up)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
                 - <b>{t("Idiomas:")}</b> {t("el español es el idioma predeterminado y el cambio se aplica al reiniciar.")}<br/>
@@ -2425,7 +2440,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5b</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2482,65 +2497,14 @@ export default function App() {
         </div>
       </AnimatedModal>
       {/* --- PANTALLA INICIAL (NOMBRES) --- */}
-      {screen === 'setup' && mainTab === 'play' && (
-        <div className={`min-h-screen text-white p-6 pb-28 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
-          <div className="max-w-md w-full bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-700 relative overflow-hidden">
-            <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-purple-600/20 blur-3xl rounded-full pointer-events-none"></div>
-            <div className="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-pink-600/20 blur-3xl rounded-full pointer-events-none"></div>
-            <div className="text-center mb-8 relative z-10 flex flex-col items-center justify-center">
-              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter pb-1 leading-tight drop-shadow-sm flex flex-col items-center">
-                Party Night
-              </h1>
-              <div className="mt-3">
-                <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.5 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
-                </span>
-              </div>
-              <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
-            </div>
-            <form onSubmit={addPlayer} className="mb-3 relative z-10">
-              <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder={t("Mete a un colega...")} className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-12 backdrop-blur-sm uppercase" />
-              <button type="submit" className="absolute right-2 top-2 bg-purple-600 hover:bg-purple-500 p-1.5 rounded-lg transition-colors shadow-lg"><Users size={20} /></button>
-            </form>
-            <button type="button" onClick={addDefaultPlayers} className="text-[10px] uppercase tracking-widest font-bold bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 px-3 py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 w-full mb-5 z-10 relative">
-              <Users size={14} /> Añadir los de siempre
-            </button>
-            <div className="mb-6 min-h-[100px] max-h-[200px] overflow-y-auto pr-1 z-10 relative custom-scrollbar">
-              {players.length === 0 ? (
-                <p className="text-gray-500 text-center italic mt-6 text-sm">{t("Añade mínimo a 2 personas (que no muerden).")}<br />{t("Máximo una familia completa.")}</p>
-              ) : (
-                <div className="flex flex-wrap gap-2 justify-center pb-2">
-                  {players.map((player, idx) => (
-                    <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-1 bg-gray-700/60 px-2.5 py-1.5 rounded-full border border-gray-600 backdrop-blur-sm shadow-sm animate-expand">
-                      <GripHorizontal size={13} className="text-gray-500" />
-                      <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide drop-shadow-md select-none">{idx + 1}. {player}</span>
-                      <button type="button" disabled={idx === 0} aria-label={`Mou ${player} amunt`} onClick={() => movePlayer(idx, -1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronUp size={14} /></button>
-                      <button type="button" disabled={idx === players.length - 1} aria-label={`Mou ${player} avall`} onClick={() => movePlayer(idx, 1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronDown size={14} /></button>
-                      <button type="button" aria-label={`Elimina ${player}`} onClick={() => removePlayer(player)} className="text-red-400 hover:text-red-300 p-0.5 rounded-full hover:bg-gray-600 transition-colors"><X size={14} /></button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button disabled={players.length < 2} onClick={resumeSession} className={`w-full py-4 mb-4 rounded-xl font-black text-xl flex items-center justify-center gap-3 transition-all z-10 relative ${players.length >= 2 ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-500/40 active:scale-95 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
-              {activeSession ? 'Continuar sessió' : 'Començar sessió'} <ArrowRight size={22} />
-            </button>
-            <div className="grid grid-cols-2 gap-2 w-full z-20 relative mt-2">
-              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-3 rounded-xl border border-emerald-500/30"><History size={16}/> {t("Novetats")}</button>
-              <button onClick={() => setShowLanguagePicker(true)} className="flex items-center justify-center gap-1.5 text-cyan-300 text-[11px] uppercase tracking-widest font-bold bg-cyan-900/30 px-3 py-3 rounded-xl border border-cyan-500/30"><Globe size={16}/> {language.toUpperCase()}</button>
-              <button onClick={() => setShowGeneralSettings(true)} className="col-span-2 flex items-center justify-center gap-2 text-gray-300 text-[11px] uppercase tracking-widest font-bold bg-gray-700/60 px-3 py-3 rounded-xl border border-gray-600"><Settings size={16}/> {t("Configuració general")}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-
-      {screen === 'setup' && mainTab === 'stats' && (
+      {screen === 'setup' && (
+        <div className="pn-main-viewport" style={{ height: mainCanvasHeight > 0 ? `${mainCanvasHeight}px` : undefined }}>
+          <div className="pn-main-canvas" style={{ transform: `translate3d(-${mainTabIndex * 33.333333}%, 0, 0)` }}>
+            <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[0] = node; }}>
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5b</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2704,12 +2668,62 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {screen === 'setup' && mainTab === 'history' && (
+      </div>
+            <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[1] = node; }}>
+        <div className={`min-h-screen text-white p-6 pb-28 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : ''}`}>
+          <div className="max-w-md w-full bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-700 relative overflow-hidden">
+            <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-purple-600/20 blur-3xl rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-pink-600/20 blur-3xl rounded-full pointer-events-none"></div>
+            <div className="text-center mb-8 relative z-10 flex flex-col items-center justify-center">
+              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter pb-1 leading-tight drop-shadow-sm flex flex-col items-center">
+                Party Night
+              </h1>
+              <div className="mt-3">
+                <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
+                  v2.0.5b • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                </span>
+              </div>
+              <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
+            </div>
+            <form onSubmit={addPlayer} className="mb-3 relative z-10">
+              <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder={t("Mete a un colega...")} className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-12 backdrop-blur-sm uppercase" />
+              <button type="submit" className="absolute right-2 top-2 bg-purple-600 hover:bg-purple-500 p-1.5 rounded-lg transition-colors shadow-lg"><Users size={20} /></button>
+            </form>
+            <button type="button" onClick={addDefaultPlayers} className="text-[10px] uppercase tracking-widest font-bold bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 px-3 py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 w-full mb-5 z-10 relative">
+              <Users size={14} /> Añadir los de siempre
+            </button>
+            <div className="mb-6 min-h-[100px] max-h-[200px] overflow-y-auto pr-1 z-10 relative custom-scrollbar">
+              {players.length === 0 ? (
+                <p className="text-gray-500 text-center italic mt-6 text-sm">{t("Añade mínimo a 2 personas (que no muerden).")}<br />{t("Máximo una familia completa.")}</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 justify-center pb-2">
+                  {players.map((player, idx) => (
+                    <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-1 bg-gray-700/60 px-2.5 py-1.5 rounded-full border border-gray-600 backdrop-blur-sm shadow-sm animate-expand">
+                      <GripHorizontal size={13} className="text-gray-500" />
+                      <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide drop-shadow-md select-none">{idx + 1}. {player}</span>
+                      <button type="button" disabled={idx === 0} aria-label={`Mou ${player} amunt`} onClick={() => movePlayer(idx, -1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronUp size={14} /></button>
+                      <button type="button" disabled={idx === players.length - 1} aria-label={`Mou ${player} avall`} onClick={() => movePlayer(idx, 1)} className="text-gray-300 p-0.5 rounded-full disabled:opacity-25"><ChevronDown size={14} /></button>
+                      <button type="button" aria-label={`Elimina ${player}`} onClick={() => removePlayer(player)} className="text-red-400 hover:text-red-300 p-0.5 rounded-full hover:bg-gray-600 transition-colors"><X size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button disabled={players.length < 2} onClick={resumeSession} className={`w-full py-4 mb-4 rounded-xl font-black text-xl flex items-center justify-center gap-3 transition-all z-10 relative ${players.length >= 2 ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-500/40 active:scale-95 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
+              {activeSession ? 'Continuar sessió' : 'Començar sessió'} <ArrowRight size={22} />
+            </button>
+            <div className="grid grid-cols-2 gap-2 w-full z-20 relative mt-2">
+              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-3 rounded-xl border border-emerald-500/30"><History size={16}/> {t("Novetats")}</button>
+              <button onClick={() => setShowLanguagePicker(true)} className="flex items-center justify-center gap-1.5 text-cyan-300 text-[11px] uppercase tracking-widest font-bold bg-cyan-900/30 px-3 py-3 rounded-xl border border-cyan-500/30"><Globe size={16}/> {language.toUpperCase()}</button>
+              <button onClick={() => setShowGeneralSettings(true)} className="col-span-2 flex items-center justify-center gap-2 text-gray-300 text-[11px] uppercase tracking-widest font-bold bg-gray-700/60 px-3 py-3 rounded-xl border border-gray-600"><Settings size={16}/> {t("Configuració general")}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+            <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[2] = node; }}>
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5b</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (
@@ -2720,8 +2734,8 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-3">
-                {sessionHistory.map((session: any) => (
-                  <div key={session.id} className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90">
+                {sessionHistory.map((session: any, index: number) => (
+                  <div key={session.id} className={`pn-history-session overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90 ${mainTab === 'history' ? 'is-active' : ''}`} style={{ animationDelay: `${Math.min(index, 7) * 65}ms` }}>
                     <button onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)} className="w-full p-4 text-left">
                       <div className="flex items-center justify-between">
                         <span className="font-black text-white">{new Date(session.startedAt).toLocaleString()}</span>
@@ -2790,11 +2804,15 @@ export default function App() {
             )}
           </div>
         </div>
+      </div>
+          </div>
+        </div>
       )}
       {screen === 'setup' && <div className="pn-bottom-nav" role="navigation" aria-label="Navegació principal">
-        <button onClick={()=>setMainTab('stats')} className={mainTab==='stats'?'pn-nav-item active':'pn-nav-item'}><BarChart3 size={20}/><span>{t("Estadístiques")}</span></button>
-        <button onClick={()=>setMainTab('play')} className={mainTab==='play'?'pn-nav-item active':'pn-nav-item'}><Beer size={20}/><span>{t("Jugar")}</span></button>
-        <button onClick={()=>setMainTab('history')} className={mainTab==='history'?'pn-nav-item active':'pn-nav-item'}><History size={20}/><span>{t("Historial")}</span></button>
+        <span className="pn-nav-indicator" aria-hidden="true" style={{ transform: `translateX(${mainTabIndex * 100}%) translateX(${mainTabIndex * 5}px)` }} />
+        <button onClick={()=>setMainTab('stats')} aria-current={mainTab==='stats'?'page':undefined} className={mainTab==='stats'?'pn-nav-item active':'pn-nav-item'}><BarChart3 size={20}/><span>{t("Estadístiques")}</span></button>
+        <button onClick={()=>setMainTab('play')} aria-current={mainTab==='play'?'page':undefined} className={mainTab==='play'?'pn-nav-item active':'pn-nav-item'}><Beer size={20}/><span>{t("Jugar")}</span></button>
+        <button onClick={()=>setMainTab('history')} aria-current={mainTab==='history'?'page':undefined} className={mainTab==='history'?'pn-nav-item active':'pn-nav-item'}><History size={20}/><span>{t("Historial")}</span></button>
       </div>}
       {/* --- MENÚ DE SELECCIÓN DE JUEGO --- */}
       {screen === 'mode-select' && (
