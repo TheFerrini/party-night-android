@@ -556,7 +556,7 @@ export default function App() {
       }
 
       const release = await response.json();
-      const tag = String(release.tag_name || release.name || '').match(/v?\\d+\\.\\d+\\.\\d+/i)?.[0];
+      const tag = String(release.tag_name || release.name || '').match(/v?\d+\.\d+\.\d+/i)?.[0];
       if (!tag) throw new Error('La darrera release no conté un número de versió vàlid.');
 
       const remoteParts = tag.replace(/^v/i, '').split('.').map(part => Number.parseInt(part, 10) || 0);
