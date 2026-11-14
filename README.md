@@ -14,14 +14,21 @@ Olvídate de las típicas conversaciones incómodas. Reúne a tus amigos, prepar
 
 Party Night no es simplemente una colección de preguntas. Es una experiencia interactiva con diferentes herramientas para gestionar y disfrutar de cada partida.
 
-- *Juegos y retos:* diferentes dinámicas para mantener la diversión y la participación de todo el grupo.
-- *Ámplia colección de contenido:* preguntas, frases y desafíos organizados en sus respectivas categorías.
-- *Gestión de jugadores:* añade participantes y organiza las sesiones de juego.
-- *Estadísticas y clasificaciones:* consulta resultados, puntuaciones y el rendimiento de los participantes.
-- *Historial de partidas:* recupera sesiones anteriores y revisa cómo han ido las últimas noches.
-- *Penalizaciones acumulativas:* un sistema para añadir consecuencias a las dinámicas del juego.
-- *Interfaz animada:* transiciones, animaciones y una navegación diseñada para ofrecer una experiencia fluida.
-- *Multidioma:* interfaz disponible en español, catalán e inglés. (frases in-game SOLO en español).
+- **Juegos y retos:** diferentes dinámicas para mantener la diversión y la participación de todo el grupo.
+
+- **Ámplia colección de contenido:** preguntas, frases y desafíos organizados en sus respectivas categorías.
+
+- **Gestión de jugadores:** añade participantes y organiza las sesiones de juego.
+
+- **Estadísticas y clasificaciones:** consulta resultados, puntuaciones y el rendimiento de los participantes.
+
+- **Historial de partidas:** recupera sesiones anteriores y revisa cómo han ido las últimas noches.
+
+- **Penalizaciones acumulativas:** un sistema para añadir consecuencias a las dinámicas del juego.
+
+- **Interfaz animada:** transiciones, animaciones y una navegación diseñada para ofrecer una experiencia fluida.
+
+- **Multidioma:** interfaz disponible en español, catalán e inglés. (frases in-game SOLO en español).
 
 ## Una experiencia cuidada
 
