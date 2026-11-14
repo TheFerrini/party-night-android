@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Browser } from '@capacitor/browser';
+import { APP_VERSION } from './version';
 import {
   Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart,
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
@@ -443,7 +445,7 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
   if (!isRendered) return null;
 
   return (
-    <div className={`fixed inset-0 bg-black/90 ${zIndex} flex items-center justify-center p-4 sm:p-6 backdrop-blur-md transition-opacity duration-250 ${isAnimatingOut ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 bg-black/90 ${zIndex} flex items-center justify-center p-4 sm:p-6 backdrop-blur-md transition-opacity duration-250 ${isAnimatingOut ? 'opacity-0' : 'opacity-100'}`} style={{ paddingTop: 'max(1rem, var(--pn-safe-top))', paddingBottom: 'max(1rem, var(--pn-safe-bottom))' }}>
       <div className={`w-full max-w-md flex flex-col justify-center ${isAnimatingOut ? 'animate-shrink' : 'animate-expand'} relative z-10`}>
         {children}
       </div>
@@ -461,6 +463,10 @@ export default function App() {
   const [mode, setMode] = useState(null);
   const [environment, setEnvironment] = useState('casa');
   const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
+  const [latestRelease, setLatestRelease] = useState(null);
+  const [updateCheckStatus, setUpdateCheckStatus] = useState('idle');
+  const [updateCheckError, setUpdateCheckError] = useState('');
   const [showPlayerManager, setShowPlayerManager] = useState(false);
   const [activeSettings, setActiveSettings] = useState(null);
 
@@ -531,11 +537,75 @@ export default function App() {
   const [activeIanPerk, setActiveIanPerk] = useState(null);
   const [showIanModeInfo, setShowIanModeInfo] = useState(false);
 
-  // La careta es tanca sola, però també es pot saltar tocant la pantalla.
+  const checkForUpdates = async (showResult = false) => {
+    if (updateCheckStatus === 'checking') return;
+    setUpdateCheckStatus('checking');
+    setUpdateCheckError('');
+    if (showResult) setShowUpdatePopup(true);
+
+    try {
+      const response = await fetch('https://api.github.com/repos/TheFerrini/party-night-android/releases/latest', {
+        headers: { Accept: 'application/vnd.github+json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 429) {
+          throw new Error('GitHub ha limitat temporalment les consultes. Torna-ho a provar més tard.');
+        }
+        throw new Error(`GitHub ha respost amb el codi ${response.status}.`);
+      }
+
+      const release = await response.json();
+      const tag = String(release.tag_name || release.name || '').match(/v?\\d+\\.\\d+\\.\\d+/i)?.[0];
+      if (!tag) throw new Error('La darrera release no conté un número de versió vàlid.');
+
+      const remoteParts = tag.replace(/^v/i, '').split('.').map(part => Number.parseInt(part, 10) || 0);
+      const currentParts = APP_VERSION.split('.').map(part => Number.parseInt(part, 10) || 0);
+      let comparison = 0;
+      for (let index = 0; index < 3; index++) {
+        if ((remoteParts[index] || 0) !== (currentParts[index] || 0)) {
+          comparison = (remoteParts[index] || 0) > (currentParts[index] || 0) ? 1 : -1;
+          break;
+        }
+      }
+
+      setLatestRelease(release);
+      if (comparison > 0) {
+        setUpdateCheckStatus('available');
+        setShowUpdatePopup(true);
+      } else {
+        setUpdateCheckStatus('up-to-date');
+        if (showResult) setShowUpdatePopup(true);
+      }
+    } catch (error) {
+      setUpdateCheckStatus('error');
+      setUpdateCheckError(error?.message || 'No s’ha pogut contactar amb GitHub.');
+      if (showResult) setShowUpdatePopup(true);
+    }
+  };
+
+  const openLatestRelease = async () => {
+    const url = latestRelease?.html_url || 'https://github.com/TheFerrini/party-night-android/releases/latest';
+    try {
+      await Browser.open({ url, toolbarColor: '#111827' });
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // La careta acaba sola; després es comprova si hi ha una versió més nova.
   useEffect(() => {
-    const introTimer = window.setTimeout(() => setShowIntro(false), 2800);
+    const introTimer = window.setTimeout(() => setShowIntro(false), 2350);
     return () => window.clearTimeout(introTimer);
   }, []);
+
+  useEffect(() => {
+    if (showIntro) return;
+    const updateTimer = window.setTimeout(() => {
+      checkForUpdates(false);
+    }, 950);
+    return () => window.clearTimeout(updateTimer);
+  }, [showIntro]);
 
   const exitPhrasesPool = [
     "¿Seguro que quieres salir de la partida actual? Perderás el progreso de la partida.",
@@ -675,14 +745,43 @@ export default function App() {
     });
   };
 
+  const reorderPlayers = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex) return;
+    setPlayers(prev => {
+      if (fromIndex < 0 || fromIndex >= prev.length || toIndex < 0 || toIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [movedPlayer] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, movedPlayer);
+      return next;
+    });
+  };
+
   const movePlayer = (index, offset) => {
     const targetIndex = index + offset;
     if (targetIndex < 0 || targetIndex >= players.length) return;
-    setPlayers(prev => {
-      const next = [...prev];
-      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-      return next;
-    });
+    reorderPlayers(index, targetIndex);
+  };
+
+  const handlePlayerTouchStart = (event, index) => {
+    setDraggedPlayer(index);
+  };
+
+  const handlePlayerTouchMove = (event) => {
+    if (draggedPlayer === null || !event.touches?.length) return;
+    const touch = event.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const row = element?.closest('[data-player-index]');
+    if (!row) return;
+    const targetIndex = Number(row.getAttribute('data-player-index'));
+    if (Number.isInteger(targetIndex) && targetIndex !== draggedPlayer) {
+      reorderPlayers(draggedPlayer, targetIndex);
+      setDraggedPlayer(targetIndex);
+    }
+    event.preventDefault();
+  };
+
+  const handlePlayerTouchEnd = () => {
+    setDraggedPlayer(null);
   };
 
   const addDefaultPlayers = () => {
@@ -705,10 +804,7 @@ export default function App() {
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
     if (draggedPlayer === null || draggedPlayer === dropIndex) return;
-    const newPlayers = [...players];
-    const draggedItem = newPlayers.splice(draggedPlayer, 1)[0];
-    newPlayers.splice(dropIndex, 0, draggedItem);
-    setPlayers(newPlayers);
+    reorderPlayers(draggedPlayer, dropIndex);
     setDraggedPlayer(null);
   };
 
@@ -1290,7 +1386,7 @@ export default function App() {
   };
 
   return (
-    <div className={`relative min-h-screen overflow-hidden font-sans ${isIansBirthday && screen !== 'setup' ? 'bg-gray-950' : 'bg-gray-900'}`}>
+    <div className={`app-root relative min-h-screen overflow-hidden font-sans ${isIansBirthday && screen !== 'setup' ? 'bg-gray-950' : 'bg-gray-900'}`}>
       <style>{`
         @keyframes expand-in { 0% { transform: scale(0.85); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes shrink-out { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(0.85); opacity: 0; } }
@@ -1305,81 +1401,87 @@ export default function App() {
         .delay-300 { animation-delay: 300ms; }
 
         @keyframes pn-intro-beer {
-          0% { opacity: 0; transform: translateY(42px) rotate(-16deg) scale(.62); }
-          55% { opacity: 1; transform: translateY(-8px) rotate(7deg) scale(1.12); }
-          75% { transform: translateY(3px) rotate(-3deg) scale(.96); }
-          100% { transform: translateY(0) rotate(0) scale(1); }
+          0% { opacity: 0; transform: translateY(24px) rotate(-8deg) scale(.82); }
+          70% { opacity: 1; transform: translateY(-4px) rotate(3deg) scale(1.04); }
+          100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
         }
         @keyframes pn-intro-title {
-          0% { opacity: 0; transform: translateY(22px); letter-spacing: .38em; }
-          100% { opacity: 1; transform: translateY(0); letter-spacing: -.045em; }
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         @keyframes pn-intro-progress {
           from { transform: scaleX(0); }
           to { transform: scaleX(1); }
         }
-        @keyframes pn-intro-glow {
-          0%, 100% { opacity: .45; transform: scale(.92); }
-          50% { opacity: .9; transform: scale(1.12); }
-        }
         @keyframes pn-intro-confetti {
-          0% { opacity: 0; transform: translate3d(0, 24px, 0) rotate(0deg) scale(.4); }
-          18% { opacity: 1; }
-          100% { opacity: 0; transform: translate3d(18px, -115vh, 0) rotate(540deg) scale(1); }
+          0% { opacity: 0; transform: translate3d(0, 10px, 0) rotate(0deg); }
+          20% { opacity: .8; }
+          100% { opacity: 0; transform: translate3d(12px, -62vh, 0) rotate(180deg); }
         }
         @keyframes pn-intro-ring {
-          0% { opacity: 0; transform: scale(.35); }
-          40% { opacity: .65; }
-          100% { opacity: 0; transform: scale(1.7); }
+          from { opacity: 0; transform: scale(.78); }
+          35% { opacity: .55; }
+          to { opacity: 0; transform: scale(1.35); }
         }
         @keyframes pn-intro-exit {
-          to { opacity: 0; visibility: hidden; transform: scale(1.025); }
+          to { opacity: 0; visibility: hidden; }
         }
         .party-intro {
           position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
-          overflow: hidden; color: white; text-align: center; cursor: pointer;
-          padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+          overflow: hidden; color: white; text-align: center; cursor: default;
+          padding: max(24px, var(--pn-safe-top)) 24px max(24px, var(--pn-safe-bottom));
           background: radial-gradient(ellipse at 50% 42%, #4a1742 0%, #211025 38%, #090a12 78%);
-          animation: pn-intro-exit .38s ease-in 2.38s forwards;
+          animation: pn-intro-exit .3s ease-in 2s forwards;
           -webkit-tap-highlight-color: transparent;
+          contain: strict;
         }
         .party-intro__glow {
-          position: absolute; width: min(82vw, 390px); aspect-ratio: 1; border-radius: 9999px;
-          background: radial-gradient(circle, rgba(236,72,153,.35), rgba(249,115,22,.10) 46%, transparent 70%);
-          filter: blur(10px); animation: pn-intro-glow 1.8s ease-in-out infinite;
+          position: absolute; width: min(76vw, 340px); aspect-ratio: 1; border-radius: 9999px;
+          background: radial-gradient(circle, rgba(236,72,153,.24), rgba(249,115,22,.07) 46%, transparent 70%);
+          opacity: .78;
         }
         .party-intro__beer {
           position: relative; z-index: 2; font-size: clamp(92px, 27vw, 142px); line-height: 1;
-          filter: drop-shadow(0 16px 28px rgba(249,115,22,.28));
-          animation: pn-intro-beer .82s cubic-bezier(.2,.85,.25,1.2) both;
+          animation: pn-intro-beer .58s cubic-bezier(.2,.8,.2,1) both;
+          will-change: transform, opacity;
         }
         .party-intro__ring {
-          position: absolute; z-index: 1; width: 180px; height: 180px; border-radius: 9999px;
-          border: 2px solid rgba(251,191,36,.7); animation: pn-intro-ring 1.3s ease-out .35s both;
+          position: absolute; z-index: 1; width: 160px; height: 160px; border-radius: 9999px;
+          border: 2px solid rgba(251,191,36,.55); animation: pn-intro-ring .95s ease-out .18s both;
         }
         .party-intro__title {
-          opacity: 0; animation: pn-intro-title .62s cubic-bezier(.2,.8,.2,1) .58s forwards;
-          text-shadow: 0 4px 28px rgba(236,72,153,.25);
+          opacity: 0; animation: pn-intro-title .42s ease-out .32s forwards;
         }
         .party-intro__confetti {
           position: absolute; z-index: 1; bottom: -24px; border-radius: 3px; opacity: 0;
-          animation-name: pn-intro-confetti; animation-timing-function: linear; animation-iteration-count: infinite;
+          animation: pn-intro-confetti 1.7s ease-out both;
+        }
+        .pn-player-row {
+          transition: background-color .14s ease, border-color .14s ease, transform .14s ease;
+        }
+        .pn-player-row--dragging {
+          transform: scale(1.015);
+          animation: pn-player-pickup .16s ease-out both;
+        }
+        @keyframes pn-player-pickup {
+          from { transform: scale(.98); }
+          to { transform: scale(1.015); }
         }
         @media (prefers-reduced-motion: reduce) {
           .party-intro, .party-intro * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+          .pn-player-row, .pn-player-row--dragging { animation: none !important; transition: none !important; }
         }
       `}</style>
 
       {showIntro && (
-        <div className="party-intro" role="button" tabIndex={0} aria-label="Saltar la careta de Party Night" onClick={() => setShowIntro(false)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setShowIntro(false); }}>
-          {Array.from({ length: 18 }).map((_, index) => (
+        <div className="party-intro" aria-label="Party Night">
+          {Array.from({ length: 8 }).map((_, index) => (
             <span key={index} className="party-intro__confetti" style={{
               left: `${(index * 37 + 7) % 100}%`,
-              width: `${5 + (index % 4) * 2}px`,
-              height: `${9 + (index % 4) * 3}px`,
-              backgroundColor: ['#fbbf24', '#fb7185', '#a78bfa', '#f97316', '#f8fafc'][index % 5],
-              animationDuration: `${1.7 + (index % 4) * 0.25}s`,
-              animationDelay: `${(index % 7) * -0.24}s`,
+              width: `${5 + (index % 3) * 2}px`,
+              height: `${8 + (index % 3) * 3}px`,
+              backgroundColor: ['#fbbf24', '#fb7185', '#a78bfa', '#f97316'][index % 4],
+              animationDelay: `${(index % 5) * 0.12}s`,
             }} />
           ))}
           <div className="party-intro__glow" />
@@ -1391,13 +1493,12 @@ export default function App() {
             <div className="party-intro__title text-5xl sm:text-6xl font-black uppercase leading-none">
               <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-red-500 bg-clip-text text-transparent">Party Night</span>
             </div>
-            <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '850ms', animationFillMode: 'forwards' }}>La noche acaba de empezar</p>
-            <div className="mt-12 h-1.5 w-36 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.35s linear both' }} />
+            <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>La noche acaba de empezar</p>
+            <div className="mt-10 h-1.5 w-36 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.05s linear both' }} />
             </div>
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-[.2em] text-white/45">Toca para saltar</p>
           </div>
-          <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>Juega con cabeza · Bebe con responsabilidad</p>
+          <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25">Juega con cabeza · Bebe con responsabilidad</p>
         </div>
       )}
 
@@ -1557,16 +1658,18 @@ export default function App() {
           <button type="button" onClick={addDefaultPlayers} className="text-[10px] uppercase tracking-widest font-bold bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 px-3 py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 w-full mb-4 shrink-0">
             <Users size={14} /> Añadir los de siempre
           </button>
-          <div className="overflow-y-auto custom-scrollbar flex-1 mb-4">
+          <div className="overflow-y-auto custom-scrollbar flex-1 mb-4 touch-pan-y" onTouchMove={handlePlayerTouchMove} onTouchEnd={handlePlayerTouchEnd} onTouchCancel={handlePlayerTouchEnd}>
             {players.length === 0 ? (
               <p className="text-gray-500 text-center italic mt-2">Añade mínimo a 2 personas.</p>
             ) : (
               <div className="flex flex-col gap-2 justify-center pb-2">
                 {players.map((player, idx) => (
-                  <div key={`${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-2 bg-gray-700/60 px-3 py-2.5 rounded-xl border border-gray-600 backdrop-blur-sm shadow-sm cursor-move animate-expand">
-                    <GripHorizontal size={18} className="text-gray-500 shrink-0" />
+                  <div key={player} data-player-index={idx} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className={`pn-player-row flex items-center gap-2 bg-gray-700/60 px-3 py-2.5 rounded-xl border border-gray-600 shadow-sm ${draggedPlayer === idx ? 'pn-player-row--dragging border-purple-400 bg-purple-500/15' : 'backdrop-blur-sm'}`}>
+                    <button type="button" draggable onDragStart={(e) => handleDragStart(e, idx)} onTouchStart={(e) => handlePlayerTouchStart(e, idx)} aria-label={`Arrossega ${player} per canviar-ne l'ordre`} className="rounded-lg p-1 text-gray-400 active:text-purple-300 cursor-grab active:cursor-grabbing" style={{ touchAction: 'none' }}>
+                      <GripHorizontal size={20} />
+                    </button>
                     <span className="font-black text-gray-500 w-4 text-right">{idx + 1}.</span>
-                    <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide drop-shadow-md select-none flex-1 truncate">{player}</span>
+                    <span className="font-bold text-sm text-yellow-400 uppercase tracking-wide select-none flex-1 truncate">{player}</span>
                     <div className="flex items-center gap-0.5 shrink-0">
                       <button type="button" disabled={idx === 0} aria-label={`Mou ${player} amunt`} onClick={() => movePlayer(idx, -1)} className="rounded-lg p-1 text-gray-300 disabled:opacity-25"><ChevronUp size={18} /></button>
                       <button type="button" disabled={idx === players.length - 1} aria-label={`Mou ${player} avall`} onClick={() => movePlayer(idx, 1)} className="rounded-lg p-1 text-gray-300 disabled:opacity-25"><ChevronDown size={18} /></button>
@@ -1576,7 +1679,7 @@ export default function App() {
                 ))}
               </div>
             )}
-            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">Usa las flechas para cambiar el orden. En partida, conserva mínimo 2 jugadores.</p>}
+            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">Mantén pulsada el asa ≡ y arrastra cada jugador a su nueva posición. También puedes usar las flechas. En partida, conserva mínimo 2 jugadores.</p>}
           </div>
           <button disabled={players.length < 2} onClick={() => { if (currentPlayerIndex >= players.length) setCurrentPlayerIndex(0); setShowPlayerManager(false); }} className={`w-full py-4 rounded-xl font-black text-lg transition-all shrink-0 ${players.length >= 2 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg active:scale-95' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>Guardar y Volver</button>
         </div>
@@ -1682,6 +1785,13 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v1.68.1 (Safe Areas Update)</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                - <b>Android:</b> espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.<br/>
+                - <b>Careta:</b> animació més lleugera, sense botó per saltar i amb inici més net.<br/>
+                - <b>Jugadors:</b> arrossega el mànec per reordenar; les files es mouen en temps real.<br/>
+                - <b>Actualitzacions:</b> comprovació automàtica en entrar i cerca manual des d'aquest historial.
+              </p>
               <h3 className="text-lg font-black text-white mb-1">v1.68.0 (First Round Edition)</h3>
               <p className="text-sm text-gray-400">
                 - <b>Careta animada:</b> nova entrada Party Night amb brindis, confeti i opció de saltar-la.<br/>
@@ -1722,7 +1832,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v1.68.0 • FIRST ROUND EDITION <Sparkles size={12} className="text-yellow-300" />
+                  v1.68.1 • SAFE AREAS UPDATE <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">para estudiantes con pretensiones alcohólicas</p>

@@ -2,6 +2,18 @@
 
 Totes les versions publicades de Party Night, amb un resum dels canvis principals.
 
+## [1.68.1] — 2026-11-14 · Safe Areas Update
+
+### Novetats
+- Comprovació automàtica de versions un segon després de la careta, amb accés a la darrera GitHub Release si hi ha una versió superior.
+- Botó «Cercar actualitzacions» al panell de Novetats per tornar a consultar GitHub manualment.
+- Reordenació tàctil real del gestor de jugadors: mantén premuda l'ansa i mou la fila; les files es reordenen mentre arrossegues.
+
+### Correccions i millores
+- Safe areas d'Android: el contingut i els diàlegs respecten la barra d'estat superior i la navegació inferior.
+- Careta d'entrada més lleugera: menys partícules, cap filtre blur ni animacions infinites i retirada del text «Toca para saltar».
+- Color de fons inicial coordinat amb la careta per reduir el flaix fosc en obrir l'app.
+
 ## [1.68.0] — 2026-11-13 · First Round Edition
 
 ### Novetats
@@ -10,7 +22,7 @@ Totes les versions publicades de Party Night, amb un resum dels canvis principal
 - Les Releases de GitHub inclouen l'APK debug descarregable i les notes de cada versió.
 
 ### Correccions
-- Veritat o Repte: ara les categories Tranqui/Físic, Dar el Cante, Contacte Físic i Perill Digital filtren realment els reptes de cada entorn i respecten els pesos del selector. Abans les llistes planes no coincidien amb les subcategories esperades.
+- Veritat o Repte: ara les categories Tranqui/Físic, Dar el Cante, Contacte Físic i Perill Digital filtren realment els reptes de cada entorn i respecten els pesos del selector.
 - Veritat o Repte: si una modalitat té tots els filtres desactivats, ara es mostra el missatge corresponent en lloc d'entrar en una pantalla buida.
 - Yo Nunca: les frases amb noms substituïts es registren amb la plantilla original per evitar que es repeteixin abans d'hora.
 - Gestió de jugadors: en una partida no es pot baixar de dos jugadors des del gestor, evitant quedar atrapat dins del modal.

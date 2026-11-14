@@ -4,7 +4,12 @@ const config: CapacitorConfig = {
   appId: 'com.theferrini.partynight',
   appName: 'Party Night',
   webDir: 'dist',
-  backgroundColor: '#111827',
+  backgroundColor: '#090a12',
+  plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+    },
+  },
   android: {
     allowMixedContent: false,
   },
