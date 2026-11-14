@@ -2675,9 +2675,9 @@ export default function App() {
               );
               return (
                 <>
-                  <div className="pn-stats-page">{overviewPanel}</div>
-                  <div className="pn-stats-page">{gamesPanel}</div>
-                  <div className="pn-stats-page">{playersPanel}</div>
+                  <div className={"pn-stats-page " + (statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
+                  <div className={"pn-stats-page " + (statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
+                  <div className={"pn-stats-page " + (statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
                 </>
               );
                 })()}
