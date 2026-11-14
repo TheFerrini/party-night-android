@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Browser } from '@capacitor/browser';
 import { APP_VERSION } from './version';
 import { translateText, type AppLanguage } from './localization';
+import { translatePrompt } from './prompt-translations';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {
   Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart, Globe, Flag,
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
@@ -380,6 +382,8 @@ const RenderFormattedText = ({ text, isVor = false, language = 'es' }) => {
     mainText = parts[0].trim();
     explanation = parts[1].replace('}}', '').trim();
   }
+  mainText = translatePrompt(language, mainText);
+  if (explanation) explanation = translatePrompt(language, explanation);
 
   const renderNames = (str) => {
     const parts = str.split('|||');
@@ -461,6 +465,9 @@ export default function App() {
   const [languageChosen, setLanguageChosen] = useState(() => {
     try { return Boolean(localStorage.getItem('pn-language')); } catch { return false; }
   });
+  const [pendingLanguage, setPendingLanguage] = useState<AppLanguage>(() => {
+    try { return (localStorage.getItem('pn-language') as AppLanguage) || 'ca'; } catch { return 'ca'; }
+  });
   const [showLanguagePicker, setShowLanguagePicker] = useState(() => {
     try { return !localStorage.getItem('pn-language'); } catch { return true; }
   });
@@ -476,6 +483,13 @@ export default function App() {
   });
   const [statisticsPage, setStatisticsPage] = useState<'overview' | 'games' | 'players'>('overview');
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<string | null>(null);
+  const [selectedStatsGame, setSelectedStatsGame] = useState<any>(null);
+  const [playerSort, setPlayerSort] = useState<'most' | 'least'>(() => {
+    try { return (localStorage.getItem('pn-player-sort') as 'most' | 'least') || 'most'; } catch { return 'most'; }
+  });
+  const [winnerMode, setWinnerMode] = useState<'least' | 'most'>(() => {
+    try { return (localStorage.getItem('pn-winner-mode') as 'least' | 'most') || 'least'; } catch { return 'least'; }
+  });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(() => {
@@ -514,7 +528,9 @@ export default function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   // Castigos Acumulativos
-  const [enableAccumulativePenalty, setEnableAccumulativePenalty] = useState(false);
+  const [enableAccumulativePenalty, setEnableAccumulativePenalty] = useState(() => {
+    try { return localStorage.getItem('pn-accumulative-penalty') === 'true'; } catch { return false; }
+  });
   const [globalStrikes, setGlobalStrikes] = useState({});
   const [supremePenaltyPlayer, setSupremePenaltyPlayer] = useState(null);
 
@@ -633,13 +649,35 @@ export default function App() {
   };
 
   const chooseLanguage = (nextLanguage: AppLanguage) => {
-    setLanguage(nextLanguage);
-    try { localStorage.setItem('pn-language', nextLanguage); } catch {}
-    setShowLanguagePicker(false);
-    if (!languageChosen) {
-      setLanguageChosen(true);
-      setShowIntro(true);
-    }
+    setPendingLanguage(nextLanguage);
+  };
+
+  const confirmLanguageChange = () => {
+    try {
+      localStorage.setItem('pn-language', pendingLanguage);
+      localStorage.setItem('pn-languageChosen', 'true');
+    } catch {}
+    setLanguageChosen(true);
+    setLanguage(pendingLanguage);
+    window.location.reload();
+  };
+
+  const updateWinnerMode = (nextMode: 'least' | 'most') => {
+    setWinnerMode(nextMode);
+    try { localStorage.setItem('pn-winner-mode', nextMode); } catch {}
+    setActiveSession((prev: any) => prev ? {
+      ...prev,
+      settings: { ...(prev.settings || {}), winnerMode: nextMode }
+    } : prev);
+  };
+
+  const updateAccumulativePenalty = (enabled: boolean) => {
+    setEnableAccumulativePenalty(enabled);
+    try { localStorage.setItem('pn-accumulative-penalty', String(enabled)); } catch {}
+    setActiveSession((prev: any) => prev ? {
+      ...prev,
+      settings: { ...(prev.settings || {}), enableAccumulativePenalty: enabled }
+    } : prev);
   };
 
   useEffect(() => {
@@ -662,10 +700,18 @@ export default function App() {
       localStorage.setItem('pn-v2-game-penalties', JSON.stringify(currentGamePenaltyCounts));
       localStorage.setItem('pn-haptics', String(hapticsEnabled));
       localStorage.setItem('pn-reduce-motion', String(reduceMotion));
+      localStorage.setItem('pn-accumulative-penalty', String(enableAccumulativePenalty));
+      localStorage.setItem('pn-winner-mode', winnerMode);
+      localStorage.setItem('pn-player-sort', playerSort);
     } catch (error) {
       console.warn('No s’ha pogut desar el progrés local de Party Night.', error);
     }
-  }, [sessionHistory, activeSession, players, currentGamePenaltyCounts, hapticsEnabled, reduceMotion]);
+  }, [sessionHistory, activeSession, players, currentGamePenaltyCounts, hapticsEnabled, reduceMotion, enableAccumulativePenalty, winnerMode, playerSort]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('pn-reduce-motion', reduceMotion);
+    return () => document.documentElement.classList.remove('pn-reduce-motion');
+  }, [reduceMotion]);
 
   const exitPhrasesPool = [
     "¿Seguro que quieres salir de la partida actual? Perderás el progreso de la partida.",
@@ -706,7 +752,7 @@ export default function App() {
     const timestamp = new Date().toISOString();
     const game = {
       id: `${Date.now()}-${key}`, key, title, startedAt: timestamp,
-      players: [...players], settings: JSON.parse(JSON.stringify(settings)), events: []
+      players: [...players], settings: JSON.parse(JSON.stringify({ ...settings, winnerMode })), events: []
     };
     const event = { id: `${Date.now()}-start`, type: 'game-start', timestamp, gameId: game.id, title, key };
     game.events.push(event);
@@ -726,13 +772,17 @@ export default function App() {
       return acc;
     }, {});
     const finalCounts = Object.keys(counts || {}).length ? counts : reconstructed;
+    const effectiveWinnerMode = game?.settings?.winnerMode || activeSession?.settings?.winnerMode || winnerMode;
     const ranking = (game?.players || players).map((player: string) => ({ player, penalties: finalCounts[player] || 0 }))
-      .sort((a: any, b: any) => a.penalties - b.penalties || a.player.localeCompare(b.player));
+      .sort((a: any, b: any) => (effectiveWinnerMode === 'most' ? b.penalties - a.penalties : a.penalties - b.penalties) || a.player.localeCompare(b.player));
+    const winningValue = effectiveWinnerMode === 'most'
+      ? Math.max(0, ...ranking.map((item: any) => item.penalties))
+      : (ranking.length ? Math.min(...ranking.map((item: any) => item.penalties)) : 0);
     return {
-      ...game, endedAt: new Date().toISOString(), ranking,
+      ...game, endedAt: new Date().toISOString(), ranking, winnerMode: effectiveWinnerMode,
       totalPenalties: ranking.reduce((sum: number, item: any) => sum + item.penalties, 0),
       eventCount: (game?.events || []).length,
-      winners: ranking.length ? ranking.filter((item: any) => item.penalties === ranking[0].penalties).map((item: any) => item.player) : []
+      winners: ranking.filter((item: any) => item.penalties === winningValue).map((item: any) => item.player)
     };
   };
 
@@ -757,7 +807,7 @@ export default function App() {
     setActiveSession({
       id: `session-${Date.now()}`, startedAt: timestamp, updatedAt: timestamp,
       completedAt: null, status: 'active', players: [...players], language,
-      settings: { enableAccumulativePenalty, hapticsEnabled, reduceMotion }, games: [], events: [], currentGame: null
+      settings: { enableAccumulativePenalty, hapticsEnabled, reduceMotion, winnerMode }, games: [], events: [], currentGame: null
     });
     setDrinkCounts({});
     setGlobalStrikes({});
@@ -803,12 +853,23 @@ export default function App() {
     setScreen('setup');
   };
 
+  const triggerHaptic = async (style = ImpactStyle.Light) => {
+    if (!hapticsEnabled) return;
+    try {
+      await Haptics.impact({ style });
+    } catch {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
+      } catch {}
+    }
+  };
+
   const processPenalty = (player, tragosCount = 1) => {
     const amount = Math.max(0, Number(tragosCount) || 0);
     setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     recordSessionEvent('penalty', { player, amount, game: mode || activeSession?.currentGame?.key || 'unknown' });
-    if (hapticsEnabled && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
+    void triggerHaptic(ImpactStyle.Light);
     if (enableAccumulativePenalty) {
        setGlobalStrikes(prev => {
           const currentStrikes = prev[player] || 0;
@@ -1458,7 +1519,7 @@ export default function App() {
         onClick={() => !isRandomizing && setConfig({ ...config, [catKey]: value })}
         className={`flex-1 h-8 px-1 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center m-0 box-border ${getBgColor()}`}
       >
-        {label}
+        {t(label)}
       </button>
     );
   };
@@ -1517,19 +1578,135 @@ export default function App() {
     );
   };
 
+
+  const gameDisplayName = (key: string, fallback = '') => {
+    const names: Record<string, string> = {
+      yonunca: 'Yo Nunca',
+      vor: 'Verdad o Reto',
+      bomba: 'La Bomba',
+      duelo: 'Duelo 1v1',
+      encuesta: 'Encuesta Brutal'
+    };
+    return t(names[key] || fallback || key || 'Partida');
+  };
+
+  const gameSettingRows = (settings: any) => {
+    if (!settings || typeof settings !== 'object') return [];
+    const rows: Array<{ label: string; value: string }> = [];
+    const environmentNames: Record<string, string> = { casa: 'Casa', bar: 'Bar', discoteca: 'Discoteca', parque: 'Parque' };
+    const categoryNames: Record<string, string> = {
+      familiar: 'Vida familiar', estudiantil: 'Estudiantil', personales: 'Personales', traumas: 'Traumas',
+      trabajo: 'Trabajo', salseo: 'Salseo', picante: 'Picante', asco: 'Asquerosidades',
+      delitos: 'Delitos', cachondeo: 'Cachondeo', normal: 'Normal', oscuro: 'Oscuro',
+      chill: 'Tranquilo', ridiculo: 'Ridículo', movil: 'Móvil'
+    };
+    const add = (label: string, value: any) => {
+      if (value === undefined || value === null || value === '') return;
+      rows.push({ label: t(label), value: String(value) });
+    };
+    if (settings.environment) add('Entorn', t(environmentNames[settings.environment] || settings.environment));
+    const penaltyValue = settings.penaltyIntensity || settings.penaltyLevel;
+    if (penaltyValue) {
+      const level = PENALTY_LEVELS.find((item: any) => item.value === penaltyValue);
+      add('Intensitat de penalització', level ? t(level.title) + ' ' + t(level.subtitle) : penaltyValue);
+    }
+    if (settings.minTime !== undefined) add('Temps mínim', settings.minTime + ' s');
+    if (settings.maxTime !== undefined) add('Temps màxim', settings.maxTime + ' s');
+    if (settings.showTimer !== undefined) add('Rellotge visual', settings.showTimer ? t('Activat') : t('Desactivat'));
+    if (settings.showTable !== undefined) add('Mostrar taula', settings.showTable ? t('Activat') : t('Desactivat'));
+    if (settings.fbiMode !== undefined) add('Mode FBI', settings.fbiMode ? t('Activat') : t('Desactivat'));
+    if (settings.winnerMode) add('Criteri de victòria', t(settings.winnerMode === 'most' ? 'Qui rep més penalitzacions' : 'Qui rep menys penalitzacions'));
+    const configGroups = [
+      ['categories', 'Filtres de Jo mai'],
+      ['truths', 'Categories de veritat'],
+      ['dares', 'Categories de repte']
+    ];
+    for (const [key, label] of configGroups) {
+      const group = settings[key];
+      if (group && typeof group === 'object') {
+        const selected = Object.entries(group as Record<string, any>)
+          .filter(([, weight]) => Number(weight) > 0)
+          .map(([category, weight]) => {
+            const frequency = FREQUENCIES.find((item: any) => item.value === Number(weight));
+            return t(categoryNames[category] || category) + ' · ' + (frequency ? t(frequency.label) : String(weight));
+          });
+        add(label, selected.length ? selected.join(' · ') : t('Cap categoria activa'));
+      }
+    }
+    return rows;
+  };
+
+  const eventDetails = (event: any) => {
+    const timestamp = event?.timestamp ? new Date(event.timestamp).toLocaleString() : '';
+    const amount = Number(event?.amount || 0);
+    let title = 'Activitat';
+    let description = '';
+    switch (event?.type) {
+      case 'game-start':
+        title = 'Partida iniciada';
+        description = event.title ? gameDisplayName(event.key, event.title) : '';
+        break;
+      case 'prompt':
+        title = 'Targeta o repte';
+        description = translatePrompt(language, event.text || '');
+        if (event.player) description = t('Torn de') + ' ' + event.player + ': ' + description;
+        break;
+      case 'penalty':
+        title = 'Penalització registrada';
+        description = (event.player || '') + ' · ' + amount + ' ' + t('penalitzacions');
+        break;
+      case 'penalty-reverted':
+        title = 'Penalització desfeta';
+        description = (event.player || '') + ' · ' + amount + ' ' + t('penalitzacions');
+        break;
+      case 'vote':
+        title = 'Vot registrat';
+        description = t('Votant') + ': ' + (event.voter || '—') + ' · ' + t('Vot a') + ': ' + (event.votedPlayer || '—');
+        break;
+      case 'survey-result':
+        title = 'Resultat de l’enquesta';
+        description = (event.winners || []).join(', ') + (event.penalty ? ' · ' + event.penalty + ' ' + t('penalitzacions') : '');
+        break;
+      case 'game-end':
+        title = 'Partida finalitzada';
+        description = (event.winners || []).join(', ');
+        break;
+      default:
+        title = t('Activitat registrada');
+        description = event?.player || event?.text || '';
+    }
+    return { title: t(title), description, timestamp };
+  };
+
+  const triggerHaptic = async (style = ImpactStyle.Light) => {
+    if (!hapticsEnabled) return;
+    try {
+      await Haptics.impact({ style });
+    } catch {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
+      } catch {}
+    }
+  };
+
   const LeaderboardComponent = ({ onClose }) => {
-    const sortedPlayers = Object.entries(drinkCounts).sort((a, b) => b[1] - a[1]);
+    const sortedPlayers = Object.entries(drinkCounts).sort((a: any, b: any) =>
+      (winnerMode === 'most' ? b[1] - a[1] : a[1] - b[1]) || String(a[0]).localeCompare(String(b[0]))
+    );
     return (
       <>
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700 shrink-0">
-          <h3 className="text-2xl font-black text-yellow-400 flex items-center gap-3"><Trophy size={28} /> Ranking Etílico</h3>
+          <div>
+            <h3 className="text-2xl font-black text-yellow-400 flex items-center gap-3"><Trophy size={28} /> {t("Rànquing de la sessió")}</h3>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{t(winnerMode === 'most' ? "Guanya qui rep més penalitzacions" : "Guanya qui rep menys penalitzacions")}</p>
+          </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white bg-gray-700/50 p-2 rounded-lg transition-colors"><X size={20} /></button>
         </div>
         <div className="overflow-y-auto custom-scrollbar flex-1 pb-4">
           {sortedPlayers.length === 0 ? (
             <div className="text-center py-10">
               <Beer size={56} className="text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 italic font-medium text-lg">Aún no hay borrachos registrados.<br />¡Empezad a beber!</p>
+              <p className="text-gray-500 italic font-medium text-lg">{t("Aún no hay borrachos registrados.")}<br />{t("¡Empezad a beber!")}</p>
             </div>
           ) : (
             <div className="flex flex-col gap-6">
@@ -1694,12 +1871,12 @@ export default function App() {
             <div className="party-intro__title text-5xl sm:text-6xl font-black uppercase leading-none">
               <span className="bg-gradient-to-r from-amber-300 via-pink-400 to-red-500 bg-clip-text text-transparent">Party Night</span>
             </div>
-            <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>La noche acaba de empezar</p>
+            <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>{t("La noche acaba de empezar")}</p>
             <div className="mt-10 h-1.5 w-36 overflow-hidden rounded-full bg-white/10">
               <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.05s linear both' }} />
             </div>
           </div>
-          <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25">Juega con cabeza · Bebe con responsabilidad</p>
+          <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25">{t("Juega con cabeza · Bebe con responsabilidad")}</p>
         </div>
       )}
 
@@ -1712,21 +1889,21 @@ export default function App() {
           {!ianPromptPhase2 ? (
             <>
               <PartyPopper size={64} className="text-yellow-400 mx-auto mb-4 animate-bounce" />
-              <h2 className="text-3xl font-black text-white mb-2 uppercase">¡ALTO AHÍ!</h2>
-              <p className="text-gray-300 text-lg mb-6">El sistema ha detectado a un tal <span className="text-yellow-400 font-black">IAN</span> en la partida. ¿Hoy es su cumpleaños?</p>
+              <h2 className="text-3xl font-black text-white mb-2 uppercase">{t("¡ALTO AHÍ!")}</h2>
+              <p className="text-gray-300 text-lg mb-6">{t("El sistema ha detectado a un tal")} <span className="text-yellow-400 font-black">IAN</span> {t("en la partida. ¿Hoy es su cumpleaños?")}</p>
               <div className="flex gap-3">
-                <button onClick={() => setShowIanBirthdayPrompt(false)} className="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-gray-300 transition-colors uppercase shadow-lg">Ni de coña</button>
-                <button onClick={() => setIanPromptPhase2(true)} className="flex-1 py-4 bg-yellow-500 hover:bg-yellow-400 rounded-xl font-black text-gray-900 transition-colors uppercase shadow-lg shadow-yellow-500/30">Sí, lo es</button>
+                <button onClick={() => setShowIanBirthdayPrompt(false)} className="flex-1 py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-gray-300 transition-colors uppercase shadow-lg">{t("Ni de coña")}</button>
+                <button onClick={() => setIanPromptPhase2(true)} className="flex-1 py-4 bg-yellow-500 hover:bg-yellow-400 rounded-xl font-black text-gray-900 transition-colors uppercase shadow-lg shadow-yellow-500/30">{t("Sí, lo es")}</button>
               </div>
             </>
           ) : (
             <div className="animate-expand">
               <Crown size={80} className="text-yellow-400 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]" />
-              <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2 uppercase leading-none">FELICIDADES JUDIOOOOOOO</h2>
-              <p className="text-gray-300 text-sm mb-6 mt-4">¿Quieres ser el rey de la fiesta? (literalmente)</p>
+              <h2 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2 uppercase leading-none">{t("FELICIDADES JUDIOOOOOOO")}</h2>
+              <p className="text-gray-300 text-sm mb-6 mt-4">{t("¿Quieres ser el rey de la fiesta? (literalmente)")}</p>
               <div className="flex flex-col gap-3">
-                <button onClick={() => { setIsIansBirthday(true); setShowIanBirthdayPrompt(false); }} className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-xl font-black text-gray-900 transition-all uppercase shadow-lg shadow-orange-500/40 transform hover:scale-105">SEEEEEEEEEE</button>
-                <button onClick={() => { setIsIansBirthday(false); setShowIanBirthdayPrompt(false); }} className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl font-bold text-gray-400 transition-colors uppercase text-xs">NO, VIVA ISRAEL</button>
+                <button onClick={() => { setIsIansBirthday(true); setShowIanBirthdayPrompt(false); }} className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-xl font-black text-gray-900 transition-all uppercase shadow-lg shadow-orange-500/40 transform hover:scale-105">{t("SEEEEEEEEEE")}</button>
+                <button onClick={() => { setIsIansBirthday(false); setShowIanBirthdayPrompt(false); }} className="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-xl font-bold text-gray-400 transition-colors uppercase text-xs">{t("NO, VIVA ISRAEL")}</button>
               </div>
             </div>
           )}
@@ -1737,11 +1914,11 @@ export default function App() {
       <AnimatedModal isOpen={showIanModeInfo} onClose={() => setShowIanModeInfo(false)} zIndex="z-[120]">
         <div className="bg-gray-800 border-4 border-yellow-500 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(234,179,8,0.4)]">
           <Crown size={64} className="text-yellow-400 mx-auto mb-4 drop-shadow-md" />
-          <h2 className="text-2xl font-black text-white mb-2 uppercase">Modo Rey Ian</h2>
-          <p className="text-gray-300 text-sm mb-6">El cumpleañero tiene el control total. Aleatoriamente en todos los juegos, Ian recibirá cajas con poderes divinos para repartir castigos, crear reglas o salvarse de beber.</p>
+          <h2 className="text-2xl font-black text-white mb-2 uppercase">{t("Modo Rey Ian")}</h2>
+          <p className="text-gray-300 text-sm mb-6">{t("El cumpleañero tiene el control total. Aleatoriamente en todos los juegos, Ian recibirá cajas con poderes divinos para repartir castigos, crear reglas o salvarse de beber.")}</p>
           <div className="flex flex-col gap-3">
-            <button onClick={() => setShowIanModeInfo(false)} className="w-full py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-white transition-colors uppercase shadow-lg">Volver al menú</button>
-            <button onClick={() => { setIsIansBirthday(false); setShowIanModeInfo(false); }} className="w-full py-3 border border-red-500/50 text-red-400 hover:bg-red-900/30 rounded-xl font-bold transition-colors uppercase text-xs">Desactivar Modo Rey</button>
+            <button onClick={() => setShowIanModeInfo(false)} className="w-full py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-white transition-colors uppercase shadow-lg">{t("Volver al menú")}</button>
+            <button onClick={() => { setIsIansBirthday(false); setShowIanModeInfo(false); }} className="w-full py-3 border border-red-500/50 text-red-400 hover:bg-red-900/30 rounded-xl font-bold transition-colors uppercase text-xs">{t("Desactivar Modo Rey")}</button>
           </div>
         </div>
       </AnimatedModal>
@@ -1752,11 +1929,11 @@ export default function App() {
           <div className="absolute inset-0 bg-yellow-500/10 pointer-events-none"></div>
           
           <Crown size={48} className="text-yellow-400 mx-auto mb-2 drop-shadow-lg" />
-          <h2 className="text-2xl font-black text-white mb-1 uppercase tracking-widest relative z-10">MODO DIOS: IAN</h2>
+          <h2 className="text-2xl font-black text-white mb-1 uppercase tracking-widest relative z-10">{t("MODO DIOS: IAN")}</h2>
           
           {!activeIanPerk ? (
             <>
-              <p className="text-gray-400 text-sm mb-6 relative z-10">Es tu turno. Elige un regalo y descubre tu poder divino.</p>
+              <p className="text-gray-400 text-sm mb-6 relative z-10">{t("Es tu turno. Elige un regalo y descubre tu poder divino.")}</p>
               <div className="flex gap-3 justify-center mb-4 relative z-10">
                 {ianBoxOptions.map((perk, idx) => (
                   <button key={idx} onClick={() => setActiveIanPerk(perk)} className="flex-1 aspect-square bg-gray-800 hover:bg-gray-700 border-2 border-yellow-500/50 rounded-2xl flex items-center justify-center shadow-lg transform transition-all hover:-translate-y-2 hover:shadow-yellow-500/40 group">
@@ -1767,7 +1944,7 @@ export default function App() {
             </>
           ) : (
             <div className="animate-expand relative z-10">
-              <p className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 mt-4">Has desbloqueado:</p>
+              <p className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 mt-4">{t("Has desbloqueado:")}</p>
               <div className="bg-gray-800 border border-yellow-500/50 rounded-2xl p-5 mb-6 shadow-inner">
                 <h3 className="text-xl font-black text-white mb-2">{activeIanPerk.title}</h3>
                 <p className="text-gray-300 italic text-sm">{activeIanPerk.desc}</p>
@@ -1784,16 +1961,16 @@ export default function App() {
       <AnimatedModal isOpen={!!supremePenaltyPlayer} onClose={() => setSupremePenaltyPlayer(null)} zIndex="z-[110]">
         <div className="bg-gray-800 border-4 border-red-500 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.6)]">
           <AlertOctagon size={72} className="text-red-500 mx-auto mb-4 animate-pulse" />
-          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 mb-2 uppercase tracking-tight">¡Límite Alcanzado!</h2>
-          <p className="text-gray-300 text-sm mb-6">Has acumulado 3 castigos (o te ha tocado beber 3 veces). Es la hora del juicio final.</p>
+          <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500 mb-2 uppercase tracking-tight">{t("¡Límite Alcanzado!")}</h2>
+          <p className="text-gray-300 text-sm mb-6">{t("Has acumulado 3 castigos (o te ha tocado beber 3 veces). Es la hora del juicio final.")}</p>
           
           <div className="bg-red-900/40 border border-red-500/50 rounded-xl p-6 mb-6">
-            <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Víctima:</span>
+            <span className="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{t("Víctima:")}</span>
             <span className="text-3xl font-black text-white uppercase break-all">{supremePenaltyPlayer}</span>
           </div>
           
           <div className="bg-gray-900 p-4 rounded-xl border border-gray-700 mb-6">
-             <span className="block text-yellow-400 font-bold text-xl uppercase tracking-wider mb-2">CASTIGO FINAL</span>
+             <span className="block text-yellow-400 font-bold text-xl uppercase tracking-wider mb-2">{t("CASTIGO FINAL")}</span>
              <p className="text-white italic">"Tómate un chupito de la mezcla que decida el grupo, o bebe 5 tragos seguidos sin respirar."</p>
           </div>
 
@@ -1817,7 +1994,7 @@ export default function App() {
       <AnimatedModal isOpen={!!exitConfirm} onClose={() => setExitConfirm(null)} zIndex="z-[80]">
         <div className="bg-gray-800 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
           <AlertTriangle size={48} className="text-yellow-500 mx-auto mb-4 animate-pulse" />
-          <h3 className="text-xl font-black text-white mb-2 uppercase">Finalitzar partida?</h3>
+          <h3 className="text-xl font-black text-white mb-2 uppercase">{t("Finalitzar partida?")}</h3>
           <p className="text-gray-400 mb-6 text-sm">
             {screen === 'game-vor' && fbiMode && fbiEvents.length > 0
               ? "¡OJO! Tienes el Modo FBI activado. Si sales ahora, todos los registros temporales y pruebas se perderán."
@@ -1847,13 +2024,13 @@ export default function App() {
       }} zIndex="z-[80]">
         <div className="bg-gray-800 border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
           <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 shrink-0">
-            <h3 className="text-xl font-black text-white flex items-center gap-2"><Users size={24} /> Editar Jugadores</h3>
+            <h3 className="text-xl font-black text-white flex items-center gap-2"><Users size={24} /> {t("Editar Jugadores")}</h3>
             <button onClick={() => { if (players.length >= 2) { if (currentPlayerIndex >= players.length) setCurrentPlayerIndex(0); setShowPlayerManager(false); } }} className="text-gray-400 hover:text-white bg-gray-700/50 p-2 rounded-lg">
               <X size={20} />
             </button>
           </div>
           <form onSubmit={addPlayer} className="mb-2 relative shrink-0">
-            <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder="Mete a un colega..." className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none pr-12 uppercase" />
+            <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder={t("Mete a un colega...")} className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none pr-12 uppercase" />
             <button type="submit" className="absolute right-2 top-2 bg-purple-600 hover:bg-purple-500 p-1.5 rounded-lg"><Users size={20} /></button>
           </form>
           <button type="button" onClick={addDefaultPlayers} className="text-[10px] uppercase tracking-widest font-bold bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 px-3 py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 w-full mb-4 shrink-0">
@@ -1861,7 +2038,7 @@ export default function App() {
           </button>
           <div className="overflow-y-auto custom-scrollbar flex-1 mb-4 touch-pan-y" onTouchMove={handlePlayerTouchMove} onTouchEnd={handlePlayerTouchEnd} onTouchCancel={handlePlayerTouchEnd}>
             {players.length === 0 ? (
-              <p className="text-gray-500 text-center italic mt-2">Añade mínimo a 2 personas.</p>
+              <p className="text-gray-500 text-center italic mt-2">{t("Añade mínimo a 2 personas.")}</p>
             ) : (
               <div className="flex flex-col gap-2 justify-center pb-2">
                 {players.map((player, idx) => (
@@ -1880,9 +2057,9 @@ export default function App() {
                 ))}
               </div>
             )}
-            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">Mantén pulsada el asa ≡ y arrastra cada jugador a su nueva posición. También puedes usar las flechas. En partida, conserva mínimo 2 jugadores.</p>}
+            {players.length > 0 && <p className="text-center text-[10px] text-gray-500 italic mt-3">{t("Mantén pulsada el asa ≡ y arrastra cada jugador a su nueva posición. También puedes usar las flechas. En partida, conserva mínimo 2 jugadores.")}</p>}
           </div>
-          <button disabled={players.length < 2} onClick={() => { if (currentPlayerIndex >= players.length) setCurrentPlayerIndex(0); setShowPlayerManager(false); }} className={`w-full py-4 rounded-xl font-black text-lg transition-all shrink-0 ${players.length >= 2 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg active:scale-95' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>Guardar y Volver</button>
+          <button disabled={players.length < 2} onClick={() => { if (currentPlayerIndex >= players.length) setCurrentPlayerIndex(0); setShowPlayerManager(false); }} className={`w-full py-4 rounded-xl font-black text-lg transition-all shrink-0 ${players.length >= 2 ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg active:scale-95' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>{t("Guardar y Volver")}</button>
         </div>
       </AnimatedModal>
 
@@ -1890,14 +2067,14 @@ export default function App() {
       <AnimatedModal isOpen={showBombaTableConfig} onClose={() => setShowBombaTableConfig(false)} zIndex="z-[85]">
         <div className="bg-gray-800 border border-gray-700 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
           <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3 shrink-0">
-            <h3 className="text-xl font-black text-white flex items-center gap-2"><Settings size={24} /> Configurar Mesa</h3>
+            <h3 className="text-xl font-black text-white flex items-center gap-2"><Settings size={24} /> {t("Configurar Mesa")}</h3>
             <button onClick={() => setShowBombaTableConfig(false)} className="text-gray-400 hover:text-white bg-gray-700/50 p-2 rounded-lg"><X size={20} /></button>
           </div>
           <div className="overflow-y-auto custom-scrollbar flex-1 pb-2">
-             <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-4">Vista Previa de la Mesa</p>
+             <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-4">{t("Vista Previa de la Mesa")}</p>
              <CircularTable activePlayerIndex={null} animatePulse={false} />
              <div className="mt-6 border-t border-gray-700 pt-4">
-               <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-3">Orden de Jugadores (Arrastrar)</p>
+               <p className="text-center text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-3">{t("Orden de Jugadores (Arrastrar)")}</p>
                <div className="flex flex-col gap-2">
                   {players.map((player, idx) => (
                     <div key={`mesa-${player}-${idx}`} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, idx)} className="flex items-center gap-3 bg-gray-700/60 px-4 py-2.5 rounded-xl border border-gray-600 backdrop-blur-sm shadow-sm cursor-move transition-transform hover:scale-[1.02]">
@@ -1909,7 +2086,7 @@ export default function App() {
                </div>
              </div>
           </div>
-          <button onClick={() => setShowBombaTableConfig(false)} className="w-full mt-4 py-4 rounded-xl font-black text-lg transition-all shrink-0 bg-blue-600 hover:bg-blue-500 text-white shadow-lg active:scale-95">Listo</button>
+          <button onClick={() => setShowBombaTableConfig(false)} className="w-full mt-4 py-4 rounded-xl font-black text-lg transition-all shrink-0 bg-blue-600 hover:bg-blue-500 text-white shadow-lg active:scale-95">{t("Listo")}</button>
         </div>
       </AnimatedModal>
 
@@ -1917,13 +2094,13 @@ export default function App() {
       <AnimatedModal isOpen={!!easterEgg} onClose={() => setEasterEgg(null)} zIndex="z-[60]">
         <div className="bg-gray-800 border-2 border-red-500 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_30px_rgba(239,68,68,0.5)]">
           <Skull size={64} className="text-red-500 mx-auto mb-4 animate-bounce" />
-          <h2 className="text-2xl font-black text-white mb-2 uppercase">¡Hacker Pillado!</h2>
-          <div className="my-6 text-white">{easterEgg && <RenderFormattedText text={easterEgg.phrase} isVor={true} />}</div>
+          <h2 className="text-2xl font-black text-white mb-2 uppercase">{t("¡Hacker Pillado!")}</h2>
+          <div className="my-6 text-white">{easterEgg && <RenderFormattedText text={t(easterEgg.phrase)} isVor={true} />}</div>
           <div className="bg-red-900/50 rounded-xl p-4 mb-6 border border-red-500/50">
             <span className="text-6xl font-black text-red-400">{easterEgg?.shots}</span>
             <span className="block text-red-300 mt-1 uppercase font-bold tracking-widest">Trago{easterEgg?.shots > 1 ? 's' : ''}</span>
           </div>
-          <button onClick={() => setEasterEgg(null)} className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-black text-white transition-colors uppercase tracking-widest shadow-lg active:scale-95">Volver a los ajustes</button>
+          <button onClick={() => setEasterEgg(null)} className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-xl font-black text-white transition-colors uppercase tracking-widest shadow-lg active:scale-95">{t("Volver a los ajustes")}</button>
         </div>
       </AnimatedModal>
 
@@ -1932,13 +2109,13 @@ export default function App() {
         {fbiAlerts.length > 0 && (
           <div className="bg-gray-800 border-2 border-purple-500 rounded-3xl p-6 w-full max-w-sm text-center shadow-[0_0_30px_rgba(168,85,247,0.5)]">
             <BellRing size={56} className="text-purple-500 mx-auto mb-4 animate-bounce" />
-            <h2 className="text-2xl font-black text-white mb-2 uppercase">¡Atención!</h2>
-            <p className="text-gray-300 mb-6">El tiempo o los turnos se han agotado para este reto.</p>
+            <h2 className="text-2xl font-black text-white mb-2 uppercase">{t("¡Atención!")}</h2>
+            <p className="text-gray-300 mb-6">{t("El tiempo o los turnos se han agotado para este reto.")}</p>
             <div className="bg-purple-900/40 border border-purple-500/50 rounded-xl p-4 mb-6 text-left">
               <p className="text-yellow-400 font-black text-lg uppercase tracking-wider mb-1">{fbiAlerts[0]?.player}</p>
               <p className="text-gray-300 italic text-sm">"{fbiAlerts[0]?.phrase.replace(/\|\|\|/g, '')}"</p>
             </div>
-            <button onClick={() => setFbiAlerts(prev => prev.slice(1))} className="w-full py-4 bg-purple-600 hover:bg-purple-500 rounded-xl font-black text-white transition-colors uppercase tracking-widest shadow-lg active:scale-95">Entendido</button>
+            <button onClick={() => setFbiAlerts(prev => prev.slice(1))} className="w-full py-4 bg-purple-600 hover:bg-purple-500 rounded-xl font-black text-white transition-colors uppercase tracking-widest shadow-lg active:scale-95">{t("Entendido")}</button>
           </div>
         )}
       </AnimatedModal>
@@ -1947,14 +2124,14 @@ export default function App() {
       <AnimatedModal isOpen={showFbiPopup} onClose={() => setShowFbiPopup(false)} zIndex="z-[70]">
         <div className="bg-gray-800 border border-purple-500/50 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[80vh]">
           <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
-            <h3 className="text-xl font-black text-purple-400 flex items-center gap-2"><Cctv size={24} /> FBI: Retos Activos</h3>
+            <h3 className="text-xl font-black text-purple-400 flex items-center gap-2"><Cctv size={24} /> {t("FBI: Retos Activos")}</h3>
             <button onClick={() => setShowFbiPopup(false)} className="text-gray-400 hover:text-white bg-gray-700/50 p-2 rounded-lg"><X size={20} /></button>
           </div>
           <div className="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-2">
             {fbiEvents.length === 0 ? (
               <div className="text-center py-8">
                 <Cctv size={48} className="text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-500 italic font-medium">Cámaras vacías.<br />No hay retos activos ahora mismo.</p>
+                <p className="text-gray-500 italic font-medium">{t("Cámaras vacías.")}<br />{t("No hay retos activos ahora mismo.")}</p>
               </div>
             ) : (
               fbiEvents.map(ev => (
@@ -1963,10 +2140,10 @@ export default function App() {
                     <p className="text-yellow-400 font-black text-sm uppercase tracking-wider">{ev.player}</p>
                     {ev.type === 'time' && <span className="text-xs font-bold text-red-400 bg-red-900/30 px-2 py-0.5 rounded border border-red-500/30 flex items-center gap-1"><Clock size={12} /> {Math.floor(ev.remaining / 60)}:{(ev.remaining % 60).toString().padStart(2, '0')}</span>}
                     {ev.type === 'round' && <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded border border-blue-500/30 flex items-center gap-1"><Zap size={12} /> {ev.remaining} turnos</span>}
-                    {ev.type === 'manual' && <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded border border-gray-600">Manual</span>}
+                    {ev.type === 'manual' && <span className="text-xs font-bold text-gray-400 bg-gray-800 px-2 py-0.5 rounded border border-gray-600">{t("Manual")}</span>}
                   </div>
                   <p className="text-gray-300 text-sm italic">"{ev.phrase.replace(/\|\|\|/g, '')}"</p>
-                  <button onClick={() => setFbiEvents(fbiEvents.filter(e => e.id !== ev.id))} className="w-full mt-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-500/30 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors">Finalizar / Eliminar</button>
+                  <button onClick={() => setFbiEvents(fbiEvents.filter(e => e.id !== ev.id))} className="w-full mt-2 bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-500/30 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors">{t("Finalizar / Eliminar")}</button>
                 </div>
               ))
             )}
@@ -1998,36 +2175,36 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.0 (The Party Rebuild)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.1 (The Party Re-Rebuild)</h3>
               <p className="text-sm text-gray-400 mb-4">
-                - <b>Android:</b> espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.<br/>
-                - <b>Careta:</b> animació més lleugera, sense botó per saltar i amb inici més net.<br/>
-                - <b>Jugadors:</b> arrossega el mànec per reordenar; les files es mouen en temps real.<br/>
-                - <b>Actualitzacions:</b> comprovació automàtica en entrar i cerca manual des d'aquest historial.
+                - <b>{t("Android:")}</b> {t("espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.")}<br/>
+                - <b>{t("Careta:")}</b> {t("animació més lleugera, sense botó per saltar i amb inici més net.")}<br/>
+                - <b>{t("Jugadors:")}</b> {t("arrossega el mànec per reordenar; les files es mouen en temps real.")}<br/>
+                - <b>{t("Actualitzacions:")}</b> comprovació automàtica en entrar i cerca manual des d'aquest historial.
               </p>
               <h3 className="text-lg font-black text-white mb-1">v1.68.0 (First Round Edition)</h3>
               <p className="text-sm text-gray-400">
-                - <b>Careta animada:</b> nova entrada Party Night amb brindis, confeti i opció de saltar-la.<br/>
-                - <b>Veritat o Repte:</b> corregida la selecció de reptes, que podia quedar sense cap frase disponible.<br/>
-                - <b>Yo Nunca:</b> millor control de frases repetides quan inclouen noms aleatoris.<br/>
-                - <b>Jugadors:</b> reordenació amb controls tàctils i neteja de puntuacions/registres en eliminar algú.<br/>
-                - <b>FBI:</b> registre d'esdeveniments més robust quan s'afegeixen diversos controls seguits.
+                - <b>{t("Careta animada:")}</b> {t("nova entrada Party Night amb brindis, confeti i opció de saltar-la.")}<br/>
+                - <b>{t("Veritat o Repte:")}</b> {t("corregida la selecció de reptes, que podia quedar sense cap frase disponible.")}<br/>
+                - <b>{t("Yo Nunca:")}</b> {t("millor control de frases repetides quan inclouen noms aleatoris.")}<br/>
+                - <b>{t("Jugadors:")}</b> {t("reordenació amb controls tàctils i neteja de puntuacions/registres en eliminar algú.")}<br/>
+                - <b>{t("FBI:")}</b> registre d'esdeveniments més robust quan s'afegeixen diversos controls seguits.
               </p>
             </div>
             <div className="relative pl-4 border-l-2 border-orange-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
               <h3 className="text-lg font-black text-white mb-1">v1.67.1 (The Six Seven Edition)</h3>
               <p className="text-sm text-gray-400 space-y-1">
-                - <b>Modo Dios Mejorado:</b> La interfaz del Modo Ian ahora tiene confeti real en todos los juegos, es oscuro para leerse perfectamente.<br/>
-                - <b>Invasión del Rey:</b> El modo Dios salta ahora en Yo Nunca, La Bomba, Duelo y Encuestas de forma automatizada por rondas.<br/>
-                - <b>Perks Pulidos:</b> Castigos y reglas de las cajas adaptados para ser rápidos, factibles y letales.<br/>
-                - <b>UI Reordenada:</b> Menús de selección más cómodos, indicador del Rey arriba y mejor posicionado de la Clasificación.
+                - <b>{t("Modo Dios Mejorado:")}</b> {t("La interfaz del Modo Ian ahora tiene confeti real en todos los juegos, es oscuro para leerse perfectamente.")}<br/>
+                - <b>{t("Invasión del Rey:")}</b> {t("El modo Dios salta ahora en Yo Nunca, La Bomba, Duelo y Encuestas de forma automatizada por rondas.")}<br/>
+                - <b>{t("Perks Pulidos:")}</b> {t("Castigos y reglas de las cajas adaptados para ser rápidos, factibles y letales.")}<br/>
+                - <b>{t("UI Reordenada:")}</b> Menús de selección más cómodos, indicador del Rey arriba y mejor posicionado de la Clasificación.
               </p>
             </div>
             <div className="relative pl-4 border-l-2 border-orange-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-orange-500 border-4 border-gray-800"></div>
               <h3 className="text-md font-bold text-gray-300 mb-1">v1.61 (Sin IA / Optimizado)</h3>
-              <p className="text-xs text-gray-400 space-y-1">- Fix de Rendimiento Móvil: Funciones de IA eliminadas.</p>
+              <p className="text-xs text-gray-400 space-y-1">{t("- Fix de Rendimiento Móvil: Funciones de IA eliminadas.")}</p>
             </div>
           </div>
         </div>
@@ -2038,7 +2215,7 @@ export default function App() {
         <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div>
-              <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-300 mb-2">Party Night · Actualitzacions</div>
+              <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-300 mb-2">{t("Party Night · Actualitzacions")}</div>
               <h2 className="text-2xl font-black text-white">
                 {updateCheckStatus === 'available' ? 'Nova versió disponible!' : updateCheckStatus === 'checking' ? 'Buscant versions...' : updateCheckStatus === 'error' ? 'No s’ha pogut comprovar' : 'Tot al dia!'}
               </h2>
@@ -2051,7 +2228,7 @@ export default function App() {
           {updateCheckStatus === 'checking' && (
             <div className="py-7 text-center">
               <Loader2 size={36} className="mx-auto mb-3 animate-spin text-cyan-400" />
-              <p className="text-sm text-gray-400">Consultant les releases públiques de GitHub...</p>
+              <p className="text-sm text-gray-400">{t("Consultant les releases públiques de GitHub...")}</p>
             </div>
           )}
 
@@ -2062,7 +2239,7 @@ export default function App() {
                 <div className="text-xl font-black text-white">Disponible: {latestRelease.tag_name}</div>
                 <p className="text-xs text-gray-400 mt-1">{latestRelease.name}</p>
               </div>
-              <p className="text-sm text-gray-300">Hi ha una versió més recent de Party Night. Obre la pàgina oficial de la release per consultar els canvis i descarregar l'APK.</p>
+              <p className="text-sm text-gray-300">{t("Hi ha una versió més recent de Party Night. Obre la pàgina oficial de la release per consultar els canvis i descarregar l'APK.")}</p>
               {latestRelease.body && <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-700 bg-gray-950/70 p-3 text-left text-xs text-gray-300 whitespace-pre-wrap">{latestRelease.body}</div>}
               <button type="button" onClick={openLatestRelease} className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-4 font-black text-white shadow-lg transition-transform active:scale-[.98] flex items-center justify-center gap-2">
                 <ArrowRight size={18} /> Veure actualització a GitHub
@@ -2073,7 +2250,7 @@ export default function App() {
           {updateCheckStatus === 'up-to-date' && (
             <div className="py-5 text-center">
               <div className="text-5xl mb-3">🥂</div>
-              <p className="text-white font-bold">Estàs utilitzant la versió més recent.</p>
+              <p className="text-white font-bold">{t("Estàs utilitzant la versió més recent.")}</p>
               <p className="text-xs text-gray-500 mt-2">Versió instal·lada: v{APP_VERSION}{latestRelease?.tag_name ? ` · GitHub: ${latestRelease.tag_name}` : ''}</p>
             </div>
           )}
@@ -2081,7 +2258,7 @@ export default function App() {
           {updateCheckStatus === 'error' && (
             <div className="py-4">
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">{updateCheckError || 'Comprova la connexió i torna-ho a provar.'}</div>
-              <button type="button" onClick={() => checkForUpdates(true)} className="mt-4 w-full rounded-xl bg-gray-700 py-3 font-bold text-white hover:bg-gray-600">Tornar a provar</button>
+              <button type="button" onClick={() => checkForUpdates(true)} className="mt-4 w-full rounded-xl bg-gray-700 py-3 font-bold text-white hover:bg-gray-600">{t("Tornar a provar")}</button>
             </div>
           )}
 
@@ -2092,43 +2269,120 @@ export default function App() {
       </AnimatedModal>
 
 
-      <AnimatedModal isOpen={showLanguagePicker} onClose={() => { if (languageChosen) setShowLanguagePicker(false); }} zIndex="z-[180]">
-        <div className="w-full max-w-sm rounded-3xl border border-cyan-400/30 bg-gray-900 p-6 shadow-2xl text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
-          <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">Party Night · Language</p>
-          <h2 className="text-2xl font-black text-white mb-2">Tria l’idioma / Choose your language</h2>
-          <p className="text-sm text-gray-400 mb-5">Podràs canviar-lo més tard des de la pantalla Jugar.</p>
-          <div className="flex flex-col gap-2">
-            <button onClick={() => chooseLanguage('ca')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇦🇩 Català</button>
-            <button onClick={() => chooseLanguage('es')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇪🇸 Español</button>
-            <button onClick={() => chooseLanguage('en')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇬🇧 English</button>
+
+      <AnimatedModal isOpen={!!selectedStatsGame} onClose={() => setSelectedStatsGame(null)} zIndex="z-[165]">
+        <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-3 mb-5">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-300">{t('Estadístiques del joc')}</p>
+              <h2 className="text-2xl font-black text-white">{gameDisplayName(selectedStatsGame?.key, selectedStatsGame?.title)}</h2>
+              <p className="mt-1 text-xs text-gray-400">{selectedStatsGame?.startedAt ? new Date(selectedStatsGame.startedAt).toLocaleString() : ''}</p>
+            </div>
+            <button onClick={() => setSelectedStatsGame(null)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+            {t(selectedStatsGame?.winnerMode === 'most' ? 'Guanya qui rep més penalitzacions' : 'Guanya qui rep menys penalitzacions')}
+          </p>
+          <div className="space-y-2">
+            {(selectedStatsGame?.ranking || []).map((item: any, index: number) => (
+              <div key={item.player} className={index === 0 ? "flex items-center justify-between rounded-xl border border-yellow-500/50 bg-yellow-500/10 px-4 py-3" : "flex items-center justify-between rounded-xl border border-gray-700 bg-gray-800 px-4 py-3"}>
+                <span className="font-black text-white">{index === 0 ? '🏆 ' : '#' + (index + 1) + ' · '}{item.player}</span>
+                <span className="text-sm font-bold tabular-nums text-gray-300">{item.penalties} {t('penalitzacions')}</span>
+              </div>
+            ))}
+            {!(selectedStatsGame?.ranking || []).length && <p className="text-sm text-gray-500">{t('Sense rànquing disponible')}</p>}
+          </div>
+          <p className="mt-4 text-xs font-bold text-yellow-200">🏆 {t('Guanyador(s)')}: {(selectedStatsGame?.winners || []).join(', ') || '—'}</p>
+        </div>
+      </AnimatedModal>
+
+      <AnimatedModal isOpen={showLanguagePicker} onClose={() => { if (languageChosen) setShowLanguagePicker(false); }} zIndex="z-[180]">
+        <div className="w-full max-w-sm rounded-3xl border border-cyan-400/30 bg-gray-900 p-5 shadow-2xl">
+          <div className="mb-4 text-center">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">{t("Party Night · Language")}</p>
+            <h2 className="text-2xl font-black text-white">{t('Tria l’idioma')}</h2>
+            <p className="mt-2 text-xs text-gray-400">{t('Selecciona un idioma i confirma per reiniciar l’app.')}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <button type="button" aria-pressed={pendingLanguage === 'ca'} onClick={() => chooseLanguage('ca')}
+              className={pendingLanguage === 'ca' ? "pn-language-option pn-flag-ca is-selected" : "pn-language-option pn-flag-ca"}>
+              <span className="relative z-10 rounded-lg bg-black/55 px-4 py-2 text-left text-lg font-black text-white">{t('Català')} <small className="block text-[10px] font-bold uppercase tracking-widest text-white/80">{t("Catalunya")}</small></span>
+              {pendingLanguage === 'ca' && <span className="absolute right-3 top-3 z-10 rounded-full bg-white px-2 py-1 text-[9px] font-black uppercase text-gray-900">✓ {t('Seleccionat')}</span>}
+            </button>
+            <button type="button" aria-pressed={pendingLanguage === 'es'} onClick={() => chooseLanguage('es')}
+              className={pendingLanguage === 'es' ? "pn-language-option pn-flag-es is-selected" : "pn-language-option pn-flag-es"}>
+              <span className="relative z-10 rounded-lg bg-black/55 px-4 py-2 text-left text-lg font-black text-white">Español</span>
+              {pendingLanguage === 'es' && <span className="absolute right-3 top-3 z-10 rounded-full bg-white px-2 py-1 text-[9px] font-black uppercase text-gray-900">✓ {t('Seleccionat')}</span>}
+            </button>
+            <button type="button" aria-pressed={pendingLanguage === 'en'} onClick={() => chooseLanguage('en')}
+              className={pendingLanguage === 'en' ? "pn-language-option pn-flag-en is-selected" : "pn-language-option pn-flag-en"}>
+              <span className="relative z-10 rounded-lg bg-black/55 px-4 py-2 text-left text-lg font-black text-white">English</span>
+              {pendingLanguage === 'en' && <span className="absolute right-3 top-3 z-10 rounded-full bg-white px-2 py-1 text-[9px] font-black uppercase text-gray-900">✓ {t('Seleccionat')}</span>}
+            </button>
+          </div>
+          <button type="button" onClick={confirmLanguageChange}
+            className="mt-5 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-4 font-black uppercase tracking-wider text-white shadow-lg active:scale-[.98]">
+            {t('Confirmar i reiniciar l’app')}
+          </button>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
-        <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
-          <div className="flex items-center justify-between mb-5"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0</p><h2 className="text-2xl font-black text-white">Configuració general</h2></div><button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button></div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Penalitzacions acumulatives</p><p className="text-xs text-gray-400">Tres penalitzacions activen el càstig final.</p></div><button onClick={() => setEnableAccumulativePenalty(v => !v)} className={`h-7 w-12 rounded-full border relative ${enableAccumulativePenalty ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${enableAccumulativePenalty ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
-            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Vibració tàctil</p><p className="text-xs text-gray-400">Resposta en registrar una penalització.</p></div><button onClick={() => setHapticsEnabled(v => !v)} className={`h-7 w-12 rounded-full border relative ${hapticsEnabled ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${hapticsEnabled ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
-            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Reduir animacions</p><p className="text-xs text-gray-400">Menys moviment en dispositius lents.</p></div><button onClick={() => setReduceMotion(v => !v)} className={`h-7 w-12 rounded-full border relative ${reduceMotion ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${reduceMotion ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
-            <button onClick={() => { setShowGeneralSettings(false); setShowLanguagePicker(true); }} className="w-full flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-black text-cyan-200"><Globe size={18}/> Canviar idioma · {language.toUpperCase()}</button>
+        <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-5">
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.1</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
-          <p className="mt-5 text-center text-[10px] text-gray-500">El mode aniversari i la detecció automàtica per nom s'han eliminat.</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+              <div><p className="font-bold text-white">{t('Castigos acumulativos')}</p><p className="text-xs text-gray-400">{t('Pringar 3 veces = Castigo final')}</p></div>
+              <button type="button" role="switch" aria-checked={enableAccumulativePenalty} onClick={() => updateAccumulativePenalty(!enableAccumulativePenalty)}
+                className={enableAccumulativePenalty ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+            </div>
+            <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+              <p className="mb-3 font-bold text-white">{t('Criteri de victòria')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" aria-pressed={winnerMode === 'least'} onClick={() => updateWinnerMode('least')}
+                  className={winnerMode === 'least' ? "rounded-xl border border-cyan-400 bg-cyan-500/15 p-3 text-left text-xs font-black text-cyan-100" : "rounded-xl border border-gray-700 bg-gray-900 p-3 text-left text-xs font-bold text-gray-400"}>
+                  {t('Rep menys penalitzacions')}<span className="mt-1 block text-[9px] font-normal opacity-70">{t('Guanya qui rep menys')}</span>
+                </button>
+                <button type="button" aria-pressed={winnerMode === 'most'} onClick={() => updateWinnerMode('most')}
+                  className={winnerMode === 'most' ? "rounded-xl border border-cyan-400 bg-cyan-500/15 p-3 text-left text-xs font-black text-cyan-100" : "rounded-xl border border-gray-700 bg-gray-900 p-3 text-left text-xs font-bold text-gray-400"}>
+                  {t('Rep més penalitzacions')}<span className="mt-1 block text-[9px] font-normal opacity-70">{t('Guanya qui rep més')}</span>
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+              <div><p className="font-bold text-white">{t('Vibració tàctil')}</p><p className="text-xs text-gray-400">{t('Resposta en registrar una penalització.')}</p></div>
+              <button type="button" role="switch" aria-checked={hapticsEnabled} onClick={() => {
+                const next = !hapticsEnabled;
+                setHapticsEnabled(next);
+                if (next) void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {
+                  try { if (navigator.vibrate) navigator.vibrate(25); } catch {}
+                });
+              }} className={hapticsEnabled ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+              <div><p className="font-bold text-white">{t('Reduir animacions')}</p><p className="text-xs text-gray-400">{t('Menys moviment en dispositius lents.')}</p></div>
+              <button type="button" role="switch" aria-checked={reduceMotion} onClick={() => setReduceMotion(value => !value)}
+                className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+            </div>
+          </div>
+          <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showGameSummary} onClose={() => setShowGameSummary(false)} zIndex="z-[170]">
         <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-yellow-500/30 bg-gray-900 p-6 shadow-2xl">
-          <div className="text-center mb-5"><Trophy size={42} className="mx-auto mb-2 text-yellow-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-yellow-300">Partida finalitzada</p><h2 className="text-2xl font-black text-white">{lastGameSummary?.title || 'Rànquing de partida'}</h2></div>
-          {lastGameSummary?.ranking?.length ? <div className="space-y-2">{lastGameSummary.ranking.map((item: any,index: number) => <div key={item.player} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${index === 0 ? 'border-yellow-400/50 bg-yellow-500/10' : 'border-gray-700 bg-gray-800'}`}><span className="font-black text-white">{index === 0 ? '🏆 ' : `#${index+1} · `}{item.player}</span><span className="text-sm font-bold text-gray-300">{item.penalties} penalitzacions</span></div>)}</div> : <p className="text-center text-gray-400">No hi ha dades de penalitzacions per a aquesta partida.</p>}
-          <button onClick={() => setShowGameSummary(false)} className="w-full mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 font-black text-white">Tornar al menú de jocs</button>
+          <div className="text-center mb-5"><Trophy size={42} className="mx-auto mb-2 text-yellow-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-yellow-300">{t("Partida finalitzada")}</p><h2 className="text-2xl font-black text-white">{gameDisplayName(lastGameSummary?.key, lastGameSummary?.title || t("Rànquing de partida"))}</h2></div>
+          {lastGameSummary?.ranking?.length ? <div className="space-y-2">{lastGameSummary.ranking.map((item: any,index: number) => <div key={item.player} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${index === 0 ? 'border-yellow-400/50 bg-yellow-500/10' : 'border-gray-700 bg-gray-800'}`}><span className="font-black text-white">{index === 0 ? '🏆 ' : `#${index+1} · `}{item.player}</span><span className="text-sm font-bold text-gray-300">{item.penalties} penalitzacions</span></div>)}</div> : <p className="text-center text-gray-400">{t("No hi ha dades de penalitzacions per a aquesta partida.")}</p>}
+          <button onClick={() => setShowGameSummary(false)} className="w-full mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 font-black text-white">{t("Tornar al menú de jocs")}</button>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showSessionSummary} onClose={() => setShowSessionSummary(false)} zIndex="z-[175]">
         <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-emerald-500/30 bg-gray-900 p-6 shadow-2xl">
-          <div className="text-center mb-5"><Trophy size={44} className="mx-auto mb-2 text-emerald-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">Sessió desada</p><h2 className="text-2xl font-black text-white">Fi de la sessió</h2><p className="text-sm text-gray-400 mt-1">{lastSessionSummary?.games?.length || 0} jocs · {lastSessionSummary?.players?.length || 0} jugadors</p></div>
-          {(lastSessionSummary?.games || []).map((game: any,index: number) => <div key={game.id || index} className="rounded-xl border border-gray-700 bg-gray-800 p-3 mb-2"><div className="font-bold text-white">{game.title}</div><div className="text-xs text-gray-400">Guanyador(s): {game.winners?.join(', ') || '—'}</div></div>)}
-          <button onClick={() => setShowSessionSummary(false)} className="w-full rounded-xl bg-emerald-600 py-4 font-black text-white">Tornar a Jugar</button>
+          <div className="text-center mb-5"><Trophy size={44} className="mx-auto mb-2 text-emerald-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">{t("Sessió desada")}</p><h2 className="text-2xl font-black text-white">{t("Fi de la sessió")}</h2><p className="text-sm text-gray-400 mt-1">{lastSessionSummary?.games?.length || 0} {t("jocs")} · {lastSessionSummary?.players?.length || 0} {t("jugadors")}</p></div>
+          {(lastSessionSummary?.games || []).map((game: any,index: number) => <div key={game.id || index} className="rounded-xl border border-gray-700 bg-gray-800 p-3 mb-2"><div className="font-bold text-white">{gameDisplayName(game.key, game.title)}</div><div className="text-xs text-gray-400">{t("Guanyador(s)")}: {game.winners?.join(', ') || '—'}</div></div>)}
+          <button onClick={() => setShowSessionSummary(false)} className="w-full rounded-xl bg-emerald-600 py-4 font-black text-white">{t("Tornar a Jugar")}</button>
         </div>
       </AnimatedModal>
       {/* --- PANTALLA INICIAL (NOMBRES) --- */}
@@ -2143,13 +2397,13 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.0 • THE PARTY REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.1 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
-              <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">para estudiantes con pretensiones alcohólicas</p>
+              <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
             </div>
             <form onSubmit={addPlayer} className="mb-3 relative z-10">
-              <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder="Mete a un colega..." className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-12 backdrop-blur-sm uppercase" />
+              <input type="text" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} placeholder={t("Mete a un colega...")} className="w-full bg-gray-700/50 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-12 backdrop-blur-sm uppercase" />
               <button type="submit" className="absolute right-2 top-2 bg-purple-600 hover:bg-purple-500 p-1.5 rounded-lg transition-colors shadow-lg"><Users size={20} /></button>
             </form>
             <button type="button" onClick={addDefaultPlayers} className="text-[10px] uppercase tracking-widest font-bold bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-600/40 px-3 py-2 rounded-xl transition-colors flex items-center justify-center gap-1.5 w-full mb-5 z-10 relative">
@@ -2157,7 +2411,7 @@ export default function App() {
             </button>
             <div className="mb-6 min-h-[100px] max-h-[200px] overflow-y-auto pr-1 z-10 relative custom-scrollbar">
               {players.length === 0 ? (
-                <p className="text-gray-500 text-center italic mt-6 text-sm">Añade mínimo a 2 personas (que no muerden).<br />Máximo una familia completa.</p>
+                <p className="text-gray-500 text-center italic mt-6 text-sm">{t("Añade mínimo a 2 personas (que no muerden).")}<br />{t("Máximo una familia completa.")}</p>
               ) : (
                 <div className="flex flex-wrap gap-2 justify-center pb-2">
                   {players.map((player, idx) => (
@@ -2176,74 +2430,284 @@ export default function App() {
               {activeSession ? 'Continuar sessió' : 'Començar sessió'} <ArrowRight size={22} />
             </button>
             <div className="grid grid-cols-2 gap-2 w-full z-20 relative mt-2">
-              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-3 rounded-xl border border-emerald-500/30"><History size={16}/> Novetats</button>
+              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-3 rounded-xl border border-emerald-500/30"><History size={16}/> {t("Novetats")}</button>
               <button onClick={() => setShowLanguagePicker(true)} className="flex items-center justify-center gap-1.5 text-cyan-300 text-[11px] uppercase tracking-widest font-bold bg-cyan-900/30 px-3 py-3 rounded-xl border border-cyan-500/30"><Globe size={16}/> {language.toUpperCase()}</button>
-              <button onClick={() => setShowGeneralSettings(true)} className="col-span-2 flex items-center justify-center gap-2 text-gray-300 text-[11px] uppercase tracking-widest font-bold bg-gray-700/60 px-3 py-3 rounded-xl border border-gray-600"><Settings size={16}/> Configuració general</button>
+              <button onClick={() => setShowGeneralSettings(true)} className="col-span-2 flex items-center justify-center gap-2 text-gray-300 text-[11px] uppercase tracking-widest font-bold bg-gray-700/60 px-3 py-3 rounded-xl border border-gray-600"><Settings size={16}/> {t("Configuració general")}</button>
             </div>
           </div>
         </div>
       )}
 
 
+
       {screen === 'setup' && mainTab === 'stats' && (
-        <div className="min-h-screen px-4 pt-6 pb-28 text-white"><div className="mx-auto w-full max-w-md">
-          <div className="mb-5"><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0</p><h1 className="text-3xl font-black">Estadístiques</h1><p className="text-sm text-gray-400">Tot el que ha passat a les vostres sessions.</p></div>
-          <div className="grid grid-cols-3 gap-2 mb-4">{[{selected:statisticsPage==='overview',label:'Resum',page:'overview'},{selected:statisticsPage==='games',label:'Jocs',page:'games'},{selected:statisticsPage==='players',label:'Jugadors',page:'players'}].map(item=><button key={item.page} onClick={()=>{setStatisticsPage(item.page as any);setSelectedPlayerProfile(null)}} className={`rounded-xl border px-2 py-3 text-xs font-black uppercase ${item.selected?'border-cyan-400 bg-cyan-500/15 text-cyan-200':'border-gray-700 bg-gray-800 text-gray-400'}`}>{item.label}</button>)}</div>
-          {(() => {
-            const allSessions=[...(activeSession?[activeSession]:[]),...sessionHistory];
-            const allGames=allSessions.flatMap((session:any)=>session.games||[]);
-            const allEvents=allSessions.flatMap((session:any)=>session.events||[]);
-            const totalPenalties=allEvents.filter((event:any)=>event.type==='penalty').reduce((sum:number,event:any)=>sum+(event.amount||0),0);
-            const playerNames=[...new Set(allSessions.flatMap((session:any)=>session.players||[]))] as string[];
-            const playerRows=playerNames.map(player=>{const penalties=allEvents.filter((event:any)=>event.type==='penalty'&&event.player===player).reduce((sum:number,event:any)=>sum+(event.amount||0),0);const gamesPlayed=allGames.filter((game:any)=>(game.players||[]).includes(player)).length;const wins=allGames.filter((game:any)=>(game.winners||[]).includes(player)).length;return{player,penalties,gamesPlayed,wins};}).sort((a,b)=>b.wins-a.wins||a.penalties-b.penalties);
-            if(statisticsPage==='overview') return <><div className="grid grid-cols-2 gap-3 mb-4">{[{label:'Sessions',value:allSessions.filter((session:any)=>session.status==='completed').length},{label:'Jocs',value:allGames.length},{label:'Jugadors',value:playerNames.length},{label:'Penalitzacions',value:totalPenalties}].map(card=><div key={card.label} className="rounded-2xl border border-gray-700 bg-gray-800/90 p-4"><div className="text-2xl font-black text-white">{card.value}</div><div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{card.label}</div></div>)}</div><div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><h3 className="font-black text-white mb-3">Jocs més jugats</h3>{Object.entries(allGames.reduce((acc:any,game:any)=>{acc[game.key]=(acc[game.key]||0)+1;return acc;},{})).sort((a:any,b:any)=>b[1]-a[1]).slice(0,5).map(([key,count]:any)=><div key={key} className="flex justify-between border-b border-gray-700/70 py-2 text-sm"><span className="text-gray-300">{key}</span><b className="text-cyan-300">{count}</b></div>)}{!allGames.length&&<p className="text-sm text-gray-500">Encara no hi ha cap sessió registrada.</p>}</div></>;
-            if(statisticsPage==='games') return <div className="space-y-3">{allGames.length?allGames.map((game:any)=><div key={game.id} className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div className="flex justify-between gap-2"><h3 className="font-black text-white">{game.title}</h3><span className="text-[10px] text-gray-500">{new Date(game.startedAt).toLocaleDateString()}</span></div><p className="text-xs text-gray-400 mt-1">{game.players?.length||0} jugadors · {game.eventCount||0} esdeveniments</p><div className="mt-3 flex flex-wrap gap-2">{(game.winners||[]).map((winner:string)=><span key={winner} className="rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-bold text-yellow-200">🏆 {winner}</span>)}</div></div>):<p className="text-sm text-gray-500">Quan acabeu una partida, aquí apareixeran els resultats.</p>}</div>;
-            if(selectedPlayerProfile){const player=playerRows.find(item=>item.player===selectedPlayerProfile);const playerEvents=allEvents.filter((event:any)=>event.player===selectedPlayerProfile||event.voter===selectedPlayerProfile);return <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/90 p-4"><button onClick={()=>setSelectedPlayerProfile(null)} className="mb-4 text-xs font-bold uppercase text-cyan-300">← Tots els perfils</button><h2 className="text-2xl font-black text-white">{selectedPlayerProfile}</h2><div className="grid grid-cols-3 gap-2 my-4"><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.gamesPlayed||0}</b><p className="text-[9px] text-gray-500 uppercase">Jocs</p></div><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.wins||0}</b><p className="text-[9px] text-gray-500 uppercase">Victòries</p></div><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.penalties||0}</b><p className="text-[9px] text-gray-500 uppercase">Penalitzacions</p></div></div><h3 className="font-bold text-white mb-2">Registre del jugador</h3>{playerEvents.slice(-30).reverse().map((event:any)=><div key={event.id} className="border-t border-gray-700 py-2 text-xs text-gray-300">{event.type==='penalty'?`+${event.amount} · penalització`:event.type==='vote'?`Vot: ${event.votedPlayer}`:event.type} · {new Date(event.timestamp).toLocaleString()}</div>)}</div>;}
-            return <div className="space-y-2">{playerRows.map(item=><button key={item.player} onClick={()=>setSelectedPlayerProfile(item.player)} className="w-full flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/90 p-4 text-left"><div><div className="font-black text-white">{item.player}</div><div className="text-[10px] text-gray-400">{item.gamesPlayed} jocs · {item.wins} victòries</div></div><div className="text-right"><div className="font-black text-cyan-300">{item.penalties}</div><div className="text-[9px] uppercase text-gray-500">penalitzacions</div></div></button>)}</div>;
-          })()}
-        </div></div>
+        <div className="min-h-screen px-4 pt-6 pb-28 text-white">
+          <div className="mx-auto w-full max-w-md">
+            <div className="mb-5">
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1</p>
+              <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
+              <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[
+                { selected: statisticsPage === 'overview', label: 'Resum', page: 'overview' },
+                { selected: statisticsPage === 'games', label: 'Jocs', page: 'games' },
+                { selected: statisticsPage === 'players', label: 'Jugadors', page: 'players' }
+              ].map(item => (
+                <button key={item.page} onClick={() => { setStatisticsPage(item.page as any); setSelectedPlayerProfile(null); }}
+                  className={item.selected ? "rounded-xl border border-cyan-400 bg-cyan-500/15 px-2 py-3 text-xs font-black uppercase text-cyan-200" : "rounded-xl border border-gray-700 bg-gray-800 px-2 py-3 text-xs font-black uppercase text-gray-400"}>
+                  {t(item.label)}
+                </button>
+              ))}
+            </div>
+            {(() => {
+              const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
+              const allGames = allSessions.flatMap((session: any) => session.games || []);
+              const allEvents = allSessions.flatMap((session: any) => session.events || []);
+              const totalPenalties = allEvents.reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : event.type === 'penalty-reverted' ? -(event.amount || 0) : 0), 0);
+              const playerNames = [...new Set(allSessions.flatMap((session: any) => session.players || []))] as string[];
+              const playerRows = playerNames.map(player => {
+                const penalties = allEvents.filter((event: any) => (event.type === 'penalty' || event.type === 'penalty-reverted') && event.player === player).reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : -(event.amount || 0)), 0);
+                const gamesPlayed = allGames.filter((game: any) => (game.players || []).includes(player)).length;
+                const wins = allGames.filter((game: any) => (game.winners || []).includes(player)).length;
+                return { player, penalties, gamesPlayed, wins };
+              }).sort((a, b) => (playerSort === 'most' ? b.penalties - a.penalties : a.penalties - b.penalties) || a.player.localeCompare(b.player));
+
+              if (statisticsPage === 'overview') {
+                const mostPlayed = Object.entries(allGames.reduce((acc: any, game: any) => {
+                  const key = game.key || game.title || 'unknown';
+                  acc[key] = (acc[key] || 0) + 1;
+                  return acc;
+                }, {})).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5);
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {[
+                        { label: 'Sessions', value: allSessions.filter((session: any) => session.status === 'completed').length },
+                        { label: 'Jocs', value: allGames.length },
+                        { label: 'Jugadors', value: playerNames.length },
+                        { label: 'Penalitzacions', value: totalPenalties }
+                      ].map(card => (
+                        <div key={card.label} className="rounded-2xl border border-gray-700 bg-gray-800/90 p-4">
+                          <div className="text-2xl font-black text-white">{card.value}</div>
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t(card.label)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+                      <h3 className="font-black text-white mb-3">{t('Jocs més jugats')}</h3>
+                      {mostPlayed.map(([key, count]: any) => (
+                        <div key={key} className="flex justify-between border-b border-gray-700/70 py-2 text-sm last:border-0">
+                          <span className="text-gray-300">{gameDisplayName(key)}</span>
+                          <b className="text-cyan-300 tabular-nums">{count}</b>
+                        </div>
+                      ))}
+                      {!allGames.length && <p className="text-sm text-gray-500">{t('Encara no hi ha cap sessió registrada.')}</p>}
+                    </div>
+                  </>
+                );
+              }
+
+              if (statisticsPage === 'games') {
+                return (
+                  <div className="space-y-3">
+                    {allGames.length ? allGames.map((game: any) => (
+                      <button key={game.id} onClick={() => setSelectedStatsGame(game)}
+                        className="w-full rounded-2xl border border-gray-700 bg-gray-800/90 p-4 text-left transition-colors hover:border-cyan-500/50 active:scale-[.99]">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="font-black text-white">{gameDisplayName(game.key, game.title)}</h3>
+                          <span className="shrink-0 text-[10px] text-gray-500">{new Date(game.startedAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">{game.players?.length || 0} {t('jugadors')} · {game.eventCount || (game.events || []).length} {t('esdeveniments')}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {(game.winners || []).map((winner: string) => <span key={winner} className="rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-bold text-yellow-200">🏆 {winner}</span>)}
+                          {!game.winners?.length && <span className="text-[10px] text-gray-500">{t('Sense rànquing disponible')}</span>}
+                        </div>
+                        <div className="mt-3 flex items-center justify-end gap-1 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+                          {t('Veure rànquing')} <ArrowRight size={13}/>
+                        </div>
+                      </button>
+                    )) : <p className="text-sm text-gray-500">{t('Quan acabeu una partida, aquí apareixeran els resultats.')}</p>}
+                  </div>
+                );
+              }
+
+              if (selectedPlayerProfile) {
+                const player = playerRows.find(item => item.player === selectedPlayerProfile);
+                const playerGameGroups = allGames.map((game: any) => {
+                  const sourceEvents = game.events && game.events.length ? game.events : allEvents.filter((event: any) => event.gameId === game.id);
+                  const gameEvents = sourceEvents.filter((event: any) => (event.type === 'penalty' || event.type === 'penalty-reverted') && event.player === selectedPlayerProfile);
+                  return { game, events: gameEvents };
+                }).filter(group => group.events.length > 0);
+                return (
+                  <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/90 p-4">
+                    <button onClick={() => setSelectedPlayerProfile(null)} className="mb-4 text-xs font-bold uppercase text-cyan-300">← {t('Tots els perfils')}</button>
+                    <h2 className="text-2xl font-black text-white">{selectedPlayerProfile}</h2>
+                    <div className="grid grid-cols-3 gap-2 my-4">
+                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.gamesPlayed || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Jocs')}</p></div>
+                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.wins || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Victòries')}</p></div>
+                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.penalties || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Penalitzacions')}</p></div>
+                    </div>
+                    <h3 className="font-bold text-white mb-3">{t('Registre per joc')}</h3>
+                    {playerGameGroups.length ? (
+                      <div className="space-y-2">
+                        {playerGameGroups.map(({ game, events }: any) => (
+                          <details key={game.id} className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900/80">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
+                              <span className="font-bold text-white">{gameDisplayName(game.key, game.title)}</span>
+                              <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[10px] font-black text-red-200">{events.reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : event.type === 'penalty-reverted' ? -(event.amount || 0) : 0), 0)} {t('penalitzacions')}</span>
+                            </summary>
+                            <div className="border-t border-gray-700 px-3 py-2">
+                              {events.map((event: any) => (
+                                <div key={event.id} className="flex items-center justify-between gap-3 border-b border-gray-800 py-2 last:border-0">
+                                  <div>
+                                    <p className={event.type === 'penalty-reverted' ? "text-xs text-emerald-300" : "text-xs text-gray-200"}>
+                                      {event.type === 'penalty-reverted' ? t('Penalització desfeta') : t('Penalització rebuda')}
+                                    </p>
+                                    <p className="text-[10px] text-gray-500">{event.timestamp ? new Date(event.timestamp).toLocaleString() : '—'}</p>
+                                  </div>
+                                  <b className="text-sm tabular-nums text-white">{event.type === 'penalty-reverted' ? '−' : '+'}{event.amount || 0}</b>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    ) : <p className="text-sm text-gray-500">{t('Encara no hi ha penalitzacions registrades per aquest jugador.')}</p>}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button onClick={() => setPlayerSort('most')} aria-pressed={playerSort === 'most'}
+                      className={playerSort === 'most' ? "rounded-xl border border-cyan-400 bg-cyan-500/15 px-3 py-3 text-[10px] font-black uppercase text-cyan-200" : "rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-[10px] font-black uppercase text-gray-400"}>
+                      {t('Més penalitzacions')}
+                    </button>
+                    <button onClick={() => setPlayerSort('least')} aria-pressed={playerSort === 'least'}
+                      className={playerSort === 'least' ? "rounded-xl border border-cyan-400 bg-cyan-500/15 px-3 py-3 text-[10px] font-black uppercase text-cyan-200" : "rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-[10px] font-black uppercase text-gray-400"}>
+                      {t('Menys penalitzacions')}
+                    </button>
+                  </div>
+                  {playerRows.map(item => (
+                    <button key={item.player} onClick={() => setSelectedPlayerProfile(item.player)}
+                      className="w-full flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/90 p-4 text-left">
+                      <div><div className="font-black text-white">{item.player}</div><div className="text-[10px] text-gray-400">{item.gamesPlayed} {t('jocs')} · {item.wins} {t('victòries')}</div></div>
+                      <div className="text-right"><div className="font-black text-cyan-300 tabular-nums">{item.penalties}</div><div className="text-[9px] uppercase text-gray-500">{t('penalitzacions')}</div></div>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
       )}
+
       {screen === 'setup' && mainTab === 'history' && (
-        <div className="min-h-screen px-4 pt-6 pb-28 text-white"><div className="mx-auto w-full max-w-md">
-          <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0</p><h1 className="text-3xl font-black mb-1">Historial</h1><p className="text-sm text-gray-400 mb-5">Les vostres sessions, jocs i rànquings.</p>
-          {sessionHistory.length===0?<div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 text-center"><History size={38} className="mx-auto text-gray-500 mb-3"/><p className="font-bold text-white">Encara no hi ha sessions desades.</p><p className="text-xs text-gray-400 mt-1">Quan acabeu una sessió, quedarà desada aquí.</p></div>:<div className="space-y-3">{sessionHistory.map((session:any)=><div key={session.id} className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90"><button onClick={()=>setExpandedSessionId(expandedSessionId===session.id?null:session.id)} className="w-full p-4 text-left"><div className="flex items-center justify-between"><span className="font-black text-white">{new Date(session.startedAt).toLocaleString()}</span><ChevronDown size={18} className={expandedSessionId===session.id?'rotate-180 transition-transform':'transition-transform'}/></div><p className="text-xs text-gray-400 mt-1">{session.players?.join(' · ')} · {session.games?.length||0} jocs</p></button>{expandedSessionId===session.id&&<div className="border-t border-gray-700 p-4 space-y-3">{(session.games||[]).map((game:any,index:number)=><div key={game.id||index} className="rounded-xl border border-gray-700 bg-gray-900/80 p-3"><div className="font-black text-white">{index+1}. {game.title}</div><p className="text-[10px] text-gray-500 mt-1">Configuració: {JSON.stringify(game.settings||{})}</p><p className="text-xs text-yellow-200 mt-2">Guanyador(s): {game.winners?.join(', ')||'—'}</p><div className="mt-2 space-y-1">{(game.ranking||[]).map((item:any,rank:number)=><div key={item.player} className="flex justify-between text-xs"><span className="text-gray-300">#{rank+1} · {item.player}</span><b className="text-cyan-300">{item.penalties}</b></div>)}</div><details className="mt-3"><summary className="cursor-pointer text-xs font-bold text-cyan-300">Veure totes les dades ({game.events?.length||0})</summary><div className="mt-2 space-y-1">{(game.events||[]).map((event:any)=><p key={event.id} className="text-[10px] text-gray-400">{event.type}: {event.text||event.player||event.votedPlayer||''}</p>)}</div></details></div>)}</div>}</div>)}</div>}
-        </div></div>
+        <div className="min-h-screen px-4 pt-6 pb-28 text-white">
+          <div className="mx-auto w-full max-w-md">
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1</p>
+            <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
+            <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
+            {sessionHistory.length === 0 ? (
+              <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 text-center">
+                <History size={38} className="mx-auto text-gray-500 mb-3"/>
+                <p className="font-bold text-white">{t('Encara no hi ha sessions desades.')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('Quan acabeu una sessió, quedarà desada aquí.')}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessionHistory.map((session: any) => (
+                  <div key={session.id} className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90">
+                    <button onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)} className="w-full p-4 text-left">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-white">{new Date(session.startedAt).toLocaleString()}</span>
+                        <ChevronDown size={18} className={expandedSessionId === session.id ? "rotate-180 transition-transform" : "transition-transform"}/>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">{(session.players || []).join(' · ')} · {(session.games || []).length} {t('jocs')}</p>
+                    </button>
+                    {expandedSessionId === session.id && (
+                      <div className="border-t border-gray-700 p-4 space-y-3">
+                        {(session.games || []).map((game: any, index: number) => (
+                          <div key={game.id || index} className="rounded-xl border border-gray-700 bg-gray-900/80 p-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-black text-white">{index + 1}. {gameDisplayName(game.key, game.title)}</div>
+                              <span className="text-[10px] text-gray-500">{game.startedAt ? new Date(game.startedAt).toLocaleTimeString() : ''}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500 mt-1">{(game.players || []).join(' · ')}</p>
+                            <div className="mt-3 rounded-lg border border-gray-700 bg-gray-800/70 p-3">
+                              <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-cyan-300">{t('Configuració de la partida')}</p>
+                              {gameSettingRows(game.settings).length ? (
+                                <div className="space-y-2">
+                                  {gameSettingRows(game.settings).map((row: any, rowIndex: number) => (
+                                    <div key={rowIndex} className="flex flex-col gap-1 border-b border-gray-700/70 pb-2 last:border-0 last:pb-0">
+                                      <span className="text-[9px] font-bold uppercase text-gray-500">{row.label}</span>
+                                      <span className="text-xs leading-relaxed text-gray-200">{row.value}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : <p className="text-xs text-gray-500">{t('Sense configuració addicional')}</p>}
+                            </div>
+                            <div className="mt-3">
+                              <p className="mb-2 text-[9px] font-black uppercase tracking-widest text-yellow-300">{t('Classificació final')}</p>
+                              <p className="mb-2 text-[10px] text-gray-400">{t(game.winnerMode === 'most' ? 'Guanya qui rep més penalitzacions' : 'Guanya qui rep menys penalitzacions')}</p>
+                              {(game.ranking || []).map((item: any, rank: number) => (
+                                <div key={item.player} className="flex items-center justify-between rounded-lg bg-gray-800 px-3 py-2 mb-1">
+                                  <span className="text-xs text-gray-200">#{rank + 1} · {item.player}</span>
+                                  <b className="text-xs tabular-nums text-cyan-300">{item.penalties} {t('penalitzacions')}</b>
+                                </div>
+                              ))}
+                              <p className="mt-2 text-xs font-bold text-yellow-200">🏆 {t('Guanyador(s)')}: {(game.winners || []).join(', ') || '—'}</p>
+                            </div>
+                            <details className="mt-3 overflow-hidden rounded-xl border border-gray-700 bg-gray-800/50">
+                              <summary className="cursor-pointer px-3 py-3 text-xs font-bold text-cyan-300">{t('Veure totes les dades')} · {(game.events || []).length}</summary>
+                              <div className="border-t border-gray-700 p-3 space-y-2">
+                                {(game.events || []).map((event: any) => {
+                                  const detail = eventDetails(event);
+                                  return (
+                                    <div key={event.id} className="rounded-lg bg-gray-900/80 p-3">
+                                      <div className="flex items-start justify-between gap-2">
+                                        <p className="text-xs font-bold text-gray-200">{detail.title}</p>
+                                        <span className="shrink-0 text-[9px] text-gray-500">{detail.timestamp}</span>
+                                      </div>
+                                      {detail.description && <p className="mt-1 whitespace-pre-wrap text-[11px] leading-relaxed text-gray-400">{detail.description}</p>}
+                                    </div>
+                                  );
+                                })}
+                                {!(game.events || []).length && <p className="text-xs text-gray-500">{t('No hi ha esdeveniments registrats.')}</p>}
+                              </div>
+                            </details>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
       {screen === 'setup' && <div className="pn-bottom-nav" role="navigation" aria-label="Navegació principal">
-        <button onClick={()=>setMainTab('stats')} className={mainTab==='stats'?'pn-nav-item active':'pn-nav-item'}><BarChart3 size={20}/><span>Estadístiques</span></button>
-        <button onClick={()=>setMainTab('play')} className={mainTab==='play'?'pn-nav-item active':'pn-nav-item'}><Beer size={20}/><span>Jugar</span></button>
-        <button onClick={()=>setMainTab('history')} className={mainTab==='history'?'pn-nav-item active':'pn-nav-item'}><History size={20}/><span>Historial</span></button>
+        <button onClick={()=>setMainTab('stats')} className={mainTab==='stats'?'pn-nav-item active':'pn-nav-item'}><BarChart3 size={20}/><span>{t("Estadístiques")}</span></button>
+        <button onClick={()=>setMainTab('play')} className={mainTab==='play'?'pn-nav-item active':'pn-nav-item'}><Beer size={20}/><span>{t("Jugar")}</span></button>
+        <button onClick={()=>setMainTab('history')} className={mainTab==='history'?'pn-nav-item active':'pn-nav-item'}><History size={20}/><span>{t("Historial")}</span></button>
       </div>}
       {/* --- MENÚ DE SELECCIÓN DE JUEGO --- */}
       {screen === 'mode-select' && (
         <div className={`min-h-screen text-white p-4 sm:p-6 pb-10 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
           <div className="max-w-md w-full relative z-10">
             <div className="flex items-center gap-2 mb-4">
-              <button onClick={() => setShowGeneralSettings(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-600 bg-gray-800/90 px-3 py-3 text-xs font-black uppercase text-gray-200"><Settings size={16}/> Configuració general</button>
-              <button onClick={finishSession} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/25 px-3 py-3 text-xs font-black uppercase text-red-300"><Flag size={16}/> Finalitzar sessió</button>
-            </div>
-
-            {/* AJUSTES GLOBALES PERSISTENTES (Castigo Acumulativo) */}
-            <div className={`bg-gray-800/90 border-2 border-red-500/30 rounded-2xl p-4 mb-6 shadow-lg transition-all ${activeSettings ? 'max-h-0 opacity-0 overflow-hidden m-0 p-0 border-0' : ''}`}>
-               <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                     <div className="bg-red-900/40 p-2 rounded-xl"><AlertOctagon size={20} className="text-red-400" /></div>
-                     <div className="flex flex-col">
-                        <span className="font-bold text-red-100 text-sm uppercase tracking-wider">Castigos Acumulativos</span>
-                        <span className="text-[10px] text-gray-400">Pringar 3 veces = Castigo final</span>
-                     </div>
-                  </div>
-                  <button onClick={() => setEnableAccumulativePenalty(!enableAccumulativePenalty)} className={`w-12 h-6 rounded-full transition-colors relative border shrink-0 ${enableAccumulativePenalty ? 'bg-red-600 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 'bg-gray-700 border-gray-600'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full absolute top-[3px] transition-transform ${enableAccumulativePenalty ? 'translate-x-7' : 'translate-x-1'}`} />
-                  </button>
-               </div>
+              <button onClick={() => setShowGeneralSettings(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-600 bg-gray-800/90 px-3 py-3 text-xs font-black uppercase text-gray-200"><Settings size={16}/> {t("Configuració general")}</button>
+              <button onClick={finishSession} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/25 px-3 py-3 text-xs font-black uppercase text-red-300"><Flag size={16}/> {t("Finalitzar sessió")}</button>
             </div>
 
             {/* Header Jugadores + Botones Clasificación/Modificar */}
             <div className={`transition-all duration-300 overflow-hidden ${activeSettings ? 'max-h-0 opacity-0 scale-95 mb-0' : 'max-h-[300px] opacity-100 scale-100 mb-6'}`}>
               <div className="bg-gray-800/90 p-5 rounded-2xl border border-gray-700 text-center shadow-lg relative flex flex-col items-center">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-orange-500"></div>
-                <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Las víctimas de hoy:</h2>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">{t("Las víctimas de hoy:")}</h2>
                 <div className="flex flex-wrap gap-1.5 justify-center mb-4">
                   {players.map((p, i) => (
                     <span key={i} className="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 uppercase">{i+1}. {p}{i < players.length - 1 ? ',' : ''}</span>
@@ -2254,11 +2718,11 @@ export default function App() {
                 <div className="flex gap-2 w-full justify-center">
                    {Object.keys(drinkCounts).length > 0 && (
                       <button onClick={() => setShowLeaderboard(true)} className="flex-1 text-yellow-400 hover:text-yellow-300 text-[10px] md:text-xs uppercase tracking-widest font-bold bg-gray-700/50 hover:bg-gray-600 px-3 py-2.5 rounded-xl border border-gray-600 transition-colors flex items-center justify-center gap-1.5 shadow-inner active:scale-95">
-                        <Trophy size={16} className="shrink-0" /> <span className="truncate">Ranking</span>
+                        <Trophy size={16} className="shrink-0" /> <span className="truncate">{t("Ranking")}</span>
                       </button>
                    )}
                    <button onClick={() => setShowPlayerManager(true)} className="flex-1 text-gray-400 hover:text-white text-[10px] md:text-xs uppercase tracking-widest font-bold bg-gray-700/50 hover:bg-gray-600 px-3 py-2.5 rounded-xl border border-gray-600 transition-colors flex items-center justify-center gap-1.5 shadow-inner active:scale-95">
-                     <Users size={16} className="shrink-0" /> <span className="truncate">Modificar</span>
+                     <Users size={16} className="shrink-0" /> <span className="truncate">{t("Modificar")}</span>
                    </button>
                 </div>
               </div>
@@ -2271,12 +2735,12 @@ export default function App() {
                 {isIansBirthday && (
                    <div className="flex justify-center mb-4">
                       <button onClick={() => setShowIanModeInfo(true)} className="animate-pulse flex items-center justify-center gap-2 bg-yellow-900/40 text-yellow-400 px-5 py-2.5 rounded-xl border-2 border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)] hover:scale-105 transition-transform w-full">
-                        <Crown size={20} /> <span className="font-black text-sm tracking-widest uppercase">Modo Rey Ian Activo</span>
+                        <Crown size={20} /> <span className="font-black text-sm tracking-widest uppercase">{t("Modo Rey Ian Activo")}</span>
                       </button>
                    </div>
                 )}
                 
-                <h2 className="text-xl font-bold text-center text-gray-300 uppercase tracking-wider">¿A qué le damos?</h2>
+                <h2 className="text-xl font-bold text-center text-gray-300 uppercase tracking-wider">{t("¿A qué le damos?")}</h2>
               </div>
 
               {/* OPCIÓN YO NUNCA */}
@@ -2284,22 +2748,22 @@ export default function App() {
                 <button onClick={() => setActiveSettings(activeSettings === 'yn' ? null : 'yn')} className={`w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl border shadow-lg transition-all group active:scale-95 ${activeSettings === 'yn' ? 'bg-indigo-600 border-indigo-400' : 'bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 border-indigo-500/30'}`}>
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 p-2 rounded-xl"><Beer size={28} className="text-white" /></div>
-                    <span className="text-2xl font-black tracking-tight text-white">Yo Nunca</span>
+                    <span className="text-2xl font-black tracking-tight text-white">{t("Yo Nunca")}</span>
                   </div>
-                  {activeSettings === 'yn' ? <div className="flex items-center gap-1.5 text-indigo-100 font-bold bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
+                  {activeSettings === 'yn' ? <div className="flex items-center gap-1.5 text-indigo-100 font-bold bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/30"><ChevronLeft size={18} /> {t("Volver")}</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'yn' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
                   <div className="bg-gray-800/50 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-4 relative">
                     <div className="flex justify-between items-center shrink-0">
-                      <p className="text-gray-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Filtro de Frases</p>
+                      <p className="text-gray-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">{t("Filtro de Frases")}</p>
                       <button onClick={handleRandomizeYN} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all ${isRandomizing ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.5)] animate-pulse' : 'bg-gray-700/50 text-gray-300 border-gray-600 hover:bg-gray-600 hover:text-white'}`}>
                         <Dices size={16} className={isRandomizing ? 'animate-spin' : ''} /> Aleatorio
                       </button>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button onClick={() => setAllYNCategories(1)} className="flex-1 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 rounded-xl text-[10px] font-bold uppercase transition-colors">Bajo</button>
-                      <button onClick={() => setAllYNCategories(2)} className="flex-1 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 rounded-xl text-[10px] font-bold uppercase transition-colors">Medio</button>
-                      <button onClick={() => setAllYNCategories(3)} className="flex-1 py-2 bg-gradient-to-r from-orange-500/20 to-red-600/20 text-red-400 border border-red-500/30 hover:from-orange-500/40 hover:to-red-600/40 rounded-xl text-[10px] font-bold uppercase transition-all">¡A TOPE!</button>
+                      <button onClick={() => setAllYNCategories(1)} className="flex-1 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40 rounded-xl text-[10px] font-bold uppercase transition-colors">{t("Bajo")}</button>
+                      <button onClick={() => setAllYNCategories(2)} className="flex-1 py-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 rounded-xl text-[10px] font-bold uppercase transition-colors">{t("Medio")}</button>
+                      <button onClick={() => setAllYNCategories(3)} className="flex-1 py-2 bg-gradient-to-r from-orange-500/20 to-red-600/20 text-red-400 border border-red-500/30 hover:from-orange-500/40 hover:to-red-600/40 rounded-xl text-[10px] font-bold uppercase transition-all">{t("¡A TOPE!")}</button>
                     </div>
                     <div className="space-y-3 shrink-0 relative z-10">
                       <SettingsRow config={ynConfig} setConfig={setYnConfig} catKey="familiar" icon={<FamilyIcon size={18} />} title="Vida Familiar" color="text-yellow-400" />
@@ -2325,21 +2789,21 @@ export default function App() {
                 <button onClick={() => setActiveSettings(activeSettings === 'vor' ? null : 'vor')} className={`w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl border shadow-lg transition-all group active:scale-95 ${activeSettings === 'vor' ? 'bg-orange-600 border-orange-400' : 'bg-gradient-to-r from-orange-600 to-red-700 hover:from-orange-500 hover:to-red-600 border-orange-500/30'}`}>
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 p-2 rounded-xl"><Flame size={28} className="text-white" /></div>
-                    <span className="text-2xl font-black tracking-tight text-white">Verdad o Reto</span>
+                    <span className="text-2xl font-black tracking-tight text-white">{t("Verdad o Reto")}</span>
                   </div>
-                  {activeSettings === 'vor' ? <div className="flex items-center gap-1.5 text-orange-100 font-bold bg-orange-900/30 px-3 py-1.5 rounded-lg border border-orange-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
+                  {activeSettings === 'vor' ? <div className="flex items-center gap-1.5 text-orange-100 font-bold bg-orange-900/30 px-3 py-1.5 rounded-lg border border-orange-500/30"><ChevronLeft size={18} /> {t("Volver")}</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'vor' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
                   <div className="bg-gray-800/50 border border-orange-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <div className="shrink-0">
-                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde nos destruimos?</p>
+                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("¿Dónde nos destruimos?")}</p>
                       <EnvironmentSelector currentEnv={environment} setEnv={setEnvironment} />
                     </div>
                     <div className="bg-gray-800/90 p-4 rounded-xl border border-gray-700 flex flex-col gap-2 shrink-0 relative z-10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Cctv className="text-purple-400" size={20} />
-                          <span className="font-bold text-gray-200">Modo FBI <span className="text-[10px] font-black tracking-widest bg-purple-600/30 border border-purple-500/50 text-purple-300 px-1.5 py-0.5 rounded ml-1">BETA</span></span>
+                          <span className="font-bold text-gray-200">{t("Modo FBI")} <span className="text-[10px] font-black tracking-widest bg-purple-600/30 border border-purple-500/50 text-purple-300 px-1.5 py-0.5 rounded ml-1">{t("BETA")}</span></span>
                         </div>
                         <button onClick={() => setFbiMode(!fbiMode)} className={`w-12 h-6 rounded-full transition-colors relative border ${fbiMode ? 'bg-purple-600 border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-gray-700 border-gray-600'}`}>
                           <div className={`w-4 h-4 bg-white rounded-full absolute top-[3px] transition-transform ${fbiMode ? 'translate-x-7' : 'translate-x-1'}`} />
@@ -2347,11 +2811,11 @@ export default function App() {
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">Castigo si te rajas</p>
+                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("Castigo si te rajas")}</p>
                       <PenaltySelector currentLevel={penaltyIntensity} setLevel={setPenaltyIntensity} />
                     </div>
                     <div className="shrink-0">
-                      <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2 text-center border-b border-gray-700 pb-1 mx-8">Potencia Verdades</p>
+                      <p className="text-blue-400 text-xs font-bold uppercase tracking-widest mb-2 text-center border-b border-gray-700 pb-1 mx-8">{t("Potencia Verdades")}</p>
                       <div className="space-y-3 relative z-10">
                         <SettingsRow config={vorTruthConfig} setConfig={setVorTruthConfig} catKey="normal" icon={<MessageSquare size={16} />} title="Vida Estudiantil" color="text-blue-300" />
                         <SettingsRow config={vorTruthConfig} setConfig={setVorTruthConfig} catKey="salseo" icon={<Heart size={16} />} title="Salseos / Crushes" color="text-pink-400" />
@@ -2360,7 +2824,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="shrink-0 relative z-10">
-                      <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2 text-center border-b border-gray-700 pb-1 mx-8">Potencia Retos</p>
+                      <p className="text-red-400 text-xs font-bold uppercase tracking-widest mb-2 text-center border-b border-gray-700 pb-1 mx-8">{t("Potencia Retos")}</p>
                       <div className="space-y-3">
                         <SettingsRow config={vorDareConfig} setConfig={setVorDareConfig} catKey="chill" icon={<Sparkles size={16} />} title="Tranqui / Físico" color="text-green-400" />
                         <SettingsRow config={vorDareConfig} setConfig={setVorDareConfig} catKey="ridiculo" icon={<Ghost size={16} />} title="Dar el Cante" color="text-yellow-400" />
@@ -2380,23 +2844,23 @@ export default function App() {
                 <button onClick={() => setActiveSettings(activeSettings === 'bomba' ? null : 'bomba')} className={`w-full flex items-center justify-between p-4 sm:p-5 rounded-2xl border shadow-lg transition-all group active:scale-95 ${activeSettings === 'bomba' ? 'bg-red-600 border-red-400' : 'bg-gradient-to-r from-red-600 to-rose-800 hover:from-red-500 hover:to-rose-700 border-red-500/30'}`}>
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 p-2 rounded-xl"><Bomb size={28} className="text-white" /></div>
-                    <span className="text-2xl font-black tracking-tight text-white">La Bomba</span>
+                    <span className="text-2xl font-black tracking-tight text-white">{t("La Bomba")}</span>
                   </div>
-                  {activeSettings === 'bomba' ? <div className="flex items-center gap-1.5 text-red-100 font-bold bg-red-900/30 px-3 py-1.5 rounded-lg border border-red-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
+                  {activeSettings === 'bomba' ? <div className="flex items-center gap-1.5 text-red-100 font-bold bg-red-900/30 px-3 py-1.5 rounded-lg border border-red-500/30"><ChevronLeft size={18} /> {t("Volver")}</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'bomba' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
                   <div className="bg-gray-800/50 border border-red-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
-                    <p className="text-sm text-gray-400 italic text-center shrink-0">Id diciendo por turnos palabras de la temática. A quien le explote, pringa.</p>
+                    <p className="text-sm text-gray-400 italic text-center shrink-0">{t("Id diciendo por turnos palabras de la temática. A quien le explote, pringa.")}</p>
                     <div className="bg-gray-800/90 p-4 rounded-xl border border-gray-700 flex flex-col gap-4 shrink-0 relative z-10">
-                      <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center">Tiempo Explosión</p>
+                      <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center">{t("Tiempo Explosión")}</p>
                       <div className="flex items-center gap-4">
                         <div className="flex-1 flex flex-col items-center">
-                          <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">Mínimo (s)</span>
+                          <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">{t("Mínimo (s)")}</span>
                           <input type="number" min="5" max="100" value={bombaConfig.minTime} onChange={(e) => { const parsed = Number.parseInt(e.target.value, 10); const value = Number.isFinite(parsed) ? Math.min(100, Math.max(5, parsed)) : 5; setBombaConfig(prev => ({ ...prev, minTime: Math.min(value, prev.maxTime) })); }} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
                         </div>
                         <span className="text-gray-500 font-bold mt-4">-</span>
                         <div className="flex-1 flex flex-col items-center">
-                          <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">Máximo (s)</span>
+                          <span className="text-[10px] text-gray-500 uppercase font-bold mb-1">{t("Máximo (s)")}</span>
                           <input type="number" min="10" max="120" value={bombaConfig.maxTime} onChange={(e) => { const parsed = Number.parseInt(e.target.value, 10); const value = Number.isFinite(parsed) ? Math.min(120, Math.max(10, parsed)) : 10; setBombaConfig(prev => ({ ...prev, maxTime: Math.max(value, prev.minTime) })); }} className="w-full bg-gray-900 border border-gray-600 rounded-lg text-center py-2 font-black text-lg text-white" />
                         </div>
                       </div>
@@ -2405,7 +2869,7 @@ export default function App() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Timer className="text-yellow-400" size={20} />
-                          <span className="font-bold text-gray-200">Reloj Visual</span>
+                          <span className="font-bold text-gray-200">{t("Reloj Visual")}</span>
                         </div>
                         <button onClick={() => setBombaConfig({ ...bombaConfig, showTimer: !bombaConfig.showTimer })} className={`w-12 h-6 rounded-full transition-colors relative border ${bombaConfig.showTimer ? 'bg-yellow-600 border-yellow-500' : 'bg-gray-700 border-gray-600'}`}>
                           <div className={`w-4 h-4 bg-white rounded-full absolute top-[3px] transition-transform ${bombaConfig.showTimer ? 'translate-x-7' : 'translate-x-1'}`} />
@@ -2414,8 +2878,8 @@ export default function App() {
                       <div className="border-t border-gray-700 pt-4 flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                           <div className="flex flex-col">
-                            <span className="font-bold text-gray-200 flex items-center gap-2"><Users className="text-blue-400" size={18} /> Mostrar Mesa</span>
-                            <span className="text-[10px] text-gray-400">Ver círculo de jugadores interactivo.</span>
+                            <span className="font-bold text-gray-200 flex items-center gap-2"><Users className="text-blue-400" size={18} /> {t("Mostrar Mesa")}</span>
+                            <span className="text-[10px] text-gray-400">{t("Ver círculo de jugadores interactivo.")}</span>
                           </div>
                           <button onClick={() => setBombaConfig({ ...bombaConfig, showTable: !bombaConfig.showTable })} className={`w-12 h-6 rounded-full transition-colors relative border shrink-0 ${bombaConfig.showTable ? 'bg-blue-600 border-blue-500' : 'bg-gray-700 border-gray-600'}`}>
                             <div className={`w-4 h-4 bg-white rounded-full absolute top-[3px] transition-transform ${bombaConfig.showTable ? 'translate-x-7' : 'translate-x-1'}`} />
@@ -2429,7 +2893,7 @@ export default function App() {
                       </div>
                     </div>
                     <div className="shrink-0 relative z-10">
-                      <p className="text-orange-400 text-xs font-bold uppercase tracking-widest text-center mb-3">Castigo por Explotar</p>
+                      <p className="text-orange-400 text-xs font-bold uppercase tracking-widest text-center mb-3">{t("Castigo por Explotar")}</p>
                       <PenaltySelector currentLevel={bombaConfig.penaltyLevel} setLevel={(val) => setBombaConfig({...bombaConfig, penaltyLevel: val})} />
                     </div>
                     <button onClick={startGameBomba} className="w-full py-4 mt-2 rounded-xl font-black text-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 shadow-lg shadow-red-500/30 active:scale-95 transition-all flex justify-center items-center gap-3 text-white shrink-0 relative z-10">
@@ -2445,20 +2909,20 @@ export default function App() {
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 p-2 rounded-xl"><Swords size={28} className="text-white" /></div>
                     <div className="flex flex-col items-start">
-                      <span className="text-2xl font-black tracking-tight text-white leading-none">Duelo 1v1</span>
+                      <span className="text-2xl font-black tracking-tight text-white leading-none">{t("Duelo 1v1")}</span>
                     </div>
                   </div>
-                  {activeSettings === 'duelo' ? <div className="flex items-center gap-1.5 text-teal-100 font-bold bg-teal-900/30 px-3 py-1.5 rounded-lg border border-teal-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
+                  {activeSettings === 'duelo' ? <div className="flex items-center gap-1.5 text-teal-100 font-bold bg-teal-900/30 px-3 py-1.5 rounded-lg border border-teal-500/30"><ChevronLeft size={18} /> {t("Volver")}</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'duelo' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
                   <div className="bg-gray-800/50 border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
-                    <p className="text-sm text-gray-400 italic text-center shrink-0">Dos personas elegidas al azar se enfrentan en un mini-reto. Quien pierda, bebe.</p>
+                    <p className="text-sm text-gray-400 italic text-center shrink-0">{t("Dos personas elegidas al azar se enfrentan en un mini-reto. Quien pierda, bebe.")}</p>
                     <div className="shrink-0 relative z-10">
-                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde nos enfrentamos?</p>
+                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("¿Dónde nos enfrentamos?")}</p>
                       <EnvironmentSelector currentEnv={dueloEnvironment} setEnv={setDueloEnvironment} />
                     </div>
                     <div className="shrink-0 relative z-10">
-                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">Castigo por perder</p>
+                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("Castigo por perder")}</p>
                       <PenaltySelector currentLevel={dueloPenaltyLevel} setLevel={setDueloPenaltyLevel} />
                     </div>
                     <button onClick={startDuelo} className="w-full py-4 mt-2 rounded-xl font-black text-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-lg shadow-teal-500/30 active:scale-95 transition-all flex justify-center items-center gap-3 text-white shrink-0 relative z-10">
@@ -2474,19 +2938,19 @@ export default function App() {
                   <div className="flex items-center gap-4">
                     <div className="bg-white/10 p-2 rounded-xl"><BarChart3 size={28} className="text-white" /></div>
                     <div className="flex flex-col items-start">
-                      <span className="text-2xl font-black tracking-tight text-white leading-none">Encuesta Brutal</span>
+                      <span className="text-2xl font-black tracking-tight text-white leading-none">{t("Encuesta Brutal")}</span>
                     </div>
                   </div>
-                  {activeSettings === 'encuesta' ? <div className="flex items-center gap-1.5 text-pink-100 font-bold bg-pink-900/30 px-3 py-1.5 rounded-lg border border-pink-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
+                  {activeSettings === 'encuesta' ? <div className="flex items-center gap-1.5 text-pink-100 font-bold bg-pink-900/30 px-3 py-1.5 rounded-lg border border-pink-500/30"><ChevronLeft size={18} /> {t("Volver")}</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
                 <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'encuesta' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
                   <div className="bg-gray-800/50 border border-pink-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <p className="text-sm text-pink-300 font-bold italic text-center shrink-0">"Ideal para destruir amistades, o reforzarlas. ¿Quién sabe?"</p>
                     <div className="shrink-0 relative z-10">
-                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde estamos?</p>
+                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("¿Dónde estamos?")}</p>
                       <EnvironmentSelector currentEnv={encuestaEnvironment} setEnv={setEncuestaEnvironment} />
                     </div>
-                    <div className="shrink-0 relative z-10">                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">Castigo para el más votado</p>
+                    <div className="shrink-0 relative z-10">                      <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">{t("Castigo para el más votado")}</p>
                       <PenaltySelector currentLevel={encuestaPenaltyLevel} setLevel={setEncuestaPenaltyLevel} />
                     </div>
                     <button onClick={startEncuesta} className="w-full py-4 mt-2 rounded-xl font-black text-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex justify-center items-center gap-3 text-white shrink-0 relative z-10">
@@ -2498,13 +2962,6 @@ export default function App() {
 
             </div>
 
-            <div className={`transition-all duration-300 overflow-hidden ${activeSettings ? 'max-h-0 opacity-0 mb-0' : 'max-h-[200px] opacity-100 mt-4'}`}>
-              <div className="flex flex-col gap-3 mt-4">
-                <button onClick={() => handleNavigate('setup')} className="w-full text-gray-500 hover:text-red-400 text-xs uppercase tracking-widest font-bold bg-gray-800/50 hover:bg-red-900/20 px-4 py-4 rounded-xl border border-gray-700/50 hover:border-red-900/50 transition-colors flex justify-center items-center gap-2 shadow-inner active:scale-95">
-                  <ChevronLeft size={18} /> Volver al Inicio
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -2529,7 +2986,7 @@ export default function App() {
             </div>
 
             <div className="w-full flex flex-col items-center z-10 px-2 mt-4 relative">
-              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">¿Quién ha pringado?</p>
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">{t("¿Quién ha pringado?")}</p>
               <div className="flex flex-wrap gap-2 justify-center">
                 <button onClick={handleToggleAllYN} disabled={isAnimatingYN} className={`px-4 py-2 rounded-full border-2 font-black text-xs uppercase tracking-wider transition-all ${ynDrinkers.length === players.length && players.length > 0 ? 'bg-indigo-600/30 border-indigo-500 text-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-gray-800/90 border-gray-600 text-gray-400 hover:border-gray-500'}`}>
                   Todos
@@ -2549,7 +3006,7 @@ export default function App() {
           <div className="w-full max-w-md pb-6 z-10 flex flex-col gap-3 animate-slide-up">
             <button onClick={handleNextYNPhrase} disabled={isAnimatingYN} className="w-full py-5 rounded-3xl font-black text-2xl md:text-3xl bg-indigo-600 hover:bg-indigo-500 shadow-xl shadow-indigo-600/40 active:scale-95 transition-all flex flex-col justify-center items-center border-b-4 border-indigo-800 text-white disabled:opacity-50">
               <div className="flex items-center gap-3">
-                {isAnimatingYN ? <><Loader2 size={28} className="animate-spin" /> ¡CARGANDO!</> : <>¡SIGUIENTE! <ArrowRight size={28} /></>}
+                {isAnimatingYN ? <><Loader2 size={28} className="animate-spin" /> {t("¡CARGANDO!")}</> : <>{t("¡SIGUIENTE!")} <ArrowRight size={28} /></>}
               </div>
               {ynDrinkers.length > 0 && <span className="text-[10px] md:text-xs font-bold text-indigo-200 mt-1 tracking-widest uppercase">Guardará {ynDrinkers.length} trago(s)</span>}
             </button>
@@ -2582,11 +3039,11 @@ export default function App() {
             const s = ev.remaining % 60;
             fbiButtonText = `${ev.player} : ${m}:${s < 10 ? '0' : ''}${s}`;
           } else if (ev.type === 'round') {
-            fbiButtonText = `${ev.player}: ${ev.remaining} turnos`;
+            fbiButtonText = `${ev.player}: ${ev.remaining} ${t('turnos')}`;
           } else {
             fbiButtonText = `${ev.player}`;
           }
-        } else if (fbiEvents.length > 1) fbiButtonText = `${fbiEvents.length} Activos`;
+        } else if (fbiEvents.length > 1) fbiButtonText = `${fbiEvents.length} ${t('Activos')}`;
 
         return (
           <div className={`min-h-screen text-white flex flex-col items-center justify-between p-4 relative z-10 ${closingScreen ? 'animate-shrink' : ''}`}>
@@ -2600,10 +3057,10 @@ export default function App() {
             <div className="w-full flex justify-between items-center z-10 max-w-2xl animate-slide-down">
               <div className="flex gap-1.5 md:gap-2">
                 <div className="bg-orange-600/30 text-orange-300 px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border border-orange-500/50 flex items-center gap-1.5 shadow-sm">
-                  <Flame size={14} /> <span className="hidden xs:inline sm:inline">V. o R.</span>
+                  <Flame size={14} /> <span className="hidden xs:inline sm:inline">{t("V. o R.")}</span>
                 </div>
                 <div className={`${envStyle.bg} ${envStyle.color} px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border flex items-center gap-1.5 shadow-sm`}>
-                  <EnvIcon size={14} /> {envStyle.label}
+                  <EnvIcon size={14} /> {t(envStyle.label)}
                 </div>
               </div>
 
@@ -2617,13 +3074,13 @@ export default function App() {
             <div className={`flex-1 w-full max-w-2xl flex flex-col items-center justify-center py-6 z-10 transition-transform duration-300 ${isVorTransitioning ? 'animate-shrink' : ''}`}>
               
               <div key={`turno-${currentPlayer}`} className={`mb-6 text-center bg-gray-800/90 border border-gray-700/60 p-4 md:p-5 rounded-3xl w-full max-w-xs shadow-xl backdrop-blur-sm relative z-10 ${turnState === 'showing' ? 'animate-slide-up' : 'animate-expand'}`} style={{ animationFillMode: 'both' }}>
-                <p className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1">TURNO ACTUAL</p>
+                <p className="text-gray-400 text-xs uppercase tracking-widest font-bold mb-1">{t("TURNO ACTUAL")}</p>
                 <h2 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-2 uppercase drop-shadow-md flex justify-center items-center gap-2">
                   {currentPlayer === 'IAN' && isIansBirthday && <Crown size={24} className="text-yellow-400 animate-pulse" />}
                   {currentPlayerIndex + 1}. {currentPlayer}
                 </h2>
                 <div className="mt-2 pt-2 border-t border-gray-700/50 flex items-center justify-center gap-2 text-gray-500 text-[10px] md:text-xs uppercase font-bold">
-                  <span>Va después:</span>
+                  <span>{t("Va después:")}</span>
                   <span className="text-gray-300">{nextPlayerIndex + 1}. {nextPlayer}</span>
                 </div>
               </div>
@@ -2642,7 +3099,7 @@ export default function App() {
                 <div className="w-full flex flex-col items-center mt-2 pb-6 relative z-10">
                   <div className={`bg-gray-800/90 border-2 border-gray-700 shadow-2xl p-6 md:p-8 pt-8 md:pt-10 pb-6 md:pb-8 rounded-3xl w-full text-center relative mt-4 animate-expand`} style={{ animationFillMode: 'both' }}>
                     <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] whitespace-nowrap ${header.color}`}>
-                      {header.text}
+                      {t(header.text)}
                     </div>
                     <RenderFormattedText text={currentPhrase} isVor={true} language={language} />
                   </div>
@@ -2650,14 +3107,14 @@ export default function App() {
                   {currentPenalty && (
                     <div className="mt-4 bg-gray-800/90 border border-gray-700 p-3 md:p-4 rounded-2xl w-full max-w-sm shadow-lg backdrop-blur-sm flex items-center justify-between gap-3 animate-slide-up delay-100" style={{ animationFillMode: 'both' }}>
                       <div className="flex flex-col items-center justify-center bg-gray-900/50 rounded-xl py-3 px-5 border border-gray-700/50 flex-1">
-                        <span className="text-gray-400 text-[10px] md:text-xs uppercase font-bold tracking-widest mb-1 text-center">Castigo si te rajas</span>
+                        <span className="text-gray-400 text-[10px] md:text-xs uppercase font-bold tracking-widest mb-1 text-center">{t("Castigo si te rajas")}</span>
                         <span className="text-yellow-400 text-5xl md:text-6xl font-black leading-none flex items-baseline gap-1">
                           {currentPenalty} <span className="text-lg md:text-xl font-bold tracking-widest">{currentPenalty === 1 ? 'TRAGO' : 'TRAGOS'}</span>
                         </span>
                       </div>
                       {vorType !== 'comodin' && (
                         <button onClick={() => handleCountPenalty()} className={`py-2 px-3 rounded-xl font-bold uppercase tracking-wider text-[10px] border transition-all h-full min-h-[60px] flex flex-col items-center justify-center gap-1.5 w-24 shrink-0 ${vorPenaltyCounted ? 'bg-green-600/20 text-green-400 border-green-500/50' : 'bg-yellow-600 hover:bg-yellow-500 text-gray-900 border-yellow-400 shadow-md active:scale-95'}`}>
-                          {vorPenaltyCounted ? <><Undo2 size={18} /> Revertir</> : <><Beer size={18} /> Anotar</>}
+                          {vorPenaltyCounted ? <><Undo2 size={18} /> {t("Revertir")}</> : <><Beer size={18} /> {t("Anotar")}</>}
                         </button>
                       )}
                     </div>
@@ -2704,21 +3161,21 @@ export default function App() {
             <div className="flex-1 w-full max-w-md flex flex-col items-center justify-center py-6 z-10 text-center relative">
               {bombaState.phase === 'countdown' && (
                 <div className="animate-pulse">
-                  <p className="text-gray-400 uppercase tracking-widest font-bold mb-4">El juego empieza en...</p>
+                  <p className="text-gray-400 uppercase tracking-widest font-bold mb-4">{t("El juego empieza en...")}</p>
                   <h1 className="text-9xl font-black text-transparent bg-clip-text bg-gradient-to-b from-red-400 to-rose-600 drop-shadow-2xl">{bombaState.timeLeft}</h1>
                 </div>
               )}
 
               {bombaState.phase === 'starting' && (
                 <div className="animate-expand bg-gray-800/90 border-2 border-red-500 rounded-3xl p-8 w-full shadow-[0_0_40px_rgba(239,68,68,0.4)] relative z-10" style={{ animationFillMode: 'both' }}>
-                  <h2 className="text-3xl font-black text-white mb-6 uppercase tracking-wider flex items-center justify-center gap-3"><Zap className="text-yellow-400" /> ¡Prepárate!</h2>
+                  <h2 className="text-3xl font-black text-white mb-6 uppercase tracking-wider flex items-center justify-center gap-3"><Zap className="text-yellow-400" /> {t("¡Prepárate!")}</h2>
                   <div className="space-y-4">
                     <div className="bg-gray-900/50 p-4 rounded-2xl border border-gray-700">
-                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Empieza con la Bomba:</p>
+                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{t("Empieza con la Bomba:")}</p>
                       <p className="text-2xl font-black text-yellow-400 uppercase">{bombaState.firstPlayer}</p>
                     </div>
                     <div className="bg-gray-900/50 p-4 rounded-2xl border border-gray-700">
-                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Pasar en sentido:</p>
+                      <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">{t("Pasar en sentido:")}</p>
                       <p className="text-xl font-bold text-white uppercase">{bombaState.direction}</p>
                     </div>
                   </div>
@@ -2728,8 +3185,8 @@ export default function App() {
               {bombaState.phase === 'active' && (
                 <div className="w-full flex flex-col items-center animate-expand relative z-10" style={{ animationFillMode: 'both' }}>
                   <div className="bg-gray-800/90 border-2 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)] p-6 rounded-3xl w-full mb-8 relative">
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-red-600 text-white border-red-400">TEMA A HABLAR</div>
-                    <h2 className="text-2xl md:text-3xl font-black text-white mt-2 leading-tight uppercase">{bombaState.topic}</h2>
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-red-600 text-white border-red-400">{t("TEMA A HABLAR")}</div>
+                    <h2 className="text-2xl md:text-3xl font-black text-white mt-2 leading-tight uppercase">{translatePrompt(language, bombaState.topic || '')}</h2>
                   </div>
 
                   {bombaConfig.showTable ? (
@@ -2737,7 +3194,7 @@ export default function App() {
                         <CircularTable activePlayerIndex={currentPlayerIndex} animatePulse={bombaState.timeLeft < 10} />
                         <div className="mt-8 flex flex-col items-center w-full max-w-[200px]">
                            {bombaConfig.showTimer && <span className="text-2xl font-black text-white bg-black/50 px-4 py-1.5 rounded-xl backdrop-blur-sm border border-white/10 mb-4">{bombaState.timeLeft}s</span>}
-                           <button onClick={passBombToNextPlayer} className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-full font-black text-xl shadow-lg border-b-4 border-red-800 text-white active:scale-95 transition-all flex items-center justify-center gap-2">Siguiente <ArrowRight size={22} /></button>
+                           <button onClick={passBombToNextPlayer} className="w-full py-4 bg-red-600 hover:bg-red-500 rounded-full font-black text-xl shadow-lg border-b-4 border-red-800 text-white active:scale-95 transition-all flex items-center justify-center gap-2">{t("Siguiente")} <ArrowRight size={22} /></button>
                         </div>
                      </div>
                   ) : (
@@ -2747,7 +3204,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {!bombaConfig.showTable && <p className="mt-8 text-gray-400 italic text-sm md:text-base">Pasad el móvil rápido diciendo palabras...</p>}
+                  {!bombaConfig.showTable && <p className="mt-8 text-gray-400 italic text-sm md:text-base">{t("Pasad el móvil rápido diciendo palabras...")}</p>}
                 </div>
               )}
 
@@ -2757,22 +3214,22 @@ export default function App() {
                     <div className="w-full flex flex-col items-center mb-6">
                       <div className="relative mb-2">
                         <Flame size={100} className="text-orange-500 mx-auto animate-pulse filter drop-shadow-[0_0_40px_rgba(249,115,22,0.8)] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-20" />
-                        <h1 className="text-4xl font-black text-white drop-shadow-2xl z-10 relative text-center">¡BOOM!</h1>
+                        <h1 className="text-4xl font-black text-white drop-shadow-2xl z-10 relative text-center">{t("¡BOOM!")}</h1>
                       </div>
                       <CircularTable activePlayerIndex={currentPlayerIndex} animatePulse={false} />
                     </div>
                   ) : (
                     <div className="relative mb-6 mt-4">
                       <Flame size={150} className="text-orange-500 mx-auto animate-pulse filter drop-shadow-[0_0_40px_rgba(249,115,22,0.8)]" />
-                      <h1 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl font-black text-white drop-shadow-2xl rotate-[-10deg]">¡BOOM!</h1>
+                      <h1 className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-5xl font-black text-white drop-shadow-2xl rotate-[-10deg]">{t("¡BOOM!")}</h1>
                     </div>
                   )}
 
-                  {!bombaConfig.showTable && <h2 className="text-2xl text-gray-300 font-bold mb-6 bg-gray-900/50 px-4 py-2 rounded-xl">El que tenga el móvil ahora mismo, pringa.</h2>}
+                  {!bombaConfig.showTable && <h2 className="text-2xl text-gray-300 font-bold mb-6 bg-gray-900/50 px-4 py-2 rounded-xl">{t("El que tenga el móvil ahora mismo, pringa.")}</h2>}
 
                   <div className="mt-2 bg-gray-800/90 border border-red-500/50 p-4 rounded-3xl w-full shadow-lg backdrop-blur-sm flex flex-col gap-4 animate-slide-up">
                     <div className="flex flex-col items-center justify-center bg-gray-900/50 rounded-2xl py-4 border border-gray-700/50 w-full">
-                      <span className="text-red-400 text-xs uppercase font-bold tracking-widest mb-1 text-center">Castigo por Explotar</span>
+                      <span className="text-red-400 text-xs uppercase font-bold tracking-widest mb-1 text-center">{t("Castigo por Explotar")}</span>
                       <span className="text-white text-6xl font-black leading-none flex items-baseline gap-2">{bombaState.penalty} <span className="text-xl font-bold text-gray-400 tracking-widest">{bombaState.penalty === 1 ? 'TRAGO' : 'TRAGOS'}</span></span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2782,7 +3239,7 @@ export default function App() {
                         </select>
                       </div>
                       <button onClick={() => handleCountPenalty(bombaState.penalty)} className={`py-3 px-4 rounded-xl font-bold uppercase tracking-wider text-xs border transition-all h-full shrink-0 flex items-center justify-center gap-2 ${vorPenaltyCounted ? 'bg-green-600/20 text-green-400 border-green-500/50' : 'bg-yellow-600 hover:bg-yellow-500 text-gray-900 border-yellow-400 shadow-md active:scale-95'}`}>
-                        {vorPenaltyCounted ? <><Undo2 size={16} /> Revertir</> : <><Beer size={16} /> Anotar</>}
+                        {vorPenaltyCounted ? <><Undo2 size={16} /> {t("Revertir")}</> : <><Beer size={16} /> {t("Anotar")}</>}
                       </button>
                     </div>
                   </div>
@@ -2803,14 +3260,14 @@ export default function App() {
            <div className="w-full flex justify-between items-center z-10 max-w-3xl animate-slide-down">
               <div className="flex gap-1.5 md:gap-2">
                 <div className="bg-teal-600/30 text-teal-300 px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border border-teal-500/50 flex items-center gap-1.5 shadow-sm">
-                  <Swords size={14} /> <span className="hidden xs:inline sm:inline">Duelo</span>
+                  <Swords size={14} /> <span className="hidden xs:inline sm:inline">{t("Duelo")}</span>
                 </div>
                 {(() => {
                   const envStyle = getEnvStyle(dueloEnvironment);
                   const EnvIcon = envStyle.icon;
                   return (
                     <div className={`${envStyle.bg} ${envStyle.color} px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border flex items-center gap-1.5 shadow-sm`}>
-                      <EnvIcon size={14} /> {envStyle.label}
+                      <EnvIcon size={14} /> {t(envStyle.label)}
                     </div>
                   );
                 })()}
@@ -2828,7 +3285,7 @@ export default function App() {
                     <div className="flex items-center justify-between w-full mb-8">
                        <div className="flex flex-col items-center justify-center flex-1 p-4 bg-gray-800/90 border-2 border-gray-600 rounded-3xl shadow-lg relative overflow-hidden">
                           {dueloState.p1 === 'IAN' && isIansBirthday && <Crown size={40} className="text-yellow-400/20 absolute -right-2 -bottom-2" />}
-                          <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 relative z-10">Jugador 1</span>
+                          <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 relative z-10">{t("Jugador 1")}</span>
                           <span className="text-2xl font-black text-white text-center break-all relative z-10">{dueloState.p1}</span>
                        </div>
                        <div className="px-4">
@@ -2836,7 +3293,7 @@ export default function App() {
                        </div>
                        <div className="flex flex-col items-center justify-center flex-1 p-4 bg-gray-800/90 border-2 border-gray-600 rounded-3xl shadow-lg relative overflow-hidden">
                           {dueloState.p2 === 'IAN' && isIansBirthday && <Crown size={40} className="text-yellow-400/20 absolute -left-2 -bottom-2" />}
-                          <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 relative z-10">Jugador 2</span>
+                          <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 relative z-10">{t("Jugador 2")}</span>
                           <span className="text-2xl font-black text-white text-center break-all relative z-10">{dueloState.p2}</span>
                        </div>
                     </div>
@@ -2845,11 +3302,11 @@ export default function App() {
                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-teal-600 text-white border-teal-400">
                           EL DESAFÍO
                        </div>
-                       <p className="text-2xl font-black leading-tight">{dueloState.challenge}</p>
+                       <p className="text-2xl font-black leading-tight">{translatePrompt(language, dueloState.challenge || '')}</p>
                     </div>
 
                     <div className="w-full flex flex-col gap-3 animate-slide-up">
-                       <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs mb-1 bg-gray-900/50 py-1 rounded-full">¿Quién ha perdido?</p>
+                       <p className="text-center text-gray-400 font-bold uppercase tracking-widest text-xs mb-1 bg-gray-900/50 py-1 rounded-full">{t("¿Quién ha perdido?")}</p>
                        <div className="flex gap-3">
                           <button onClick={() => resolveDuelo(dueloState.p1)} className="flex-1 py-4 bg-gray-800/90 hover:bg-gray-700 border border-gray-600 rounded-2xl font-black text-xl text-white shadow-lg active:scale-95 transition-all">
                              {dueloState.p1}
@@ -2873,7 +3330,7 @@ export default function App() {
                     </h2>
                     
                     <div className="bg-gray-800/90 border border-red-500/50 p-6 rounded-3xl w-full shadow-lg text-center mb-8">
-                       <span className="text-red-400 text-xs uppercase font-bold tracking-widest block mb-2">Penalización</span>
+                       <span className="text-red-400 text-xs uppercase font-bold tracking-widest block mb-2">{t("Penalización")}</span>
                        <span className="text-white text-6xl font-black leading-none flex items-baseline justify-center gap-2">
                          {dueloState.penalty} <span className="text-xl font-bold text-gray-400 tracking-widest">{dueloState.penalty === 1 ? 'TRAGO' : 'TRAGOS'}</span>
                        </span>
@@ -2894,14 +3351,14 @@ export default function App() {
            <div className="w-full flex justify-between items-center z-10 max-w-3xl animate-slide-down">
               <div className="flex gap-1.5 md:gap-2">
                 <div className="bg-pink-600/30 text-pink-300 px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border border-pink-500/50 flex items-center gap-1.5 shadow-sm">
-                  <BarChart3 size={14} /> <span className="hidden xs:inline sm:inline">Encuesta</span>
+                  <BarChart3 size={14} /> <span className="hidden xs:inline sm:inline">{t("Encuesta")}</span>
                 </div>
                 {(() => {
                   const envStyle = getEnvStyle(encuestaEnvironment);
                   const EnvIcon = envStyle.icon;
                   return (
                     <div className={`${envStyle.bg} ${envStyle.color} px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-xs uppercase tracking-wider border flex items-center gap-1.5 shadow-sm`}>
-                      <EnvIcon size={14} /> {envStyle.label}
+                      <EnvIcon size={14} /> {t(envStyle.label)}
                     </div>
                   );
                 })()}
@@ -2918,7 +3375,7 @@ export default function App() {
               {encuestaState.phase === 'pass' && (
                  <div className="w-full flex flex-col items-center animate-expand text-center" style={{ animationFillMode: 'both' }}>
                     <Smartphone size={80} className="text-pink-500 mb-6 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]" />
-                    <h2 className="text-4xl font-black text-white mb-2 bg-gray-900/40 px-4 py-1 rounded-xl">¡Pasa el móvil!</h2>
+                    <h2 className="text-4xl font-black text-white mb-2 bg-gray-900/40 px-4 py-1 rounded-xl">{t("¡Pasa el móvil!")}</h2>
                     <p className="text-xl text-gray-400 font-bold mb-8">
                        Es el turno de votar de: <span className="text-pink-400 uppercase font-black">{players[encuestaState.currentVoterIndex]}</span>
                     </p>
@@ -2931,12 +3388,12 @@ export default function App() {
               {encuestaState.phase === 'vote' && (
                  <div className="w-full flex flex-col items-center animate-expand" style={{ animationFillMode: 'both' }}>
                     <div className="mb-4 text-center">
-                       <span className="text-xs font-bold text-gray-300 bg-gray-900/50 px-3 py-1 rounded-full uppercase tracking-widest block mb-2">Votando: <span className="text-pink-400">{players[encuestaState.currentVoterIndex]}</span></span>
+                       <span className="text-xs font-bold text-gray-300 bg-gray-900/50 px-3 py-1 rounded-full uppercase tracking-widest block mb-2">{t("Votando:")} <span className="text-pink-400">{players[encuestaState.currentVoterIndex]}</span></span>
                     </div>
                     <div className="bg-gray-800/90 border-2 border-pink-500/50 shadow-[0_0_30px_rgba(236,72,153,0.2)] p-6 rounded-3xl w-full text-center mb-6">
-                       <p className="text-2xl font-black leading-tight text-white">{encuestaState.question}</p>
+                       <p className="text-2xl font-black leading-tight text-white">{translatePrompt(language, encuestaState.question || '')}</p>
                     </div>
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest w-full text-left mb-3 bg-gray-900/50 pl-2 rounded">Elige a alguien en secreto:</p>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest w-full text-left mb-3 bg-gray-900/50 pl-2 rounded">{t("Elige a alguien en secreto:")}</p>
                     <div className="w-full flex flex-col gap-2 overflow-y-auto max-h-[40vh] custom-scrollbar pr-2">
                        {players.map(p => {
                           if (p === players[encuestaState.currentVoterIndex]) return null;
@@ -2953,7 +3410,7 @@ export default function App() {
               {encuestaState.phase === 'completed' && (
                  <div className="w-full flex flex-col items-center animate-expand text-center" style={{ animationFillMode: 'both' }}>
                     <AlertTriangle size={80} className="text-yellow-500 mb-6 drop-shadow-[0_0_20px_rgba(234,179,8,0.5)] animate-pulse" />
-                    <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-tight bg-gray-900/40 px-4 py-1 rounded-xl">¡COMPLETADO!</h2>
+                    <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-tight bg-gray-900/40 px-4 py-1 rounded-xl">{t("¡COMPLETADO!")}</h2>
                     <p className="text-xl text-gray-400 font-medium mb-8">
                        Todos habéis votado. Pasad el móvil al portavoz de la ronda.
                     </p>
@@ -2972,7 +3429,7 @@ export default function App() {
                  return (
                     <div className="w-full flex flex-col items-center animate-expand" style={{ animationFillMode: 'both' }}>
                        <div className="bg-gray-800/90 border-2 border-gray-600 p-6 rounded-3xl w-full text-center mb-6 opacity-80">
-                          <p className="text-lg font-bold text-gray-300 italic">"{encuestaState.question}"</p>
+                          <p className="text-lg font-bold text-gray-300 italic">"{translatePrompt(language, encuestaState.question || '')}"</p>
                        </div>
                        
                        <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-rose-500 mb-6 uppercase text-center bg-gray-900/50 px-6 py-2 rounded-xl">
@@ -2998,8 +3455,8 @@ export default function App() {
                        </div>
 
                        <div className="w-full text-center bg-gray-800/90 border border-red-500/50 p-4 rounded-2xl mb-6 shadow-lg">
-                          <span className="text-red-400 text-xs uppercase font-bold tracking-widest block mb-1">El Pueblo ha hablado</span>
-                          <p className="text-white text-lg font-medium"><span className="font-black text-yellow-400">{winners.join(" y ")}</span> beben <span className="font-black text-red-400">{encuestaState.penalty} tragos</span>.</p>
+                          <span className="text-red-400 text-xs uppercase font-bold tracking-widest block mb-1">{t("El Pueblo ha hablado")}</span>
+                          <p className="text-white text-lg font-medium"><span className="font-black text-yellow-400">{winners.join(" y ")}</span> {t("beben")} <span className="font-black text-red-400">{encuestaState.penalty} tragos</span>.</p>
                        </div>
 
                        <button onClick={applyEncuestaPenalty} className="w-full py-5 bg-pink-600 hover:bg-pink-500 border-b-4 border-pink-800 rounded-3xl font-black text-xl text-white shadow-xl active:scale-95 transition-all flex justify-center items-center gap-2">

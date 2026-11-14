@@ -1,19 +1,26 @@
-## Party Night v2.0.0 — The Party Rebuild
+## Party Night v2.0.1 — The Party Re-Rebuild
 
-### Novetats
-- **Jugar:** gestió de jugadors i inici o continuació de sessió.
-- **Estadístiques:** dades globals, resultats per jocs i perfils individuals.
-- **Historial:** sessions desplegables amb configuracions, esdeveniments i rànquings.
-- **Idiomes:** català, castellà i anglès; selector inicial abans de la careta.
-- **Liquid glass:** navegació inferior amb tres pestanyes; s'amaga dins la sessió.
-- **Final de partida:** compte enrere i rànquing abans de tornar al menú de jocs.
-- **Final de sessió:** desa la sessió i retorna a Jugar.
-- **Autodesament:** prompts, vots, penalitzacions i resultats en local.
-- **Configuració general:** penalitzacions acumulatives, vibració i reducció d'animacions.
-- **Actualitzacions:** el pop-up mostra el changelog de GitHub.
+### 🌐 Idiomes
+- Selector redissenyat amb les banderes de Catalunya, Espanya i el Regne Unit.
+- Tria una bandera i confirma per desar l'idioma i reiniciar l'app.
+- Traduccions de la interfície i dels 246 textos de joc al català i a l'anglès; es conserva el castellà original.
+- Els noms inserits en preguntes i reptes es mantenen intactes.
 
-### Android
-- Es conserva l'identificador com.theferrini.partynight i s'augmenta el versionCode a cada versió.
-- La clau debug queda a la memòria cau per a futures actualitzacions.
+### 🏆 Guanyadors i estadístiques
+- Criteri global configurable: guanya qui rep més penalitzacions o qui en rep menys.
+- Estadístiques amb noms de jocs llegibles, rànquing de cada joc en un pop-up i ordenació de jugadors.
+- Registre de penalitzacions de cada jugador agrupat per joc.
 
-**Nota de signatura:** la clau de la 1.68.1 no es va conservar. La primera instal·lació de la 2.0 pot requerir desinstal·lar la 1.68.1 una vegada. Les actualitzacions posteriors podran instal·lar-se directament amb la clau persistent.
+### 📚 Historial
+- Configuració de cada partida presentada en camps llegibles.
+- Esdeveniments desplegables amb descripcions, jugadors i hora, sense codi JSON.
+
+### ⚙️ Configuració
+- Penalitzacions acumulatives centralitzades a Configuració general.
+- Interruptors visuals corregits, vibració tàctil nativa i mode de reducció de moviment funcional.
+- Eliminat el botó «Volver al Inicio» del selector de jocs.
+- Eliminada l'opció de canviar idioma de Configuració general.
+
+### 📱 Android
+- Identificador conservat: `com.theferrini.partynight`.
+- Versió 2.0.1; actualització signada amb la clau persistent de la 2.0.0.

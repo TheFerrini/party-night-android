@@ -1,24 +1,31 @@
 # Changelog — Party Night
 
-## [2.0.0] — 2026-11-14 · The Party Rebuild
-- Nova barra inferior liquid glass amb Jugar, Estadístiques i Historial.
-- Nova pantalla Jugar amb gestió de jugadors, sessions, novetats, idioma i configuració general.
-- Selector inicial de català, castellà o anglès abans de la careta.
-- Autodesament local de sessions, preguntes, vots, penalitzacions i resultats.
-- Rànquing de partida en finalitzar un joc i resum complet en finalitzar una sessió.
-- Estadístiques globals, per jocs i per perfil de jugador.
-- Historial desplegable amb configuracions, rànquings i esdeveniments.
-- Eliminada la detecció automàtica del mode aniversari pel nom IAN.
-- Configuració general amb penalitzacions acumulatives, vibració i reducció d'animacions.
-- Desplegables continguts dins l'alçada visible; botó Següent de Yo Nunca més estable.
-- El comprovador de versions mostra les notes de la release.
-- Es conserva l'identificador com.theferrini.partynight; versionCode creixent i clau debug persistent per a futures versions.
+## [2.0.1] — 2026-11-14 · The Party Re-Rebuild
 
-## [1.68.1] — Safe Areas Update
-- Safe areas d'Android, careta més lleugera, reordenació tàctil i detector d'actualitzacions.
+### Idiomes i interfície
+- Selector d'idioma redissenyat amb banderes de Catalunya, Espanya i el Regne Unit.
+- Escollir una bandera només selecciona l'idioma; el botó de confirmació desa la preferència i reinicia l'app.
+- Traduccions completes dels textos visibles dels jocs: 246 preguntes, reptes, temes, duels i enquestes en català i anglès, a més de la interfície.
+- Les traduccions conserven els noms dels jugadors inserits dinàmicament.
 
-## [1.68.0] — First Round Edition
-- Primera APK d'Android i correccions inicials dels jocs.
+### Resultats i estadístiques
+- Nou criteri global de victòria: guanya qui rep més penalitzacions o qui en rep menys.
+- El mateix criteri s'aplica al rànquing de sessió i als resultats de cada partida.
+- Noms llegibles dels jocs a les estadístiques (mai més claus internes com `yonunca`).
+- Les targetes de cada joc obren un pop-up amb el rànquing de la partida.
+- Perfils de jugador ordenables per més/menys penalitzacions, amb registre desplegable agrupat per joc.
 
-## [1.67.1] — The Six Seven Edition
-- Millores del mode aniversari i reorganització de la interfície.
+### Historial i configuració
+- Configuracions de partida convertides en etiquetes llegibles en lloc d'objectes JSON.
+- Esdeveniments traduïts a accions comprensibles: targetes, penalitzacions, vots i resultats.
+- «Penalitzacions acumulatives» queda només a Configuració general.
+- Interruptors redissenyats amb posició i estat consistents.
+- Vibració tàctil amb el plugin natiu de Capacitor Haptics.
+- Reduir animacions aplica una regla global a les animacions i transicions.
+- Eliminat el botó «Volver al Inicio» del menú de jocs.
+- El canvi d'idioma ja no apareix a Configuració general.
+
+### Android
+- Package ID conservat: `com.theferrini.partynight`.
+- Versió Android incrementada a 2.0.1; el workflow continua calculant el `versionCode` a partir de SemVer.
+- La signatura persistent de la 2.0.0 es manté per a aquesta actualització.

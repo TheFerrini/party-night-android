@@ -1,11 +1,22 @@
 # Party Night — Android
 
-Party Night v2.0.0 és una app de jocs per a grups feta amb React, Vite i Capacitor 8.
+**Party Night v2.0.1 · The Party Re-Rebuild**
+
+App de jocs per a grups, feta amb React, Vite i Capacitor 8.
+
+## Novetats de la 2.0.1
+- Selector d'idioma amb banderes de Catalunya, Espanya i el Regne Unit; confirma i reinicia per aplicar el canvi.
+- Interfície i 246 textos de joc traduïts al català, castellà i anglès.
+- Criteri global de victòria configurable: qui rep més o menys penalitzacions.
+- Estadístiques per joc i jugador, amb rànquings i registres agrupats per partida.
+- Historial de sessions amb configuracions i esdeveniments llegibles.
+- Vibració tàctil nativa, reducció d'animacions real i interruptors corregits.
+- Penalitzacions acumulatives centralitzades a Configuració general.
 
 ## Navegació
 - **Jugar:** jugadors, sessions, novetats, idioma i configuració general.
-- **Estadístiques:** resum, jocs i perfils de jugador.
-- **Historial:** sessions desades amb detalls i rànquings.
+- **Estadístiques:** resum, resultats dels jocs i perfils de jugador.
+- **Historial:** sessions desades amb configuracions, esdeveniments i rànquings.
 
 ## Dades i privacitat
 Les sessions i estadístiques es desen localment al dispositiu. No s'envien a cap servidor. L'historial pot contenir noms, preguntes, vots i penalitzacions.
@@ -22,7 +33,6 @@ Cal Node.js 22+, Java 21 i Android SDK.
 ```bash
 npm install
 npm run build
-npx cap add android
 npx cap sync android
 cd android
 ./gradlew assembleDebug
