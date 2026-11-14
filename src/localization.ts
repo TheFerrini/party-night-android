@@ -897,6 +897,36 @@ Object.assign(UI_TRANSLATIONS.en, {
   "Tragos": "Penalties"
 });
 
+Object.assign(UI_TRANSLATIONS.es, {
+  "Party Night · Language": "Party Night · Idioma",
+  "Els ajustos s’apliquen a les sessions noves i es desen automàticament.": "Los ajustes se aplican a las sesiones nuevas y se guardan automáticamente.",
+  "jocs": "juegos",
+  "victòries": "victorias",
+  "Finalitzar sessió": "Finalizar sesión",
+  "Rànquing de partida": "Clasificación de la partida",
+  "Descarrega l’APK oficial. Després d’aquesta reinstal·lació inicial, les versions següents es podran instal·lar directament com a actualització.": "Descarga el APK oficial. Después de esta reinstalación inicial, las siguientes versiones se podrán instalar directamente como actualización."
+});
+
+Object.assign(UI_TRANSLATIONS.ca, {
+  "Descarrega l’APK oficial. Després d’aquesta reinstal·lació inicial, les versions següents es podran instal·lar directament com a actualització.": "Descarrega l’APK oficial. Després d’aquesta reinstal·lació inicial, les versions següents s’instal·laran directament com a actualització.",
+  "la careta animada vuelve a mostrarse al abrir la app.": "la careta animada torna a aparèixer en obrir l’app.",
+  "Idiomas:": "Idiomes:",
+  "el español es el idioma predeterminado y el cambio se aplica al reiniciar.": "el castellà és l’idioma predeterminat i el canvi s’aplica en reiniciar.",
+  "Interfaz:": "Interfície:",
+  "los textos de la app se traducen al español, catalán e inglés; los retos mantienen su idioma original.": "els textos de l’app es tradueixen al castellà, català i anglès; els reptes mantenen l’idioma original.",
+  "el APK se instala directamente, sin desinstalar la versión anterior.": "l’APK s’instal·la directament, sense desinstal·lar la versió anterior."
+});
+
+Object.assign(UI_TRANSLATIONS.en, {
+  "Descarrega l’APK oficial. Després d’aquesta reinstal·lació inicial, les versions següents es podran instal·lar directament com a actualització.": "Download the official APK. After this one-time reinstall, future versions can be installed directly as updates.",
+  "la careta animada vuelve a mostrarse al abrir la app.": "the animated intro appears again whenever the app opens.",
+  "Idiomas:": "Languages:",
+  "el español es el idioma predeterminado y el cambio se aplica al reiniciar.": "Spanish is the default language and changes apply after restarting.",
+  "Interfaz:": "Interface:",
+  "los textos de la app se traducen al español, catalán e inglés; los retos mantienen su idioma original.": "all app interface text is available in Spanish, Catalan and English; game challenges stay in their original language.",
+  "el APK se instala directamente, sin desinstalar la versión anterior.": "the APK installs directly over the previous version, without uninstalling."
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   // Les frases i reptes de joc es mantenen en castellà per ara.

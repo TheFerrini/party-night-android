@@ -2237,12 +2237,12 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.3 (The Party Re-Rebuild)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.3 (The Comeback Intro)</h3>
               <p className="text-sm text-gray-400 mb-4">
-                - <b>{t("Android:")}</b> {t("espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.")}<br/>
-                - <b>{t("Careta:")}</b> {t("animació més lleugera, sense botó per saltar i amb inici més net.")}<br/>
-                - <b>{t("Jugadors:")}</b> {t("arrossega el mànec per reordenar; les files es mouen en temps real.")}<br/>
-                - <b>{t("Actualitzacions:")}</b> comprovació automàtica en entrar i cerca manual des d'aquest historial.
+                - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
+                - <b>{t("Idiomas:")}</b> {t("el español es el idioma predeterminado y el cambio se aplica al reiniciar.")}<br/>
+                - <b>{t("Interfaz:")}</b> {t("los textos de la app se traducen al español, catalán e inglés; los retos mantienen su idioma original.")}<br/>
+                - <b>{t("Actualizaciones:")}</b> {t("el APK se instala directamente, sin desinstalar la versión anterior.")}.
               </p>
               <h3 className="text-lg font-black text-white mb-1">v1.68.0 (First Round Edition)</h3>
               <p className="text-sm text-gray-400">
