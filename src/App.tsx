@@ -2312,7 +2312,7 @@ export default function App() {
             <div>
               <div className="text-[10px] font-black uppercase tracking-[.2em] text-cyan-300 mb-2">{t("Party Night · Actualitzacions")}</div>
               <h2 className="text-2xl font-black text-white">
-                {updateCheckStatus === 'available' ? 'Nova versió disponible!' : updateCheckStatus === 'checking' ? 'Buscant versions...' : updateCheckStatus === 'error' ? 'No s’ha pogut comprovar' : 'Tot al dia!'}
+                {t(updateCheckStatus === 'available' ? 'Nova versió disponible!' : updateCheckStatus === 'checking' ? 'Buscant versions...' : updateCheckStatus === 'error' ? 'No s’ha pogut comprovar' : 'Tot al dia!')}
               </h2>
             </div>
             <button type="button" onClick={() => setShowUpdatePopup(false)} aria-label="Tancar" className="rounded-xl bg-gray-800 p-2 text-gray-300 hover:bg-gray-700">
