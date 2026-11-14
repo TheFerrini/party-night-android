@@ -1,5 +1,18 @@
 # Changelog — Party Night
 
+## [2.0.5b] — 2026-11-14 · Full Canvas Navigation
+
+### Navegació
+- El llenç principal llisca entre Estadístiques, Jugar i Historial, seguint l'ordre visual de la barra inferior.
+- La transició té una desacceleració progressiva i manté el contingut de les tres seccions muntat.
+- L'indicador de la barra inferior es desplaça lateralment fins a l'opció seleccionada.
+
+### Animacions
+- Eliminat el zoom d'entrada de la pantalla principal de Jugar.
+- Les targetes de sessions de l'Historial entren de baix cap amunt amb una desacceleració suau i retard esglaonat.
+- L'alçada del llenç s'adapta a la secció activa i al contingut desplegat.
+- Les transicions respecten l'opció de reduir animacions.
+
 ## [2.0.5] — 2026-11-14 · Smooth Canvas & Count-up
 
 ### Animacions
