@@ -1,15 +1,16 @@
-## Party Night v2.0.3 — The Comeback Intro & Full UI Language
+## Party Night v2.0.5 — Smooth Canvas & Count-up
 
 ### 🎬 Careta
-- Recuperada la careta animada al abrir la app y después de cambiar el idioma.
+- La intro dura un poco más y termina con una salida más suave.
 
-### 🌐 Idiomas
-- Español como idioma predeterminado para instalaciones sin preferencia guardada.
-- El selector ya no muestra «Catalunya» debajo de Català.
-- Guardar el idioma reinicia la app para aplicarlo de forma uniforme en todas las pantallas.
-- Traductor común para textos estáticos, elementos anidados y etiquetas accesibles.
-- Interfaz disponible en español, catalán e inglés.
-- Las frases, preguntas y retos de juego permanecen en su idioma original por ahora.
+### 🧭 Estadísticas
+- Las subsecciones se deslizan como un único lienzo horizontal con desaceleración al llegar al apartado elegido.
+- Los números de tarjetas, listados y perfiles cuentan hasta su valor final.
+- Se respeta la preferencia de reducir animaciones.
 
-### 📦 Actualización
-- Se mantiene la firma persistente de la 2.0.2: instala directamente encima, sin desinstalar.
+### 🔔 Actualizaciones
+- El aviso automático de una nueva versión aparece una sola vez por release detectada.
+- La comprobación manual sigue mostrando el estado de la versión.
+
+### 🌐 Interfaz
+- Versión actualizada a 2.0.5.
