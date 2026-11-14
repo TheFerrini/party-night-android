@@ -2551,8 +2551,7 @@ export default function App() {
               ))}
             </div>
             <div className="pn-stats-viewport">
-              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 100 / 3}%, 0, 0)` }}>
-                <div className="pn-stats-page">
+              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 100}%, 0, 0)` }}>
                 {(() => {
                   const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
               const allGames = allSessions.flatMap((session: any) => session.games || []);
@@ -2693,13 +2692,6 @@ export default function App() {
                 </div>
               );
                 })()}
-                </div>
-                <div className="pn-stats-page">
-                  <div className="sr-only" aria-hidden="true" />
-                </div>
-                <div className="pn-stats-page">
-                  <div className="sr-only" aria-hidden="true" />
-                </div>
               </div>
             </div>
           </div>
