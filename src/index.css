@@ -141,3 +141,6 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 .pn-nav-item{position:relative;z-index:1;background:transparent;}
 .pn-nav-item.active{color:#fff;border-color:transparent;background:transparent;box-shadow:none;}
 @media(prefers-reduced-motion:reduce){.pn-main-canvas,.pn-nav-indicator,.pn-main-viewport{transition:none}.pn-history-session.is-active{animation:none}}
+
+/* Les pantalles del llenç també respecten les zones segures d'Android. */
+.app-root .pn-main-page>.min-h-screen{min-height:calc(100vh - var(--pn-safe-top) - var(--pn-safe-bottom));min-height:calc(100dvh - var(--pn-safe-top) - var(--pn-safe-bottom));}
