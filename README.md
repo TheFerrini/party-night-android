@@ -76,16 +76,25 @@ El proyecto sigue una filosofía de mejora continua: cuidar tanto el funcionamie
 
 Consulta el historial de cambios en "Releases" (https://github.com/TheFerrini/party-night-android/releases).
 
-🛠️ Información del proyecto
+---
 
-Información| Detalles
+## Información del proyecto
+
 Nombre| Party Night
+
 Plataforma| Android
+
+Género| Fluido *(vale fuera coñas juego tipo fiesta)*
+
 Versión actual| 2.0.6
+
 Idiomas de interfaz| Español, catalán e inglés
+
 Formato de instalación| APK
+
 Copias de seguridad| JSON
-Desarrollador| TheFerrini
+
+Desarrollador| TheFerrini y ChatGPT
 
 ---
 
