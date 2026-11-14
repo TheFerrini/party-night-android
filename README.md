@@ -1,33 +1,23 @@
 # Party Night — Android
 
-Party Night v1.68.1 és una app de jocs per a grups, creada amb React, Vite i Capacitor 8 i empaquetada com a APK Android.
+Party Night v2.0.0 és una app de jocs per a grups feta amb React, Vite i Capacitor 8.
 
-## Descarregar
+## Navegació
+- **Jugar:** jugadors, sessions, novetats, idioma i configuració general.
+- **Estadístiques:** resum, jocs i perfils de jugador.
+- **Historial:** sessions desades amb detalls i rànquings.
 
-Les versions publicades i les seves APK es troben a la pàgina [Releases](https://github.com/TheFerrini/party-night-android/releases). Descarrega `app-debug.apk` directament dels recursos de la Release i instal·la'l al dispositiu Android. L'artefacte separat de GitHub Actions es descarrega en ZIP.
+## Dades i privacitat
+Les sessions i estadístiques es desen localment al dispositiu. No s'envien a cap servidor. L'historial pot contenir noms, preguntes, vots i penalitzacions.
 
-## Compilació automàtica i releases
+## Idiomes
+Català, castellà i anglès. El selector apareix la primera vegada abans de la careta i es pot tornar a obrir des de Jugar.
 
-El workflow **Build Android APK** s'executa a cada push a `main` o manualment des de **Actions**. Si la compilació acaba correctament:
-
-1. Desa l'APK com a artefacte de GitHub Actions.
-2. Llegeix la versió de `package.json`.
-3. Crea o actualitza la Release `v<versió>` amb `RELEASE_NOTES.md` i adjunta l'APK.
-
-Per cada nova actualització, cal incrementar `version` a `package.json`, afegir un apartat a `CHANGELOG.md` i substituir `RELEASE_NOTES.md` per les notes de la nova versió. La pàgina Releases queda així com a historial de versions descarregables.
-
-## Desenvolupament web
-
-Requereix Node.js 22 o superior.
-
-```bash
-npm install
-npm run dev
-```
+## Actualitzacions
+L'app consulta GitHub Releases públiques i mostra el changelog quan detecta una versió nova.
 
 ## Compilar localment
-
-Cal Node.js, Java 21 i Android SDK.
+Cal Node.js 22+, Java 21 i Android SDK.
 
 ```bash
 npm install
@@ -38,21 +28,4 @@ cd android
 ./gradlew assembleDebug
 ```
 
-L'APK es genera a `android/app/build/outputs/apk/debug/app-debug.apk`.
-
-## Identitat Android
-
-- Nom: Party Night
-- Package ID: `com.theferrini.partynight`
-- Web directory: `dist`
-- Tipus de compilació: debug APK
-
-L'APK debug serveix per instal·lar i provar. Per publicar a Google Play caldrà configurar una signatura de producció i generar un AAB signat.
-
-## Actualitzacions automàtiques
-
-L'app consulta les GitHub Releases públiques després de la careta d'entrada. Si detecta una versió posterior a la instal·lada, mostra un avís amb accés a la pàgina oficial de la release. També es pot iniciar una consulta manual des de **Novetats → Cercar actualitzacions**. La consulta necessita connexió a Internet; si GitHub aplica un límit temporal, es pot tornar a provar més tard.
-
-## Historial de canvis
-
-Consulta [`CHANGELOG.md`](CHANGELOG.md) per al resum general de totes les versions i [`RELEASE_NOTES.md`](RELEASE_NOTES.md) per a la versió que s'està preparant.
+Package ID: `com.theferrini.partynight`.

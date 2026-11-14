@@ -54,6 +54,14 @@ jobs:
       - name: Sync web app into Android project
         run: npx cap sync android
 
+      - name: Set Android versionCode and versionName
+        shell: bash
+        run: |
+          VERSION="$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")"
+          CODE="$(node -e "const [a,b,c] = require('./package.json').version.split('.').map(Number); console.log(a * 1000000 + b * 1000 + c)")"
+          sed -i -E "s/versionCode [0-9]+/versionCode ${CODE}/" android/app/build.gradle
+          sed -i -E "s/versionName \"[^\"]+\"/versionName \"${VERSION}\"/" android/app/build.gradle
+
       - name: Restore stable Android debug signing key
         uses: actions/cache@v4
         with:

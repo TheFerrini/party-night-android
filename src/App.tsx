@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Browser } from '@capacitor/browser';
 import { APP_VERSION } from './version';
+import { translateText, type AppLanguage } from './localization';
 import {
-  Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart,
+  Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart, Globe, Flag,
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
   Laugh, Music, History, Info, Dices, TreePine, Settings, Cctv, Clock, BellRing, Trophy,
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
@@ -369,7 +370,7 @@ const DARE_CATEGORY_INDEXES = {
 };
 
 // --- RENDERIZADOR AVANZADO DE TEXTO
-const RenderFormattedText = ({ text, isVor = false }) => {
+const RenderFormattedText = ({ text, isVor = false, language = 'es' }) => {
   if (!text) return null;
   let mainText = text;
   let explanation = null;
@@ -401,7 +402,7 @@ const RenderFormattedText = ({ text, isVor = false }) => {
       </span>
       {explanation && (
         <div className="text-sm md:text-base text-gray-400 bg-gray-800/90 px-5 py-4 rounded-2xl border border-gray-700 shadow-inner w-full max-w-lg mt-4 animate-fade-in-up">
-          <span className="font-bold text-gray-300">Diccionario de Fiesta:</span> <br />
+          <span className="font-bold text-gray-300">{translateText(language, "Diccionario de Fiesta:")}</span> <br />
           <span className="italic">{renderNames(explanation)}</span>
         </div>
       )}
@@ -454,10 +455,48 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
 };
 
 export default function App() {
-  const [showIntro, setShowIntro] = useState(true);
+  const [language, setLanguage] = useState<AppLanguage>(() => {
+    try { return (localStorage.getItem('pn-language') as AppLanguage) || 'ca'; } catch { return 'ca'; }
+  });
+  const [languageChosen, setLanguageChosen] = useState(() => {
+    try { return Boolean(localStorage.getItem('pn-language')); } catch { return false; }
+  });
+  const [showLanguagePicker, setShowLanguagePicker] = useState(() => {
+    try { return !localStorage.getItem('pn-language'); } catch { return true; }
+  });
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return Boolean(localStorage.getItem('pn-language')); } catch { return false; }
+  });
+  const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
+  const [sessionHistory, setSessionHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pn-v2-sessions') || '[]'); } catch { return []; }
+  });
+  const [activeSession, setActiveSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pn-v2-active-session') || 'null'); } catch { return null; }
+  });
+  const [statisticsPage, setStatisticsPage] = useState<'overview' | 'games' | 'players'>('overview');
+  const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<string | null>(null);
+  const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [showGeneralSettings, setShowGeneralSettings] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => {
+    try { return localStorage.getItem('pn-haptics') !== 'false'; } catch { return true; }
+  });
+  const [reduceMotion, setReduceMotion] = useState(() => {
+    try { return localStorage.getItem('pn-reduce-motion') === 'true'; } catch { return false; }
+  });
+  const [currentGamePenaltyCounts, setCurrentGamePenaltyCounts] = useState<Record<string, number>>(() => {
+    try { return JSON.parse(localStorage.getItem('pn-v2-game-penalties') || '{}'); } catch { return {}; }
+  });
+  const [lastGameSummary, setLastGameSummary] = useState<any>(null);
+  const [showGameSummary, setShowGameSummary] = useState(false);
+  const [lastSessionSummary, setLastSessionSummary] = useState<any>(null);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const t = (value: string) => translateText(language, value);
   const [screen, setScreen] = useState('setup');
   const [closingScreen, setClosingScreen] = useState(false);
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('pn-v2-players') || '[]'); } catch { return []; }
+  });
   const [newPlayer, setNewPlayer] = useState("");
   const [draggedPlayer, setDraggedPlayer] = useState(null);
   const [mode, setMode] = useState(null);
@@ -593,19 +632,40 @@ export default function App() {
     }
   };
 
-  // La careta acaba sola; després es comprova si hi ha una versió més nova.
-  useEffect(() => {
-    const introTimer = window.setTimeout(() => setShowIntro(false), 2350);
-    return () => window.clearTimeout(introTimer);
-  }, []);
+  const chooseLanguage = (nextLanguage: AppLanguage) => {
+    setLanguage(nextLanguage);
+    try { localStorage.setItem('pn-language', nextLanguage); } catch {}
+    setShowLanguagePicker(false);
+    if (!languageChosen) {
+      setLanguageChosen(true);
+      setShowIntro(true);
+    }
+  };
 
   useEffect(() => {
-    if (showIntro) return;
-    const updateTimer = window.setTimeout(() => {
-      checkForUpdates(false);
-    }, 950);
-    return () => window.clearTimeout(updateTimer);
+    if (!showIntro) return;
+    const introTimer = window.setTimeout(() => setShowIntro(false), 2350);
+    return () => window.clearTimeout(introTimer);
   }, [showIntro]);
+
+  useEffect(() => {
+    if (!languageChosen || showLanguagePicker || showIntro) return;
+    const updateTimer = window.setTimeout(() => checkForUpdates(false), 950);
+    return () => window.clearTimeout(updateTimer);
+  }, [showIntro, languageChosen, showLanguagePicker]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pn-v2-sessions', JSON.stringify(sessionHistory));
+      localStorage.setItem('pn-v2-active-session', JSON.stringify(activeSession));
+      localStorage.setItem('pn-v2-players', JSON.stringify(players));
+      localStorage.setItem('pn-v2-game-penalties', JSON.stringify(currentGamePenaltyCounts));
+      localStorage.setItem('pn-haptics', String(hapticsEnabled));
+      localStorage.setItem('pn-reduce-motion', String(reduceMotion));
+    } catch (error) {
+      console.warn('No s’ha pogut desar el progrés local de Party Night.', error);
+    }
+  }, [sessionHistory, activeSession, players, currentGamePenaltyCounts, hapticsEnabled, reduceMotion]);
 
   const exitPhrasesPool = [
     "¿Seguro que quieres salir de la partida actual? Perderás el progreso de la partida.",
@@ -621,18 +681,134 @@ export default function App() {
       setScreen(targetScreen);
       setClosingScreen(false);
       
-      // Chequear cumple de IAN al entrar a mode-select
-      if (targetScreen === 'mode-select' && !hasAskedIanBirthday) {
-        if (players.includes('IAN')) {
-          setShowIanBirthdayPrompt(true);
-        }
-        setHasAskedIanBirthday(true);
-      }
     }, 250);
   };
 
+  const recordSessionEvent = (type: string, data: Record<string, any> = {}) => {
+    const timestamp = new Date().toISOString();
+    const event = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, type, timestamp, ...data };
+    setActiveSession((prev: any) => {
+      if (!prev) return prev;
+      const storedEvent = { ...event, gameId: event.gameId || prev.currentGame?.id || null };
+      return {
+        ...prev,
+        updatedAt: timestamp,
+        events: [...(prev.events || []), storedEvent],
+        currentGame: prev.currentGame
+          ? { ...prev.currentGame, events: [...(prev.currentGame.events || []), storedEvent] }
+          : null
+      };
+    });
+  };
+
+  const startTrackedGame = (key: string, title: string, settings: Record<string, any> = {}) => {
+    if (!activeSession) return;
+    const timestamp = new Date().toISOString();
+    const game = {
+      id: `${Date.now()}-${key}`, key, title, startedAt: timestamp,
+      players: [...players], settings: JSON.parse(JSON.stringify(settings)), events: []
+    };
+    const event = { id: `${Date.now()}-start`, type: 'game-start', timestamp, gameId: game.id, title, key };
+    game.events.push(event);
+    setActiveSession((prev: any) => prev ? {
+      ...prev, updatedAt: timestamp, events: [...(prev.events || []), event], currentGame: game
+    } : prev);
+    setCurrentGamePenaltyCounts({});
+    setDrinkCounts({});
+    setGlobalStrikes({});
+    setCurrentPlayerIndex(0);
+  };
+
+  const buildGameSummary = (game: any, counts: Record<string, number> = currentGamePenaltyCounts) => {
+    const reconstructed = (game?.events || []).reduce((acc: Record<string, number>, event: any) => {
+      if (event.type === 'penalty') acc[event.player] = (acc[event.player] || 0) + (event.amount || 0);
+      if (event.type === 'penalty-reverted') acc[event.player] = Math.max(0, (acc[event.player] || 0) - (event.amount || 0));
+      return acc;
+    }, {});
+    const finalCounts = Object.keys(counts || {}).length ? counts : reconstructed;
+    const ranking = (game?.players || players).map((player: string) => ({ player, penalties: finalCounts[player] || 0 }))
+      .sort((a: any, b: any) => a.penalties - b.penalties || a.player.localeCompare(b.player));
+    return {
+      ...game, endedAt: new Date().toISOString(), ranking,
+      totalPenalties: ranking.reduce((sum: number, item: any) => sum + item.penalties, 0),
+      eventCount: (game?.events || []).length,
+      winners: ranking.length ? ranking.filter((item: any) => item.penalties === ranking[0].penalties).map((item: any) => item.player) : []
+    };
+  };
+
+  const finishTrackedGame = (showSummary = true) => {
+    const game = activeSession?.currentGame;
+    if (!game) return null;
+    const summary = buildGameSummary(game);
+    const endedEvent = { id: `${Date.now()}-game-end`, type: 'game-end', timestamp: summary.endedAt, gameId: game.id, winners: summary.winners };
+    setActiveSession((prev: any) => prev ? {
+      ...prev, updatedAt: summary.endedAt, events: [...(prev.events || []), endedEvent],
+      games: [...(prev.games || []), summary], currentGame: null
+    } : prev);
+    setLastGameSummary(summary);
+    setCurrentGamePenaltyCounts({});
+    if (showSummary) setShowGameSummary(true);
+    return summary;
+  };
+
+  const beginSession = () => {
+    if (players.length < 2) return;
+    const timestamp = new Date().toISOString();
+    setActiveSession({
+      id: `session-${Date.now()}`, startedAt: timestamp, updatedAt: timestamp,
+      completedAt: null, status: 'active', players: [...players], language,
+      settings: { enableAccumulativePenalty, hapticsEnabled, reduceMotion }, games: [], events: [], currentGame: null
+    });
+    setDrinkCounts({});
+    setGlobalStrikes({});
+    setCurrentGamePenaltyCounts({});
+    setMainTab('play');
+    setScreen('mode-select');
+  };
+
+  const resumeSession = () => {
+    if (!activeSession) { beginSession(); return; }
+    if (activeSession.currentGame) {
+      const interrupted = buildGameSummary(activeSession.currentGame);
+      interrupted.interrupted = true;
+      setActiveSession((prev: any) => prev ? { ...prev, games: [...(prev.games || []), interrupted], currentGame: null } : prev);
+      setLastGameSummary(interrupted);
+      setShowGameSummary(true);
+      setCurrentGamePenaltyCounts({});
+    }
+    setMainTab('play');
+    setScreen('mode-select');
+  };
+
+  const finishSession = () => {
+    if (!activeSession) { setScreen('setup'); setMainTab('play'); return; }
+    const games = [...(activeSession.games || [])];
+    if (activeSession.currentGame) {
+      const interrupted = buildGameSummary(activeSession.currentGame);
+      interrupted.interrupted = true;
+      games.push(interrupted);
+    }
+    const completed = {
+      ...activeSession, games, currentGame: null, status: 'completed',
+      completedAt: new Date().toISOString(), finalPlayers: [...players]
+    };
+    setSessionHistory((prev: any[]) => [completed, ...prev].slice(0, 100));
+    setActiveSession(null);
+    setLastSessionSummary(completed);
+    setShowSessionSummary(true);
+    setDrinkCounts({});
+    setGlobalStrikes({});
+    setCurrentGamePenaltyCounts({});
+    setMainTab('play');
+    setScreen('setup');
+  };
+
   const processPenalty = (player, tragosCount = 1) => {
-    setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + tragosCount }));
+    const amount = Math.max(0, Number(tragosCount) || 0);
+    setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
+    setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
+    recordSessionEvent('penalty', { player, amount, game: mode || activeSession?.currentGame?.key || 'unknown' });
+    if (hapticsEnabled && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
     if (enableAccumulativePenalty) {
        setGlobalStrikes(prev => {
           const currentStrikes = prev[player] || 0;
@@ -647,7 +823,10 @@ export default function App() {
   };
 
   const processRevertPenalty = (player, tragosCount = 1) => {
-    setDrinkCounts(prev => ({ ...prev, [player]: Math.max(0, (prev[player] || 0) - tragosCount) }));
+    const amount = Math.max(0, Number(tragosCount) || 0);
+    setDrinkCounts(prev => ({ ...prev, [player]: Math.max(0, (prev[player] || 0) - amount) }));
+    setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: Math.max(0, (prev[player] || 0) - amount) }));
+    recordSessionEvent('penalty-reverted', { player, amount, game: mode || activeSession?.currentGame?.key || 'unknown' });
     if (enableAccumulativePenalty) {
        setGlobalStrikes(prev => ({ ...prev, [player]: Math.max(0, (prev[player] || 0) - 1) }));
     }
@@ -682,8 +861,18 @@ export default function App() {
   };
 
   const confirmExit = () => {
-    handleNavigate(exitConfirm);
+    const destination = exitConfirm;
     setExitConfirm(null);
+    if (destination === 'mode-select') {
+      finishTrackedGame(true);
+      setClosingScreen(true);
+      window.setTimeout(() => {
+        setScreen('mode-select');
+        setClosingScreen(false);
+      }, 180);
+      return;
+    }
+    handleNavigate(destination);
   };
 
   const handleToggleAllYN = () => {
@@ -895,6 +1084,7 @@ export default function App() {
       return;
     }
     setMode('yonunca');
+    startTrackedGame('yonunca', 'Yo Nunca', { categories: ynConfig });
     handleNavigate('game-yonunca');
     generateYNPhrase();
   };
@@ -907,6 +1097,7 @@ export default function App() {
       return;
     }
     setMode('vor');
+    startTrackedGame('vor', 'Verdad o Reto', { environment, truths: vorTruthConfig, dares: vorDareConfig, penaltyIntensity, fbiMode });
     handleNavigate('game-vor');
     setCurrentPlayerIndex(0);
     setTurnState('waiting');
@@ -915,6 +1106,7 @@ export default function App() {
 
   const startGameBomba = () => {
     setMode('bomba');
+    startTrackedGame('bomba', 'La Bomba', { ...bombaConfig });
     handleNavigate('game-bomba');
     startBombaRound();
   };
@@ -948,6 +1140,7 @@ export default function App() {
     // Guardem la plantilla original, no el nom aleatori que s'hi hagi substituït.
     setUsedPhrases(prev => [...prev, rawPhraseTemplate]);
 
+    recordSessionEvent('prompt', { game: 'yonunca', text: phraseTemplate });
     if (animate) {
       setIsAnimatingYN(true);
       let ticks = 0;
@@ -975,7 +1168,7 @@ export default function App() {
     // MODO REY IAN INVASION
     const nextCount = ynTurnCount + 1;
     setYnTurnCount(nextCount);
-    if (isIansBirthday && players.includes('IAN') && nextCount % Math.max(2, players.length) === 0) {
+    if (isIansBirthday && false && nextCount % Math.max(2, players.length) === 0) {
        triggerIanBoxes();
     }
     
@@ -1038,6 +1231,7 @@ export default function App() {
     }
 
     setCurrentPhrase(finalPhrase);
+    recordSessionEvent('prompt', { game: 'vor', type: finalType, player: currentPlayerName, text: finalPhrase });
     setCurrentPenalty(tragosGenerados);
     setVorType(finalType);
     setHasTimerOnCurrentPhrase(checkHasTimer(finalPhrase));
@@ -1079,13 +1273,14 @@ export default function App() {
     const firstPlayer = getRandomPlayer();
     const direction = Math.random() > 0.5 ? 'Horario' : 'Antihorario';
     setBombaState({ phase: 'countdown', topic, timeLeft: 3, penalty: 0, firstPlayer, direction });
+    recordSessionEvent('prompt', { game: 'bomba', text: topic, firstPlayer, direction });
     setVorPenaltyCounted(false);
     setCurrentPlayerIndex(players.indexOf(firstPlayer));
     
     // MODO REY IAN INVASION (cada 2 rondas)
     const nextCount = bombaRoundCount + 1;
     setBombaRoundCount(nextCount);
-    if (isIansBirthday && players.includes('IAN') && nextCount % 2 === 0) {
+    if (isIansBirthday && false && nextCount % 2 === 0) {
         triggerIanBoxes();
     }
   };
@@ -1125,6 +1320,7 @@ export default function App() {
   // 4. DUELO 1V1
   const startDuelo = () => {
      setMode('duelo');
+     startTrackedGame('duelo', 'Duelo 1v1', { environment: dueloEnvironment, penaltyLevel: dueloPenaltyLevel });
      handleNavigate('game-duelo');
      triggerNewDuelo();
   };
@@ -1136,11 +1332,12 @@ export default function App() {
      const penalty = Math.floor(Math.random() * (pConfig.max - pConfig.min + 1)) + pConfig.min;
      
      setDueloState({ p1, p2, challenge, penalty, phase: 'playing' });
+     recordSessionEvent('prompt', { game: 'duelo', players: [p1, p2], text: challenge, penalty });
      
      // MODO REY IAN INVASION (cada 3 rondas)
      const nextCount = dueloRoundCount + 1;
      setDueloRoundCount(nextCount);
-     if (isIansBirthday && players.includes('IAN') && nextCount % 3 === 0) {
+     if (isIansBirthday && false && nextCount % 3 === 0) {
          triggerIanBoxes();
      }
   };
@@ -1158,6 +1355,7 @@ export default function App() {
   // 5. ENCUESTA BRUTAL
   const startEncuesta = () => {
      setMode('encuesta');
+     startTrackedGame('encuesta', 'Encuesta Brutal', { environment: encuestaEnvironment, penaltyLevel: encuestaPenaltyLevel });
      handleNavigate('game-encuesta');
      triggerNewEncuesta();
   };
@@ -1168,16 +1366,18 @@ export default function App() {
      const penalty = Math.floor(Math.random() * (pConfig.max - pConfig.min + 1)) + pConfig.min;
      
      setEncuestaState({ question, penalty, currentVoterIndex: 0, votes: {}, phase: 'pass' });
+     recordSessionEvent('prompt', { game: 'encuesta', text: question, penalty });
      
      // MODO REY IAN INVASION (cada 2 rondas)
      const nextCount = encuestaRoundCount + 1;
      setEncuestaRoundCount(nextCount);
-     if (isIansBirthday && players.includes('IAN') && nextCount % 2 === 0) {
+     if (isIansBirthday && false && nextCount % 2 === 0) {
          triggerIanBoxes();
      }
   };
 
   const registerVote = (votedPlayer) => {
+     recordSessionEvent('vote', { game: 'encuesta', voter: players[encuestaState.currentVoterIndex], votedPlayer });
      setEncuestaState(prev => {
         const newVotes = { ...prev.votes, [votedPlayer]: (prev.votes[votedPlayer] || 0) + 1 };
         const nextIndex = prev.currentVoterIndex + 1;
@@ -1197,6 +1397,7 @@ export default function App() {
         else if (v === maxVotes) { losers.push(p); }
      });
      
+     recordSessionEvent('survey-result', { game: 'encuesta', winners: losers, votes: encuestaState.votes, penalty: encuestaState.penalty });
      losers.forEach(l => processPenalty(l, encuestaState.penalty));
      triggerNewEncuesta();
   };
@@ -1222,7 +1423,7 @@ export default function App() {
               className={`flex-1 min-w-[70px] flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 transition-all ${isActive ? `${env.border} ${env.bg} ${env.text} shadow-lg` : 'border-gray-600 bg-gray-700/80 text-gray-400 hover:bg-gray-600'}`}
             >
               <Icon size={24} />
-              <span className="font-bold text-[10px] sm:text-xs uppercase tracking-wider text-center">{env.label}</span>
+              <span className="font-bold text-[10px] sm:text-xs uppercase tracking-wider text-center">{t(env.label)}</span>
             </button>
           );
         })}
@@ -1235,8 +1436,8 @@ export default function App() {
       <div className="grid grid-cols-2 gap-2 w-full relative z-10">
         {PENALTY_LEVELS.map(level => (
           <button key={level.value} onClick={() => setLevel(level.value)} className={`w-full py-3 px-1 text-sm font-bold rounded-xl transition-all flex flex-col items-center justify-center gap-1 border ${currentLevel === level.value ? level.colorClass : 'bg-gray-700/80 text-gray-400 border-gray-600 hover:bg-gray-600'}`}>
-            <span className="flex items-center gap-1">{level.title} {level.value === 'fallo' && currentLevel === 'fallo' && <Flame size={14} className="animate-bounce" />}</span>
-            <span className={`text-[10px] font-medium ${currentLevel === level.value ? 'opacity-90' : 'opacity-60'}`}>{level.subtitle}</span>
+            <span className="flex items-center gap-1">{t(level.title)} {level.value === 'fallo' && currentLevel === 'fallo' && <Flame size={14} className="animate-bounce" />}</span>
+            <span className={`text-[10px] font-medium ${currentLevel === level.value ? 'opacity-90' : 'opacity-60'}`}>{t(level.subtitle)}</span>
           </button>
         ))}
       </div>
@@ -1266,7 +1467,7 @@ export default function App() {
     <div className={`bg-gray-800/90 p-3 rounded-xl border flex flex-col gap-2 transition-colors relative z-10 ${isRandomizing ? 'border-indigo-500/50 bg-gray-700/90' : 'border-gray-700'}`}>
       <div className="flex items-center gap-2">
         <span className={color}>{icon}</span>
-        <span className="font-bold text-gray-200 text-sm">{title}</span>
+        <span className="font-bold text-gray-200 text-sm">{t(title)}</span>
       </div>
       <div className="flex gap-1 bg-gray-900 p-1 rounded-lg h-10 box-border">
         {FREQUENCIES.map(f => <FrequencyButton key={f.value} config={config} setConfig={setConfig} catKey={catKey} value={f.value} label={f.label} />)}
@@ -1616,7 +1817,7 @@ export default function App() {
       <AnimatedModal isOpen={!!exitConfirm} onClose={() => setExitConfirm(null)} zIndex="z-[80]">
         <div className="bg-gray-800 border border-gray-700 rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl">
           <AlertTriangle size={48} className="text-yellow-500 mx-auto mb-4 animate-pulse" />
-          <h3 className="text-xl font-black text-white mb-2 uppercase">¿Huyendo tan pronto?</h3>
+          <h3 className="text-xl font-black text-white mb-2 uppercase">Finalitzar partida?</h3>
           <p className="text-gray-400 mb-6 text-sm">
             {screen === 'game-vor' && fbiMode && fbiEvents.length > 0
               ? "¡OJO! Tienes el Modo FBI activado. Si sales ahora, todos los registros temporales y pruebas se perderán."
@@ -1631,7 +1832,7 @@ export default function App() {
               onClick={confirmExit}
               className={`w-full py-3 rounded-xl font-bold uppercase tracking-wider transition-colors ${exitTimer > 0 ? 'bg-red-900/50 text-red-500/50 cursor-not-allowed border border-red-900/30' : 'bg-red-600 hover:bg-red-500 text-white border-b-4 border-red-800 active:scale-95'}`}
             >
-              {exitTimer > 0 ? `Salir (${exitTimer})` : 'Confirmar Salida'}
+              {exitTimer > 0 ? `Finalitzar (${exitTimer})` : 'Finalitzar partida'}
             </button>
           </div>
         </div>
@@ -1797,7 +1998,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v1.68.1 (Safe Areas Update)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.0 (The Party Rebuild)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>Android:</b> espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.<br/>
                 - <b>Careta:</b> animació més lleugera, sense botó per saltar i amb inici més net.<br/>
@@ -1862,6 +2063,7 @@ export default function App() {
                 <p className="text-xs text-gray-400 mt-1">{latestRelease.name}</p>
               </div>
               <p className="text-sm text-gray-300">Hi ha una versió més recent de Party Night. Obre la pàgina oficial de la release per consultar els canvis i descarregar l'APK.</p>
+              {latestRelease.body && <div className="max-h-36 overflow-y-auto rounded-xl border border-gray-700 bg-gray-950/70 p-3 text-left text-xs text-gray-300 whitespace-pre-wrap">{latestRelease.body}</div>}
               <button type="button" onClick={openLatestRelease} className="w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 py-4 font-black text-white shadow-lg transition-transform active:scale-[.98] flex items-center justify-center gap-2">
                 <ArrowRight size={18} /> Veure actualització a GitHub
               </button>
@@ -1889,9 +2091,49 @@ export default function App() {
         </div>
       </AnimatedModal>
 
+
+      <AnimatedModal isOpen={showLanguagePicker} onClose={() => { if (languageChosen) setShowLanguagePicker(false); }} zIndex="z-[180]">
+        <div className="w-full max-w-sm rounded-3xl border border-cyan-400/30 bg-gray-900 p-6 shadow-2xl text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
+          <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">Party Night · Language</p>
+          <h2 className="text-2xl font-black text-white mb-2">Tria l’idioma / Choose your language</h2>
+          <p className="text-sm text-gray-400 mb-5">Podràs canviar-lo més tard des de la pantalla Jugar.</p>
+          <div className="flex flex-col gap-2">
+            <button onClick={() => chooseLanguage('ca')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇦🇩 Català</button>
+            <button onClick={() => chooseLanguage('es')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇪🇸 Español</button>
+            <button onClick={() => chooseLanguage('en')} className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-4 text-left font-black text-white">🇬🇧 English</button>
+          </div>
+        </div>
+      </AnimatedModal>
+      <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
+        <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
+          <div className="flex items-center justify-between mb-5"><div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0</p><h2 className="text-2xl font-black text-white">Configuració general</h2></div><button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button></div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Penalitzacions acumulatives</p><p className="text-xs text-gray-400">Tres penalitzacions activen el càstig final.</p></div><button onClick={() => setEnableAccumulativePenalty(v => !v)} className={`h-7 w-12 rounded-full border relative ${enableAccumulativePenalty ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${enableAccumulativePenalty ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
+            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Vibració tàctil</p><p className="text-xs text-gray-400">Resposta en registrar una penalització.</p></div><button onClick={() => setHapticsEnabled(v => !v)} className={`h-7 w-12 rounded-full border relative ${hapticsEnabled ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${hapticsEnabled ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
+            <div className="flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div><p className="font-bold text-white">Reduir animacions</p><p className="text-xs text-gray-400">Menys moviment en dispositius lents.</p></div><button onClick={() => setReduceMotion(v => !v)} className={`h-7 w-12 rounded-full border relative ${reduceMotion ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-transform ${reduceMotion ? 'translate-x-6' : 'translate-x-1'}`}/></button></div>
+            <button onClick={() => { setShowGeneralSettings(false); setShowLanguagePicker(true); }} className="w-full flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 font-black text-cyan-200"><Globe size={18}/> Canviar idioma · {language.toUpperCase()}</button>
+          </div>
+          <p className="mt-5 text-center text-[10px] text-gray-500">El mode aniversari i la detecció automàtica per nom s'han eliminat.</p>
+        </div>
+      </AnimatedModal>
+      <AnimatedModal isOpen={showGameSummary} onClose={() => setShowGameSummary(false)} zIndex="z-[170]">
+        <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-yellow-500/30 bg-gray-900 p-6 shadow-2xl">
+          <div className="text-center mb-5"><Trophy size={42} className="mx-auto mb-2 text-yellow-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-yellow-300">Partida finalitzada</p><h2 className="text-2xl font-black text-white">{lastGameSummary?.title || 'Rànquing de partida'}</h2></div>
+          {lastGameSummary?.ranking?.length ? <div className="space-y-2">{lastGameSummary.ranking.map((item: any,index: number) => <div key={item.player} className={`flex items-center justify-between rounded-xl border px-4 py-3 ${index === 0 ? 'border-yellow-400/50 bg-yellow-500/10' : 'border-gray-700 bg-gray-800'}`}><span className="font-black text-white">{index === 0 ? '🏆 ' : `#${index+1} · `}{item.player}</span><span className="text-sm font-bold text-gray-300">{item.penalties} penalitzacions</span></div>)}</div> : <p className="text-center text-gray-400">No hi ha dades de penalitzacions per a aquesta partida.</p>}
+          <button onClick={() => setShowGameSummary(false)} className="w-full mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 py-4 font-black text-white">Tornar al menú de jocs</button>
+        </div>
+      </AnimatedModal>
+      <AnimatedModal isOpen={showSessionSummary} onClose={() => setShowSessionSummary(false)} zIndex="z-[175]">
+        <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-emerald-500/30 bg-gray-900 p-6 shadow-2xl">
+          <div className="text-center mb-5"><Trophy size={44} className="mx-auto mb-2 text-emerald-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-emerald-300">Sessió desada</p><h2 className="text-2xl font-black text-white">Fi de la sessió</h2><p className="text-sm text-gray-400 mt-1">{lastSessionSummary?.games?.length || 0} jocs · {lastSessionSummary?.players?.length || 0} jugadors</p></div>
+          {(lastSessionSummary?.games || []).map((game: any,index: number) => <div key={game.id || index} className="rounded-xl border border-gray-700 bg-gray-800 p-3 mb-2"><div className="font-bold text-white">{game.title}</div><div className="text-xs text-gray-400">Guanyador(s): {game.winners?.join(', ') || '—'}</div></div>)}
+          <button onClick={() => setShowSessionSummary(false)} className="w-full rounded-xl bg-emerald-600 py-4 font-black text-white">Tornar a Jugar</button>
+        </div>
+      </AnimatedModal>
       {/* --- PANTALLA INICIAL (NOMBRES) --- */}
-      {screen === 'setup' && (
-        <div className={`min-h-screen text-white p-6 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
+      {screen === 'setup' && mainTab === 'play' && (
+        <div className={`min-h-screen text-white p-6 pb-28 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
           <div className="max-w-md w-full bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-700 relative overflow-hidden">
             <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-purple-600/20 blur-3xl rounded-full pointer-events-none"></div>
             <div className="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-pink-600/20 blur-3xl rounded-full pointer-events-none"></div>
@@ -1901,7 +2143,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v1.68.1 • SAFE AREAS UPDATE <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.0 • THE PARTY REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">para estudiantes con pretensiones alcohólicas</p>
@@ -1930,22 +2172,56 @@ export default function App() {
                 </div>
               )}
             </div>
-            <button disabled={players.length < 2} onClick={() => handleNavigate('mode-select')} className={`w-full py-4 mb-4 rounded-xl font-black text-xl flex items-center justify-center gap-3 transition-all z-10 relative ${players.length >= 2 ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-500/40 active:scale-95 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
-              ¡Al lío! <ArrowRight size={22} />
+            <button disabled={players.length < 2} onClick={resumeSession} className={`w-full py-4 mb-4 rounded-xl font-black text-xl flex items-center justify-center gap-3 transition-all z-10 relative ${players.length >= 2 ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-xl shadow-purple-500/40 active:scale-95 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}>
+              {activeSession ? 'Continuar sessió' : 'Començar sessió'} <ArrowRight size={22} />
             </button>
-            <div className="flex justify-between items-center w-full z-20 relative mt-2">
-              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 text-xs sm:text-sm uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-2 rounded-lg border border-emerald-500/30 transition-colors">
-                <History size={16} /> NOVEDADES
-              </button>
+            <div className="grid grid-cols-2 gap-2 w-full z-20 relative mt-2">
+              <button onClick={() => setIsChangelogOpen(true)} className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] uppercase tracking-widest font-bold bg-emerald-900/30 px-3 py-3 rounded-xl border border-emerald-500/30"><History size={16}/> Novetats</button>
+              <button onClick={() => setShowLanguagePicker(true)} className="flex items-center justify-center gap-1.5 text-cyan-300 text-[11px] uppercase tracking-widest font-bold bg-cyan-900/30 px-3 py-3 rounded-xl border border-cyan-500/30"><Globe size={16}/> {language.toUpperCase()}</button>
+              <button onClick={() => setShowGeneralSettings(true)} className="col-span-2 flex items-center justify-center gap-2 text-gray-300 text-[11px] uppercase tracking-widest font-bold bg-gray-700/60 px-3 py-3 rounded-xl border border-gray-600"><Settings size={16}/> Configuració general</button>
             </div>
           </div>
         </div>
       )}
 
+
+      {screen === 'setup' && mainTab === 'stats' && (
+        <div className="min-h-screen px-4 pt-6 pb-28 text-white"><div className="mx-auto w-full max-w-md">
+          <div className="mb-5"><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0</p><h1 className="text-3xl font-black">Estadístiques</h1><p className="text-sm text-gray-400">Tot el que ha passat a les vostres sessions.</p></div>
+          <div className="grid grid-cols-3 gap-2 mb-4">{[{selected:statisticsPage==='overview',label:'Resum',page:'overview'},{selected:statisticsPage==='games',label:'Jocs',page:'games'},{selected:statisticsPage==='players',label:'Jugadors',page:'players'}].map(item=><button key={item.page} onClick={()=>{setStatisticsPage(item.page as any);setSelectedPlayerProfile(null)}} className={`rounded-xl border px-2 py-3 text-xs font-black uppercase ${item.selected?'border-cyan-400 bg-cyan-500/15 text-cyan-200':'border-gray-700 bg-gray-800 text-gray-400'}`}>{item.label}</button>)}</div>
+          {(() => {
+            const allSessions=[...(activeSession?[activeSession]:[]),...sessionHistory];
+            const allGames=allSessions.flatMap((session:any)=>session.games||[]);
+            const allEvents=allSessions.flatMap((session:any)=>session.events||[]);
+            const totalPenalties=allEvents.filter((event:any)=>event.type==='penalty').reduce((sum:number,event:any)=>sum+(event.amount||0),0);
+            const playerNames=[...new Set(allSessions.flatMap((session:any)=>session.players||[]))] as string[];
+            const playerRows=playerNames.map(player=>{const penalties=allEvents.filter((event:any)=>event.type==='penalty'&&event.player===player).reduce((sum:number,event:any)=>sum+(event.amount||0),0);const gamesPlayed=allGames.filter((game:any)=>(game.players||[]).includes(player)).length;const wins=allGames.filter((game:any)=>(game.winners||[]).includes(player)).length;return{player,penalties,gamesPlayed,wins};}).sort((a,b)=>b.wins-a.wins||a.penalties-b.penalties);
+            if(statisticsPage==='overview') return <><div className="grid grid-cols-2 gap-3 mb-4">{[{label:'Sessions',value:allSessions.filter((session:any)=>session.status==='completed').length},{label:'Jocs',value:allGames.length},{label:'Jugadors',value:playerNames.length},{label:'Penalitzacions',value:totalPenalties}].map(card=><div key={card.label} className="rounded-2xl border border-gray-700 bg-gray-800/90 p-4"><div className="text-2xl font-black text-white">{card.value}</div><div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{card.label}</div></div>)}</div><div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><h3 className="font-black text-white mb-3">Jocs més jugats</h3>{Object.entries(allGames.reduce((acc:any,game:any)=>{acc[game.key]=(acc[game.key]||0)+1;return acc;},{})).sort((a:any,b:any)=>b[1]-a[1]).slice(0,5).map(([key,count]:any)=><div key={key} className="flex justify-between border-b border-gray-700/70 py-2 text-sm"><span className="text-gray-300">{key}</span><b className="text-cyan-300">{count}</b></div>)}{!allGames.length&&<p className="text-sm text-gray-500">Encara no hi ha cap sessió registrada.</p>}</div></>;
+            if(statisticsPage==='games') return <div className="space-y-3">{allGames.length?allGames.map((game:any)=><div key={game.id} className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4"><div className="flex justify-between gap-2"><h3 className="font-black text-white">{game.title}</h3><span className="text-[10px] text-gray-500">{new Date(game.startedAt).toLocaleDateString()}</span></div><p className="text-xs text-gray-400 mt-1">{game.players?.length||0} jugadors · {game.eventCount||0} esdeveniments</p><div className="mt-3 flex flex-wrap gap-2">{(game.winners||[]).map((winner:string)=><span key={winner} className="rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-bold text-yellow-200">🏆 {winner}</span>)}</div></div>):<p className="text-sm text-gray-500">Quan acabeu una partida, aquí apareixeran els resultats.</p>}</div>;
+            if(selectedPlayerProfile){const player=playerRows.find(item=>item.player===selectedPlayerProfile);const playerEvents=allEvents.filter((event:any)=>event.player===selectedPlayerProfile||event.voter===selectedPlayerProfile);return <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/90 p-4"><button onClick={()=>setSelectedPlayerProfile(null)} className="mb-4 text-xs font-bold uppercase text-cyan-300">← Tots els perfils</button><h2 className="text-2xl font-black text-white">{selectedPlayerProfile}</h2><div className="grid grid-cols-3 gap-2 my-4"><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.gamesPlayed||0}</b><p className="text-[9px] text-gray-500 uppercase">Jocs</p></div><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.wins||0}</b><p className="text-[9px] text-gray-500 uppercase">Victòries</p></div><div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.penalties||0}</b><p className="text-[9px] text-gray-500 uppercase">Penalitzacions</p></div></div><h3 className="font-bold text-white mb-2">Registre del jugador</h3>{playerEvents.slice(-30).reverse().map((event:any)=><div key={event.id} className="border-t border-gray-700 py-2 text-xs text-gray-300">{event.type==='penalty'?`+${event.amount} · penalització`:event.type==='vote'?`Vot: ${event.votedPlayer}`:event.type} · {new Date(event.timestamp).toLocaleString()}</div>)}</div>;}
+            return <div className="space-y-2">{playerRows.map(item=><button key={item.player} onClick={()=>setSelectedPlayerProfile(item.player)} className="w-full flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/90 p-4 text-left"><div><div className="font-black text-white">{item.player}</div><div className="text-[10px] text-gray-400">{item.gamesPlayed} jocs · {item.wins} victòries</div></div><div className="text-right"><div className="font-black text-cyan-300">{item.penalties}</div><div className="text-[9px] uppercase text-gray-500">penalitzacions</div></div></button>)}</div>;
+          })()}
+        </div></div>
+      )}
+      {screen === 'setup' && mainTab === 'history' && (
+        <div className="min-h-screen px-4 pt-6 pb-28 text-white"><div className="mx-auto w-full max-w-md">
+          <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0</p><h1 className="text-3xl font-black mb-1">Historial</h1><p className="text-sm text-gray-400 mb-5">Les vostres sessions, jocs i rànquings.</p>
+          {sessionHistory.length===0?<div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 text-center"><History size={38} className="mx-auto text-gray-500 mb-3"/><p className="font-bold text-white">Encara no hi ha sessions desades.</p><p className="text-xs text-gray-400 mt-1">Quan acabeu una sessió, quedarà desada aquí.</p></div>:<div className="space-y-3">{sessionHistory.map((session:any)=><div key={session.id} className="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90"><button onClick={()=>setExpandedSessionId(expandedSessionId===session.id?null:session.id)} className="w-full p-4 text-left"><div className="flex items-center justify-between"><span className="font-black text-white">{new Date(session.startedAt).toLocaleString()}</span><ChevronDown size={18} className={expandedSessionId===session.id?'rotate-180 transition-transform':'transition-transform'}/></div><p className="text-xs text-gray-400 mt-1">{session.players?.join(' · ')} · {session.games?.length||0} jocs</p></button>{expandedSessionId===session.id&&<div className="border-t border-gray-700 p-4 space-y-3">{(session.games||[]).map((game:any,index:number)=><div key={game.id||index} className="rounded-xl border border-gray-700 bg-gray-900/80 p-3"><div className="font-black text-white">{index+1}. {game.title}</div><p className="text-[10px] text-gray-500 mt-1">Configuració: {JSON.stringify(game.settings||{})}</p><p className="text-xs text-yellow-200 mt-2">Guanyador(s): {game.winners?.join(', ')||'—'}</p><div className="mt-2 space-y-1">{(game.ranking||[]).map((item:any,rank:number)=><div key={item.player} className="flex justify-between text-xs"><span className="text-gray-300">#{rank+1} · {item.player}</span><b className="text-cyan-300">{item.penalties}</b></div>)}</div><details className="mt-3"><summary className="cursor-pointer text-xs font-bold text-cyan-300">Veure totes les dades ({game.events?.length||0})</summary><div className="mt-2 space-y-1">{(game.events||[]).map((event:any)=><p key={event.id} className="text-[10px] text-gray-400">{event.type}: {event.text||event.player||event.votedPlayer||''}</p>)}</div></details></div>)}</div>}</div>)}</div>}
+        </div></div>
+      )}
+      {screen === 'setup' && <div className="pn-bottom-nav" role="navigation" aria-label="Navegació principal">
+        <button onClick={()=>setMainTab('stats')} className={mainTab==='stats'?'pn-nav-item active':'pn-nav-item'}><BarChart3 size={20}/><span>Estadístiques</span></button>
+        <button onClick={()=>setMainTab('play')} className={mainTab==='play'?'pn-nav-item active':'pn-nav-item'}><Beer size={20}/><span>Jugar</span></button>
+        <button onClick={()=>setMainTab('history')} className={mainTab==='history'?'pn-nav-item active':'pn-nav-item'}><History size={20}/><span>Historial</span></button>
+      </div>}
       {/* --- MENÚ DE SELECCIÓN DE JUEGO --- */}
       {screen === 'mode-select' && (
-        <div className={`min-h-screen text-white p-4 sm:p-6 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
+        <div className={`min-h-screen text-white p-4 sm:p-6 pb-10 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : 'animate-expand'}`}>
           <div className="max-w-md w-full relative z-10">
+            <div className="flex items-center gap-2 mb-4">
+              <button onClick={() => setShowGeneralSettings(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-600 bg-gray-800/90 px-3 py-3 text-xs font-black uppercase text-gray-200"><Settings size={16}/> Configuració general</button>
+              <button onClick={finishSession} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/25 px-3 py-3 text-xs font-black uppercase text-red-300"><Flag size={16}/> Finalitzar sessió</button>
+            </div>
 
             {/* AJUSTES GLOBALES PERSISTENTES (Castigo Acumulativo) */}
             <div className={`bg-gray-800/90 border-2 border-red-500/30 rounded-2xl p-4 mb-6 shadow-lg transition-all ${activeSettings ? 'max-h-0 opacity-0 overflow-hidden m-0 p-0 border-0' : ''}`}>
@@ -2012,8 +2288,8 @@ export default function App() {
                   </div>
                   {activeSettings === 'yn' ? <div className="flex items-center gap-1.5 text-indigo-100 font-bold bg-indigo-900/30 px-3 py-1.5 rounded-lg border border-indigo-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'yn' ? 'max-h-[70vh] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
-                  <div className="bg-gray-800/50 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[70vh] flex flex-col gap-4 relative">
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'yn' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className="bg-gray-800/50 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-4 relative">
                     <div className="flex justify-between items-center shrink-0">
                       <p className="text-gray-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest">Filtro de Frases</p>
                       <button onClick={handleRandomizeYN} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all ${isRandomizing ? 'bg-indigo-600 text-white border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.5)] animate-pulse' : 'bg-gray-700/50 text-gray-300 border-gray-600 hover:bg-gray-600 hover:text-white'}`}>
@@ -2053,8 +2329,8 @@ export default function App() {
                   </div>
                   {activeSettings === 'vor' ? <div className="flex items-center gap-1.5 text-orange-100 font-bold bg-orange-900/30 px-3 py-1.5 rounded-lg border border-orange-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'vor' ? 'max-h-[70vh] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
-                  <div className="bg-gray-800/50 border border-orange-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[70vh] flex flex-col gap-5 relative">
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'vor' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className="bg-gray-800/50 border border-orange-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <div className="shrink-0">
                       <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde nos destruimos?</p>
                       <EnvironmentSelector currentEnv={environment} setEnv={setEnvironment} />
@@ -2108,8 +2384,8 @@ export default function App() {
                   </div>
                   {activeSettings === 'bomba' ? <div className="flex items-center gap-1.5 text-red-100 font-bold bg-red-900/30 px-3 py-1.5 rounded-lg border border-red-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'bomba' ? 'max-h-[70vh] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
-                  <div className="bg-gray-800/50 border border-red-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[70vh] flex flex-col gap-5 relative">
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'bomba' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className="bg-gray-800/50 border border-red-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <p className="text-sm text-gray-400 italic text-center shrink-0">Id diciendo por turnos palabras de la temática. A quien le explote, pringa.</p>
                     <div className="bg-gray-800/90 p-4 rounded-xl border border-gray-700 flex flex-col gap-4 shrink-0 relative z-10">
                       <p className="text-red-400 text-xs font-bold uppercase tracking-widest text-center">Tiempo Explosión</p>
@@ -2174,8 +2450,8 @@ export default function App() {
                   </div>
                   {activeSettings === 'duelo' ? <div className="flex items-center gap-1.5 text-teal-100 font-bold bg-teal-900/30 px-3 py-1.5 rounded-lg border border-teal-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'duelo' ? 'max-h-[70vh] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
-                  <div className="bg-gray-800/50 border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[70vh] flex flex-col gap-5 relative">
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'duelo' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className="bg-gray-800/50 border border-teal-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <p className="text-sm text-gray-400 italic text-center shrink-0">Dos personas elegidas al azar se enfrentan en un mini-reto. Quien pierda, bebe.</p>
                     <div className="shrink-0 relative z-10">
                       <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde nos enfrentamos?</p>
@@ -2203,8 +2479,8 @@ export default function App() {
                   </div>
                   {activeSettings === 'encuesta' ? <div className="flex items-center gap-1.5 text-pink-100 font-bold bg-pink-900/30 px-3 py-1.5 rounded-lg border border-pink-500/30"><ChevronLeft size={18} /> Volver</div> : <Settings2 size={24} className="group-hover:rotate-90 transition-transform opacity-70 text-white" />}
                 </button>
-                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'encuesta' ? 'max-h-[70vh] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
-                  <div className="bg-gray-800/50 border border-pink-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[70vh] flex flex-col gap-5 relative">
+                <div className={`transition-all duration-500 ease-in-out overflow-hidden ${activeSettings === 'encuesta' ? 'max-h-[min(62dvh,560px)] opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
+                  <div className="bg-gray-800/50 border border-pink-500/30 rounded-2xl p-4 sm:p-5 shadow-inner overflow-y-auto custom-scrollbar max-h-[min(62dvh,560px)] overscroll-contain flex flex-col gap-5 relative">
                     <p className="text-sm text-pink-300 font-bold italic text-center shrink-0">"Ideal para destruir amistades, o reforzarlas. ¿Quién sabe?"</p>
                     <div className="shrink-0 relative z-10">
                       <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-3 text-center">¿Dónde estamos?</p>
@@ -2368,7 +2644,7 @@ export default function App() {
                     <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] whitespace-nowrap ${header.color}`}>
                       {header.text}
                     </div>
-                    <RenderFormattedText text={currentPhrase} isVor={true} />
+                    <RenderFormattedText text={currentPhrase} isVor={true} language={language} />
                   </div>
 
                   {currentPenalty && (
