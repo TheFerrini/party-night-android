@@ -128,3 +128,16 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 .pn-stats-number{display:inline-block;font-variant-numeric:tabular-nums;animation:pn-number-pop .72s cubic-bezier(.16,1,.3,1) both;}
 @keyframes pn-number-pop{0%{opacity:.55;transform:translateY(7px) scale(.94)}65%{opacity:1;transform:translateY(-1px) scale(1.025)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.pn-stats-canvas{transition:none}.pn-stats-number{animation:none}}
+
+/* v2.0.5b — llenç principal entre Estadístiques, Jugar i Historial */
+.pn-main-viewport{width:100%;overflow:hidden;transition:height 260ms cubic-bezier(.22,1,.36,1);contain:layout paint;}
+.pn-main-canvas{display:flex;width:300%;align-items:flex-start;transition:transform 780ms cubic-bezier(.22,1,.36,1);will-change:transform;}
+.pn-main-page{width:33.333333%;min-width:33.333333%;flex:0 0 33.333333%;box-sizing:border-box;}
+.pn-history-session{opacity:1;transform:none;}
+.pn-history-session.is-active{animation:pn-history-rise .68s cubic-bezier(.22,1,.36,1) both;}
+@keyframes pn-history-rise{0%{opacity:0;transform:translate3d(0,24px,0)}68%{opacity:1;transform:translate3d(0,-2px,0)}100%{opacity:1;transform:translate3d(0,0,0)}}
+.pn-bottom-nav{box-sizing:border-box;}
+.pn-nav-indicator{position:absolute;z-index:0;left:7px;top:7px;bottom:7px;width:calc((100% - 24px)/3);border:1px solid rgba(168,85,247,.4);border-radius:17px;background:linear-gradient(140deg,rgba(124,58,237,.4),rgba(219,39,119,.25));box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 18px rgba(124,58,237,.2);transition:transform 780ms cubic-bezier(.22,1,.36,1);will-change:transform;pointer-events:none;}
+.pn-nav-item{position:relative;z-index:1;background:transparent;}
+.pn-nav-item.active{color:#fff;border-color:transparent;background:transparent;box-shadow:none;}
+@media(prefers-reduced-motion:reduce){.pn-main-canvas,.pn-nav-indicator,.pn-main-viewport{transition:none}.pn-history-session.is-active{animation:none}}
