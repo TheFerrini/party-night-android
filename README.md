@@ -1,6 +1,6 @@
 # Party Night — Android
 
-[App que antes era en versión Gemini, ahora disponible en versión APK para Android.]
+[App que antes era en canvas de Gemini, ahora disponible en versión APK para Android.]
 
 **La fiesta empieza aquí.**
 
