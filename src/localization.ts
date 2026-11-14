@@ -234,7 +234,17 @@ const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
   "Classificació final": "Classificació final",
   "Guanyador(s)": "Guanyador(s)",
   "Veure totes les dades": "Veure totes les dades",
-  "No hi ha esdeveniments registrats.": "No hi ha esdeveniments registrats."
+  "No hi ha esdeveniments registrats.": "No hi ha esdeveniments registrats.",
+  "Nova versió disponible!": "Nova versió disponible!",
+  "Buscant versions...": "Cercant versions...",
+  "No s’ha pogut comprovar": "No s’ha pogut comprovar",
+  "Tot al dia!": "Tot al dia!",
+  "Sessions": "Sessions",
+  "Resum": "Resum",
+  "Esdeveniments": "Esdeveniments",
+  "Historial": "Historial",
+  "Jugadors": "Jugadors",
+  "Comprova la connexió i torna-ho a provar.": "Comprova la connexió i torna-ho a provar."
 },
   en: {
   "Ranking Etílico": "Session leaderboard",
@@ -894,7 +904,17 @@ Object.assign(UI_TRANSLATIONS.en, {
   "Resultados": "Results",
   "Aplicar Castigo y Siguiente": "Apply penalty and next",
   "Guardará": "Will count",
-  "Tragos": "Penalties"
+  "Tragos": "Penalties",
+  "Nova versió disponible!": "New version available!",
+  "Buscant versions...": "Checking for updates...",
+  "No s’ha pogut comprovar": "Could not check for updates",
+  "Tot al dia!": "You're up to date!",
+  "Sessions": "Sessions",
+  "Resum": "Overview",
+  "Esdeveniments": "Events",
+  "Historial": "History",
+  "Jugadors": "Players",
+  "Comprova la connexió i torna-ho a provar.": "Check your connection and try again."
 });
 
 Object.assign(UI_TRANSLATIONS.es, {
