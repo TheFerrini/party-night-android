@@ -144,3 +144,13 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 
 /* Les pantalles del llenç també respecten les zones segures d'Android. */
 .app-root .pn-main-page>.min-h-screen{min-height:calc(100vh - var(--pn-safe-top) - var(--pn-safe-bottom));min-height:calc(100dvh - var(--pn-safe-top) - var(--pn-safe-bottom));}
+
+
+/* v2.0.5c — estadístiques sense solapaments i desplegables animats */
+.pn-stats-viewport{position:relative;overflow:hidden;isolation:isolate;}
+.pn-stats-canvas{display:flex;flex-flow:row nowrap;width:300%;max-width:none;}
+.pn-stats-canvas>.pn-stats-page{display:block;box-sizing:border-box;flex:0 0 33.333333%;width:33.333333%;min-width:33.333333%;max-width:33.333333%;overflow-wrap:anywhere;}
+.pn-history-details-grid{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 420ms cubic-bezier(.22,1,.36,1),opacity 260ms ease;}
+.pn-history-details-grid.is-open{grid-template-rows:1fr;opacity:1;}
+.pn-history-details-inner{min-height:0;overflow:hidden;}
+@media(prefers-reduced-motion:reduce){.pn-history-details-grid{transition:none}}
