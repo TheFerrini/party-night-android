@@ -1,5 +1,21 @@
 # Changelog — Party Night
 
+## [2.0.6] — 2026-11-14 · Expanded Party Deck
+
+### Base de datos de juegos
+- Añadidas 200 frases, preguntas, temas y pruebas nuevas, todas en castellano.
+- Yo Nunca: 80 frases nuevas repartidas entre las 10 categorías.
+- Verdad o Reto: 32 preguntas nuevas entre normal, salseo, picante y oscuro.
+- Retos: 32 pruebas nuevas para casa, bar, discoteca y parque, además de 4 comodines.
+- La Bomba: 30 temas nuevos; Duelos: 10 pruebas nuevas; Encuestas: 12 preguntas nuevas.
+- Ampliados los índices ponderados para que los nuevos retos entren en el selector de categorías.
+
+### Versionado y actualizaciones
+- Nueva versión estable 2.0.6, sin sufijos de letras.
+- Comparador de actualizaciones compatible con las versiones históricas 2.0.5b y 2.0.5c.
+- Workflow Android con versionCode numérico validado antes de compilar.
+
+
 ## [2.0.5c] — 2026-11-14 · Confirmacions & Refinament
 
 ### Actualitzacions i seguretat
