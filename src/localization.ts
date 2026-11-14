@@ -981,6 +981,23 @@ Object.assign(UI_TRANSLATIONS.es, {
   "Finalitzar sessió": "Finalizar sesión"
 });
 
+Object.assign(UI_TRANSLATIONS.en, {
+  "Nova versió disponible!": "New version available!",
+  "Buscant versions...": "Checking for updates...",
+  "No s’ha pogut comprovar": "Could not check for updates",
+  "Tot al dia!": "You're up to date!",
+  "Sessions": "Sessions",
+  "Resum": "Overview",
+  "Esdeveniments": "Events",
+  "Historial": "History",
+  "Jugadors": "Players",
+  "Comprova la connexió i torna-ho a provar.": "Check your connection and try again.",
+  "Estàs utilitzant la versió més recent.": "You are using the latest version.",
+  "Tornar a provar": "Try again",
+  "Party Night · Actualitzacions": "Party Night · Updates",
+  "Consultant les releases públiques de GitHub...": "Checking public GitHub releases..."
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   // Les frases i reptes de joc es mantenen en castellà per ara.
