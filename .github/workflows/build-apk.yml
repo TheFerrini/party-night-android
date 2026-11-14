@@ -54,6 +54,12 @@ jobs:
       - name: Sync web app into Android project
         run: npx cap sync android
 
+      - name: Restore stable Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: party-night-android-debug-keystore-v1
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
