@@ -534,6 +534,8 @@ export default function App() {
   });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
+  const [showDeleteDataConfirm, setShowDeleteDataConfirm] = useState(false);
+  const [showFinishSessionConfirm, setShowFinishSessionConfirm] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
   const [reduceMotion, setReduceMotion] = useState(() => {
     try { return localStorage.getItem('pn-reduce-motion') === 'true'; } catch { return false; }
@@ -753,7 +755,7 @@ export default function App() {
     try { hasChecked = sessionStorage.getItem('pn-update-checked-this-launch') === 'true'; } catch {}
     if (hasChecked) return;
     try { sessionStorage.setItem('pn-update-checked-this-launch', 'true'); } catch {}
-    const updateTimer = window.setTimeout(() => checkForUpdates(false), 1200);
+    const updateTimer = window.setTimeout(() => checkForUpdates(false), 500);
     return () => window.clearTimeout(updateTimer);
   }, [screen, mainTab, showIntro, showLanguagePicker]);
 
@@ -2285,7 +2287,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.5b (Smooth Canvas & Count-up)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.5c (Smooth Canvas & Count-up)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
                 - <b>{t("Idiomas:")}</b> {t("el español es el idioma predeterminado y el cambio se aplica al reiniciar.")}<br/>
@@ -2321,6 +2323,20 @@ export default function App() {
       </AnimatedModal>
 
       {/* POP-UP D'ACTUALITZACIÓ */}
+      <AnimatedModal isOpen={showDeleteDataConfirm} onClose={() => setShowDeleteDataConfirm(false)} zIndex="z-[190]">
+        <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-gray-900 p-6 shadow-2xl">
+          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><AlertOctagon size={24}/></div><h2 className="text-xl font-black text-white">{t('Esborrar totes les dades?')}</h2></div>
+          <p className="text-sm leading-relaxed text-gray-300">{t('S’esborraran jugadors, sessions, historial, estadístiques i configuració guardada en aquest dispositiu. Aquesta acció no es pot desfer. Exporta una còpia abans si vols conservar les dades.')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancel·lar')}</button><button type="button" onClick={() => { Object.keys(localStorage).filter(key => key.startsWith('pn-')).forEach(key => localStorage.removeItem(key)); window.location.reload(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Esborrar dades')}</button></div>
+        </div>
+      </AnimatedModal>
+      <AnimatedModal isOpen={showFinishSessionConfirm} onClose={() => setShowFinishSessionConfirm(false)} zIndex="z-[190]">
+        <div className="w-full max-w-sm rounded-3xl border border-amber-500/40 bg-gray-900 p-6 shadow-2xl">
+          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-amber-500/15 p-3 text-amber-300"><Flag size={24}/></div><h2 className="text-xl font-black text-white">{t('Finalitzar la sessió?')}</h2></div>
+          <p className="text-sm leading-relaxed text-gray-300">{t('La sessió es desarà a l’historial i tornareu al menú principal. Segur que la vols finalitzar?')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowFinishSessionConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Continuar jugant')}</button><button type="button" onClick={() => { setShowFinishSessionConfirm(false); finishSession(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Finalitzar sessió')}</button></div>
+        </div>
+      </AnimatedModal>
       <AnimatedModal isOpen={showUpdatePopup} onClose={() => setShowUpdatePopup(false)} zIndex="z-[150]">
         <div className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4 mb-5">
@@ -2440,7 +2456,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5b</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5c</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2472,12 +2488,13 @@ export default function App() {
               <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-bold text-white">{t('Copia de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
               <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Download size={16}/> {t('Exportar datos')}</button>
-                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Upload size={16}/> {t('Importar datos')}</button>
+                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Upload size={16}/> {t('Exportar datos')}</button>
+                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Download size={16}/> {t('Importar datos')}</button>
               </div>
               {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
               <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
             </div>
+            <button type="button" onClick={() => setShowDeleteDataConfirm(true)} className="w-full rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-left text-sm font-black text-red-300 active:scale-[.99]">{t('Esborrar totes les dades')}</button>
           </div>
           <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>
         </div>
@@ -2504,7 +2521,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5b</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5c</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2680,7 +2697,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.5b • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.5c • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
@@ -2723,7 +2740,7 @@ export default function App() {
             <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[2] = node; }}>
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5b</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5c</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (
@@ -2743,8 +2760,8 @@ export default function App() {
                       </div>
                       <p className="text-xs text-gray-400 mt-1">{(session.players || []).join(' · ')} · {(session.games || []).length} {t('jocs')}</p>
                     </button>
-                    {expandedSessionId === session.id && (
-                      <div className="border-t border-gray-700 p-4 space-y-3">
+                    <div className={"pn-history-details-grid " + (expandedSessionId === session.id ? "is-open" : "")} aria-hidden={expandedSessionId !== session.id}>
+                      <div className="pn-history-details-inner border-t border-gray-700 p-4 space-y-3">
                         {(session.games || []).map((game: any, index: number) => (
                           <div key={game.id || index} className="rounded-xl border border-gray-700 bg-gray-900/80 p-3">
                             <div className="flex items-center justify-between gap-2">
@@ -2797,7 +2814,7 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                    )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2820,7 +2837,7 @@ export default function App() {
           <div className="max-w-md w-full relative z-10">
             <div className="flex items-center gap-2 mb-4">
               <button onClick={() => setShowGeneralSettings(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-600 bg-gray-800/90 px-3 py-3 text-xs font-black uppercase text-gray-200"><Settings size={16}/> {t("Configuració general")}</button>
-              <button onClick={finishSession} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/25 px-3 py-3 text-xs font-black uppercase text-red-300"><Flag size={16}/> {t("Finalitzar sessió")}</button>
+              <button onClick={() => setShowFinishSessionConfirm(true)} className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-900/25 px-3 py-3 text-xs font-black uppercase text-red-300"><Flag size={16}/> {t("Finalitzar sessió")}</button>
             </div>
 
             {/* Header Jugadores + Botones Clasificación/Modificar */}
