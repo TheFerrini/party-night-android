@@ -2262,10 +2262,10 @@ export default function App() {
             className="w-full mb-4 flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-black uppercase tracking-wider text-cyan-300 transition-colors hover:bg-cyan-500/20 disabled:opacity-60"
           >
             <RefreshCcw size={16} className={updateCheckStatus === 'checking' ? 'animate-spin' : ''} />
-            {updateCheckStatus === 'checking' ? 'Comprovant...' : 'Cercar actualitzacions'}
+            {updateCheckStatus === 'checking' ? t('Comprovant...') : t('Cercar actualitzacions')}
           </button>
           <p className="text-center text-[10px] text-gray-500 mb-3">
-            {updateCheckStatus === 'up-to-date' ? `Versió ${APP_VERSION}: ja tens l'última.` : updateCheckStatus === 'available' ? 'Hi ha una actualització disponible.' : 'Consulta les versions publicades a GitHub.'}
+            {updateCheckStatus === 'up-to-date' ? t(`Versió ${APP_VERSION}: ja tens l'última.`) : updateCheckStatus === 'available' ? t('Hi ha una actualització disponible.') : t('Consulta les versions publicades a GitHub.')}
           </p>
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
