@@ -12,6 +12,8 @@
 - A Android, el fitxer es crea temporalment i s’obre el menú natiu per desar-lo o compartir-lo.
 - Importació de còpies amb validació del format, contingut i estructura.
 - La restauració substitueix només les claus locals de Party Night; no toca les dades d’altres apps.
+- Traduccions del panell de còpies corregides en català, castellà i anglès.
+- Càlcul del `versionCode` ampliat perquè la futura 2.0.2 continuï sent una actualització compatible.
 - Confirmació abans de substituir dades i restauració de les dades actuals si falla l’escriptura.
 
 ### Android

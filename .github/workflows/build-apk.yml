@@ -61,7 +61,7 @@ jobs:
           BASE_VERSION="${VERSION%b}"
           SUFFIX=""
           if [[ "${VERSION}" == *b ]]; then SUFFIX="b"; fi
-          CODE="$(node -e 'const [a,b,c] = process.argv[1].split(".").map(Number); console.log(a * 1000000 + b * 1000 + c + (process.argv[2] === "b" ? 1 : 0))' "$BASE_VERSION" "$SUFFIX")"
+          CODE="$(node -e 'const [a,b,c] = process.argv[1].split(".").map(Number); console.log(a * 1000000 + b * 10000 + c * 10 + (process.argv[2] === "b" ? 1 : 0))' "$BASE_VERSION" "$SUFFIX")"
           sed -i -E "s/versionCode [0-9]+/versionCode ${CODE}/" android/app/build.gradle
           sed -i -E "s/versionName \"[^\"]+\"/versionName \"${VERSION}\"/" android/app/build.gradle
 

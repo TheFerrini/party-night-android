@@ -1479,8 +1479,8 @@ export default function App() {
         if (Capacitor.isNativePlatform()) {
           const [{Filesystem,Directory},{Share}] = await Promise.all([import('@capacitor/filesystem'),import('@capacitor/share')]);
           const saved = await Filesystem.writeFile({path:fileName,data:json,directory:Directory.Cache,encoding:'utf8'});
-          await Share.share({title:'Party Night · Backup',text:'Còpia de seguretat de Party Night',url:saved.uri,dialogTitle:t('Desa la còpia de seguretat')});
-          setBackupMessage(t('Còpia preparada. Tria on desar-la.'));
+          await Share.share({title:'Party Night · Backup',text:'Copia de seguridad de Party Night',url:saved.uri,dialogTitle:t('Guardar copia de seguridad')});
+          setBackupMessage(t('Copia preparada. Elige dónde guardarla.'));
           return;
         }
       } catch(nativeError) {
@@ -1490,10 +1490,10 @@ export default function App() {
       const link=document.createElement('a'); link.href=url; link.download=fileName; link.style.display='none';
       document.body.appendChild(link); link.click(); link.remove();
       window.setTimeout(()=>URL.revokeObjectURL(url),30000);
-      setBackupMessage(t('S’ha generat el fitxer de còpia de seguretat.'));
+      setBackupMessage(t('Se ha generado el archivo de copia de seguridad.'));
     } catch(error) {
       console.error('Error exportant les dades de Party Night:',error);
-      setBackupMessage(t('No s’ha pogut crear la còpia de seguretat.'));
+      setBackupMessage(t('No se ha podido crear la copia de seguridad.'));
     }
   };
 
@@ -1511,7 +1511,7 @@ export default function App() {
       if((playersValue!==undefined&&(!Array.isArray(playersValue)||playersValue.some((p:unknown)=>typeof p!=='string')))||
         (sessionsValue!==undefined&&!Array.isArray(sessionsValue))||
         (activeValue!==undefined&&activeValue!==null&&(typeof activeValue!=='object'||Array.isArray(activeValue))))throw new Error('invalid-backup-data');
-      if(!window.confirm(t('La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?')))return;
+      if(!window.confirm(t('La importación sustituirá los datos locales actuales de Party Night. Antes, expórtalos si quieres conservarlos. ¿Quieres continuar?')))return;
       const previous:Record<string,string>={};
       Object.keys(localStorage).filter(key=>key.startsWith('pn-')).forEach(key=>{const value=localStorage.getItem(key);if(value!==null)previous[key]=value;});
       try {
@@ -1525,7 +1525,7 @@ export default function App() {
       window.location.reload();
     } catch(error) {
       console.error('Error important la còpia de Party Night:',error);
-      setBackupMessage(t('El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.'));
+      setBackupMessage(t('El archivo no es una copia válida de Party Night o no se ha podido leer.'));
     } finally { input.value=''; }
   };
 
@@ -2412,7 +2412,7 @@ export default function App() {
               <button type="button" role="switch" aria-checked={hapticsEnabled} onClick={() => {
                 const next = !hapticsEnabled;
                 setHapticsEnabled(next);
-                if (next) void triggerHaptic('MEDIUM');
+                if (next) void triggerHaptic('MEDIUM', true);
               }} className={hapticsEnabled ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
@@ -2422,14 +2422,14 @@ export default function App() {
             </div>
 
             <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-4">
-              <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-bold text-white">{t('Còpia de seguretat')}</p><p className="text-xs text-gray-400">{t('Desa jugadors, sessions, historial i configuració en un fitxer.')}</p></div></div>
+              <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-bold text-white">{t('Copia de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
               <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Download size={16}/> {t('Exportar dades')}</button>
-                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Upload size={16}/> {t('Importar dades')}</button>
+                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Download size={16}/> {t('Exportar datos')}</button>
+                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Upload size={16}/> {t('Importar datos')}</button>
               </div>
               {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
-              <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.')}</p>
+              <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
             </div>
           </div>
           <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>

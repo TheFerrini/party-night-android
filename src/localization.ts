@@ -553,6 +553,26 @@ Object.assign(EXTRA_UI_TRANSLATIONS.en, {
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
 
+Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+  "Exportar datos":"Exportar dades","Importar datos":"Importar dades","Copia de seguridad":"Còpia de seguretat",
+  "Guarda jugadores, sesiones, historial y ajustes en un archivo.":"Desa jugadors, sessions, historial i ajustos en un fitxer.",
+  "La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.":"La còpia inclou dades desades al dispositiu, inclosos noms i resultats de les sessions.",
+  "Guardar copia de seguridad":"Desa la còpia de seguretat","Copia preparada. Elige dónde guardarla.":"Còpia preparada. Tria on desar-la.",
+  "Se ha generado el archivo de copia de seguridad.":"S’ha generat el fitxer de còpia de seguretat.","No se ha podido crear la copia de seguridad.":"No s’ha pogut crear la còpia de seguretat.",
+  "La importación sustituirá los datos locales actuales de Party Night. Antes, expórtalos si quieres conservarlos. ¿Quieres continuar?":"La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?",
+  "El archivo no es una copia válida de Party Night o no se ha podido leer.":"El fitxer no és una còpia vàlida de Party Night o no s’ha pogut llegir."
+});
+
+Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+  "Exportar datos":"Export data","Importar datos":"Import data","Copia de seguridad":"Backup",
+  "Guarda jugadores, sesiones, historial y ajustes en un archivo.":"Save players, sessions, history and settings to a file.",
+  "La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.":"The backup includes data stored on this device, including player names and session results.",
+  "Guardar copia de seguridad":"Save backup","Copia preparada. Elige dónde guardarla.":"Backup ready. Choose where to save it.",
+  "Se ha generado el archivo de copia de seguridad.":"The backup file has been created.","No se ha podido crear la copia de seguridad.":"The backup could not be created.",
+  "La importación sustituirá los datos locales actuales de Party Night. Antes, expórtalos si quieres conservarlos. ¿Quieres continuar?":"Importing will replace Party Night's current local data. Export it first if you want to keep it. Continue?",
+  "El archivo no es una copia válida de Party Night o no se ha podido leer.":"This is not a valid Party Night backup or the file could not be read."
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   if (language === 'es') return value;

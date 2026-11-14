@@ -11,6 +11,7 @@
 - Importa una còpia des de l’emmagatzematge del dispositiu.
 - Validació del fitxer abans de tocar les dades actuals.
 - La restauració només substitueix les dades de Party Night i demana confirmació.
+- Traduccions del panell corregides en els tres idiomes i `versionCode` preparat per a les versions futures.
 
 ### 📱 Android
 - Es manté l’identificador `com.theferrini.partynight`.
