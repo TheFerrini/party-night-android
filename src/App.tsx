@@ -2557,7 +2557,7 @@ export default function App() {
               ))}
             </div>
             <div className="pn-stats-viewport">
-              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 100}%, 0, 0)` }}>
+              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 33.333333}%, 0, 0)` }}>
                 {(() => {
                   const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
               const allGames = allSessions.flatMap((session: any) => session.games || []);
