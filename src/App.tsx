@@ -482,6 +482,26 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
   );
 };
 
+
+const AnimatedNumber = ({ value, className = '' }: { value: number | string; className?: string }) => {
+  const target = Number(value) || 0;
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const duration = 720;
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      setDisplay(Math.round(target * eased));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target]);
+  return <span className={`pn-stats-number ${className}`}>{display.toLocaleString()}</span>;
+};
+
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => {
     try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'es'; } catch { return 'es'; }
@@ -493,6 +513,7 @@ export default function App() {
   const [showLanguagePicker, setShowLanguagePicker] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
+  const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
   });
@@ -643,7 +664,13 @@ export default function App() {
       setLatestRelease(release);
       if (comparison > 0) {
         setUpdateCheckStatus('available');
-        setShowUpdatePopup(true);
+        // Avís automàtic només una vegada per cada release detectada.
+        let alreadyAnnounced = false;
+        try { alreadyAnnounced = localStorage.getItem('pn-update-announced') === tag; } catch {}
+        if (showResult || !alreadyAnnounced) {
+          setShowUpdatePopup(true);
+          try { localStorage.setItem('pn-update-announced', tag); } catch {}
+        }
       } else {
         setUpdateCheckStatus('up-to-date');
         if (showResult) setShowUpdatePopup(true);
@@ -700,7 +727,7 @@ export default function App() {
 
   useEffect(() => {
     if (!showIntro) return;
-    const introTimer = window.setTimeout(() => setShowIntro(false), 2350);
+    const introTimer = window.setTimeout(() => setShowIntro(false), 3100);
     return () => window.clearTimeout(introTimer);
   }, [showIntro]);
 
@@ -1871,7 +1898,7 @@ export default function App() {
           overflow: hidden; color: white; text-align: center; cursor: default;
           padding: max(24px, var(--pn-safe-top)) 24px max(24px, var(--pn-safe-bottom));
           background: radial-gradient(ellipse at 50% 42%, #4a1742 0%, #211025 38%, #090a12 78%);
-          animation: pn-intro-exit .3s ease-in 2s forwards;
+          animation: pn-intro-exit .35s ease-in 2.75s forwards;
           -webkit-tap-highlight-color: transparent;
           contain: strict;
         }
@@ -1935,7 +1962,7 @@ export default function App() {
             </div>
             <p className="mt-4 text-xs font-black uppercase tracking-[.32em] text-pink-200/90 opacity-0 animate-slide-up" style={{ animationDelay: '500ms', animationFillMode: 'forwards' }}>{t("La noche acaba de empezar")}</p>
             <div className="mt-10 h-1.5 w-36 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.05s linear both' }} />
+              <div className="h-full w-full origin-left rounded-full bg-gradient-to-r from-amber-300 via-pink-400 to-red-500" style={{ animation: 'pn-intro-progress 2.75s linear both' }} />
             </div>
           </div>
           <p className="absolute bottom-7 text-[9px] font-semibold uppercase tracking-widest text-white/25">{t("Juega con cabeza · Bebe con responsabilidad")}</p>
@@ -2237,7 +2264,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.3 (The Comeback Intro)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.5 (Smooth Canvas & Count-up)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
                 - <b>{t("Idiomas:")}</b> {t("el español es el idioma predeterminado y el cambio se aplica al reiniciar.")}<br/>
@@ -2349,7 +2376,7 @@ export default function App() {
             {(selectedStatsGame?.ranking || []).map((item: any, index: number) => (
               <div key={item.player} className={index === 0 ? "flex items-center justify-between rounded-xl border border-yellow-500/50 bg-yellow-500/10 px-4 py-3" : "flex items-center justify-between rounded-xl border border-gray-700 bg-gray-800 px-4 py-3"}>
                 <span className="font-black text-white">{index === 0 ? '🏆 ' : '#' + (index + 1) + ' · '}{item.player}</span>
-                <span className="text-sm font-bold tabular-nums text-gray-300">{item.penalties} {t('penalitzacions')}</span>
+                <span className="text-sm font-bold tabular-nums text-gray-300"><AnimatedNumber value={item.penalties} /> {t('penalitzacions')}</span>
               </div>
             ))}
             {!(selectedStatsGame?.ranking || []).length && <p className="text-sm text-gray-500">{t('Sense rànquing disponible')}</p>}
@@ -2392,7 +2419,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.3</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2460,7 +2487,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.3 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.5 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
@@ -2507,7 +2534,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.3</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2516,15 +2543,18 @@ export default function App() {
                 { selected: statisticsPage === 'overview', label: 'Resum', page: 'overview' },
                 { selected: statisticsPage === 'games', label: 'Jocs', page: 'games' },
                 { selected: statisticsPage === 'players', label: 'Jugadors', page: 'players' }
-              ].map(item => (
-                <button key={item.page} onClick={() => { setStatisticsPage(item.page as any); setSelectedPlayerProfile(null); }}
+              ].map((item, index) => (
+                <button key={item.page} onClick={() => { setStatisticsPage(item.page as any); setStatsCanvasIndex(index); setSelectedPlayerProfile(null); }}
                   className={item.selected ? "rounded-xl border border-cyan-400 bg-cyan-500/15 px-2 py-3 text-xs font-black uppercase text-cyan-200" : "rounded-xl border border-gray-700 bg-gray-800 px-2 py-3 text-xs font-black uppercase text-gray-400"}>
                   {t(item.label)}
                 </button>
               ))}
             </div>
-            {(() => {
-              const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
+            <div className="pn-stats-viewport">
+              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 100 / 3}%, 0, 0)` }}>
+                <div className="pn-stats-page">
+                {(() => {
+                  const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
               const allGames = allSessions.flatMap((session: any) => session.games || []);
               const allEvents = allSessions.flatMap((session: any) => session.events || []);
               const totalPenalties = allEvents.reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : event.type === 'penalty-reverted' ? -(event.amount || 0) : 0), 0);
@@ -2552,7 +2582,7 @@ export default function App() {
                         { label: 'Penalitzacions', value: totalPenalties }
                       ].map(card => (
                         <div key={card.label} className="rounded-2xl border border-gray-700 bg-gray-800/90 p-4">
-                          <div className="text-2xl font-black text-white">{card.value}</div>
+                          <AnimatedNumber value={card.value} className="text-2xl font-black text-white" />
                           <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{t(card.label)}</div>
                         </div>
                       ))}
@@ -2562,7 +2592,7 @@ export default function App() {
                       {mostPlayed.map(([key, count]: any) => (
                         <div key={key} className="flex justify-between border-b border-gray-700/70 py-2 text-sm last:border-0">
                           <span className="text-gray-300">{gameDisplayName(key)}</span>
-                          <b className="text-cyan-300 tabular-nums">{count}</b>
+                          <AnimatedNumber value={count} className="text-cyan-300 tabular-nums font-bold" />
                         </div>
                       ))}
                       {!allGames.length && <p className="text-sm text-gray-500">{t('Encara no hi ha cap sessió registrada.')}</p>}
@@ -2581,7 +2611,7 @@ export default function App() {
                           <h3 className="font-black text-white">{gameDisplayName(game.key, game.title)}</h3>
                           <span className="shrink-0 text-[10px] text-gray-500">{new Date(game.startedAt).toLocaleDateString()}</span>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">{game.players?.length || 0} {t('jugadors')} · {game.eventCount || (game.events || []).length} {t('esdeveniments')}</p>
+                        <p className="text-xs text-gray-400 mt-1"><AnimatedNumber value={game.players?.length || 0} /> {t('jugadors')} · <AnimatedNumber value={game.eventCount || (game.events || []).length} /> {t('esdeveniments')}</p>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {(game.winners || []).map((winner: string) => <span key={winner} className="rounded-full bg-yellow-500/15 px-3 py-1 text-xs font-bold text-yellow-200">🏆 {winner}</span>)}
                           {!game.winners?.length && <span className="text-[10px] text-gray-500">{t('Sense rànquing disponible')}</span>}
@@ -2607,9 +2637,9 @@ export default function App() {
                     <button onClick={() => setSelectedPlayerProfile(null)} className="mb-4 text-xs font-bold uppercase text-cyan-300">← {t('Tots els perfils')}</button>
                     <h2 className="text-2xl font-black text-white">{selectedPlayerProfile}</h2>
                     <div className="grid grid-cols-3 gap-2 my-4">
-                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.gamesPlayed || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Jocs')}</p></div>
-                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.wins || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Victòries')}</p></div>
-                      <div className="rounded-xl bg-gray-900 p-3"><b className="text-xl text-white">{player?.penalties || 0}</b><p className="text-[9px] text-gray-500 uppercase">{t('Penalitzacions')}</p></div>
+                      <div className="rounded-xl bg-gray-900 p-3"><AnimatedNumber value={player?.gamesPlayed || 0} className="text-xl text-white" /><p className="text-[9px] text-gray-500 uppercase">{t('Jocs')}</p></div>
+                      <div className="rounded-xl bg-gray-900 p-3"><AnimatedNumber value={player?.wins || 0} className="text-xl text-white" /><p className="text-[9px] text-gray-500 uppercase">{t('Victòries')}</p></div>
+                      <div className="rounded-xl bg-gray-900 p-3"><AnimatedNumber value={player?.penalties || 0} className="text-xl text-white" /><p className="text-[9px] text-gray-500 uppercase">{t('Penalitzacions')}</p></div>
                     </div>
                     <h3 className="font-bold text-white mb-3">{t('Registre per joc')}</h3>
                     {playerGameGroups.length ? (
@@ -2618,7 +2648,7 @@ export default function App() {
                           <details key={game.id} className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900/80">
                             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-3">
                               <span className="font-bold text-white">{gameDisplayName(game.key, game.title)}</span>
-                              <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[10px] font-black text-red-200">{events.reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : event.type === 'penalty-reverted' ? -(event.amount || 0) : 0), 0)} {t('penalitzacions')}</span>
+                              <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[10px] font-black text-red-200"><AnimatedNumber value={events.reduce((sum: number, event: any) => sum + (event.type === 'penalty' ? (event.amount || 0) : event.type === 'penalty-reverted' ? -(event.amount || 0) : 0), 0)} /> {t('penalitzacions')}</span>
                             </summary>
                             <div className="border-t border-gray-700 px-3 py-2">
                               {events.map((event: any) => (
@@ -2629,7 +2659,7 @@ export default function App() {
                                     </p>
                                     <p className="text-[10px] text-gray-500">{event.timestamp ? new Date(event.timestamp).toLocaleString() : '—'}</p>
                                   </div>
-                                  <b className="text-sm tabular-nums text-white">{event.type === 'penalty-reverted' ? '−' : '+'}{event.amount || 0}</b>
+                                  <b className="text-sm tabular-nums text-white">{event.type === 'penalty-reverted' ? '−' : '+'}<AnimatedNumber value={event.amount || 0} /></b>
                                 </div>
                               ))}
                             </div>
@@ -2656,13 +2686,22 @@ export default function App() {
                   {playerRows.map(item => (
                     <button key={item.player} onClick={() => setSelectedPlayerProfile(item.player)}
                       className="w-full flex items-center justify-between rounded-2xl border border-gray-700 bg-gray-800/90 p-4 text-left">
-                      <div><div className="font-black text-white">{item.player}</div><div className="text-[10px] text-gray-400">{item.gamesPlayed} {t('jocs')} · {item.wins} {t('victòries')}</div></div>
-                      <div className="text-right"><div className="font-black text-cyan-300 tabular-nums">{item.penalties}</div><div className="text-[9px] uppercase text-gray-500">{t('penalitzacions')}</div></div>
+                      <div><div className="font-black text-white">{item.player}</div><div className="text-[10px] text-gray-400"><AnimatedNumber value={item.gamesPlayed} /> {t('jocs')} · <AnimatedNumber value={item.wins} /> {t('victòries')}</div></div>
+                      <div className="text-right"><AnimatedNumber value={item.penalties} className="font-black text-cyan-300 tabular-nums" /><div className="text-[9px] uppercase text-gray-500">{t('penalitzacions')}</div></div>
                     </button>
                   ))}
                 </div>
               );
-            })()}
+                })()}
+                </div>
+                <div className="pn-stats-page">
+                  <div className="sr-only" aria-hidden="true" />
+                </div>
+                <div className="pn-stats-page">
+                  <div className="sr-only" aria-hidden="true" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2670,7 +2709,7 @@ export default function App() {
       {screen === 'setup' && mainTab === 'history' && (
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.3</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (
