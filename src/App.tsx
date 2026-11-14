@@ -1678,17 +1678,6 @@ export default function App() {
     return { title: t(title), description, timestamp };
   };
 
-  const triggerHaptic = async (style = ImpactStyle.Light) => {
-    if (!hapticsEnabled) return;
-    try {
-      await Haptics.impact({ style });
-    } catch {
-      try {
-        if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(18);
-      } catch {}
-    }
-  };
-
   const LeaderboardComponent = ({ onClose }) => {
     const sortedPlayers = Object.entries(drinkCounts).sort((a: any, b: any) =>
       (winnerMode === 'most' ? b[1] - a[1] : a[1] - b[1]) || String(a[0]).localeCompare(String(b[0]))
