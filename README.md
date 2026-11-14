@@ -1,31 +1,29 @@
 # Party Night — Android
 
-**Party Night v2.0.1 · The Party Re-Rebuild**
+**Party Night v2.0.1b · Hotfix & Backup**
 
 App de jocs per a grups, feta amb React, Vite i Capacitor 8.
 
-## Novetats de la 2.0.1
-- Selector d'idioma amb banderes de Catalunya, Espanya i el Regne Unit; confirma i reinicia per aplicar el canvi.
-- Interfície i 246 textos de joc traduïts al català, castellà i anglès.
-- Criteri global de victòria configurable: qui rep més o menys penalitzacions.
-- Estadístiques per joc i jugador, amb rànquings i registres agrupats per partida.
-- Historial de sessions amb configuracions i esdeveniments llegibles.
-- Vibració tàctil nativa, reducció d'animacions real i interruptors corregits.
-- Penalitzacions acumulatives centralitzades a Configuració general.
+## Novetats de la 2.0.1b
+- Arrencada més defensiva: les dades locals es validen abans d'inicialitzar l'app.
+- La vibració nativa es carrega només quan s'utilitza.
+- Error Boundary amb missatge tècnic visible per evitar pantalles negres sense informació.
+- Exportació de jugadors, sessions, historial i configuració en JSON.
+- Importació de còpies JSON amb validació i confirmació abans de substituir dades.
+- A Android, l'exportació obre el menú natiu per desar o compartir el fitxer.
 
 ## Navegació
-- **Jugar:** jugadors, sessions, novetats, idioma i configuració general.
+- **Jugar:** gestió de jugadors, sessions, idioma i configuració general.
 - **Estadístiques:** resum, resultats dels jocs i perfils de jugador.
 - **Historial:** sessions desades amb configuracions, esdeveniments i rànquings.
 
 ## Dades i privacitat
-Les sessions i estadístiques es desen localment al dispositiu. No s'envien a cap servidor. L'historial pot contenir noms, preguntes, vots i penalitzacions.
+Les dades es desen localment al dispositiu. Les còpies poden contenir noms de jugadors, preguntes, vots, penalitzacions i resultats. No comparteixis el fitxer amb persones no autoritzades.
+
+La importació substitueix totes les claus locals que comencen per `pn-` i conserva les dades d'altres aplicacions.
 
 ## Idiomes
-Català, castellà i anglès. El selector apareix la primera vegada abans de la careta i es pot tornar a obrir des de Jugar.
-
-## Actualitzacions
-L'app consulta GitHub Releases públiques i mostra el changelog quan detecta una versió nova.
+Català, castellà i anglès.
 
 ## Compilar localment
 Cal Node.js 22+, Java 21 i Android SDK.

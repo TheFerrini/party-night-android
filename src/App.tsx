@@ -3,13 +3,12 @@ import { Browser } from '@capacitor/browser';
 import { APP_VERSION } from './version';
 import { translateText, type AppLanguage } from './localization';
 import { translatePrompt } from './prompt-translations';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import {
   Users, Beer, Home, Play, ArrowRight, X, Flame, MessageSquare, Settings2, Heart, Globe, Flag,
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
   Laugh, Music, History, Info, Dices, TreePine, Settings, Cctv, Clock, BellRing, Trophy,
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
-  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown
+  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload
 } from 'lucide-react';
 
 // --- BASE DE DATOS MASIVA DE FRASES V1.67 (100% RENOVADA)
@@ -460,26 +459,26 @@ const AnimatedModal = ({ isOpen, onClose, children, zIndex = "z-[100]" }) => {
 
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => {
-    try { return (localStorage.getItem('pn-language') as AppLanguage) || 'ca'; } catch { return 'ca'; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
   });
   const [languageChosen, setLanguageChosen] = useState(() => {
-    try { return Boolean(localStorage.getItem('pn-language')); } catch { return false; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'; } catch { return false; }
   });
   const [pendingLanguage, setPendingLanguage] = useState<AppLanguage>(() => {
-    try { return (localStorage.getItem('pn-language') as AppLanguage) || 'ca'; } catch { return 'ca'; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'?value:'ca'; } catch { return 'ca'; }
   });
   const [showLanguagePicker, setShowLanguagePicker] = useState(() => {
-    try { return !localStorage.getItem('pn-language'); } catch { return true; }
+    try { const value=localStorage.getItem('pn-language'); return !(value==='ca'||value==='es'||value==='en'); } catch { return true; }
   });
   const [showIntro, setShowIntro] = useState(() => {
-    try { return Boolean(localStorage.getItem('pn-language')); } catch { return false; }
+    try { const value=localStorage.getItem('pn-language'); return value==='ca'||value==='es'||value==='en'; } catch { return false; }
   });
   const [mainTab, setMainTab] = useState<'play' | 'stats' | 'history'>('play');
   const [sessionHistory, setSessionHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pn-v2-sessions') || '[]'); } catch { return []; }
+    try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
   });
   const [activeSession, setActiveSession] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pn-v2-active-session') || 'null'); } catch { return null; }
+    try { const value=JSON.parse(localStorage.getItem('pn-v2-active-session')||'null'); return value&&typeof value==='object'&&!Array.isArray(value)?value:null; } catch { return null; }
   });
   const [statisticsPage, setStatisticsPage] = useState<'overview' | 'games' | 'players'>('overview');
   const [selectedPlayerProfile, setSelectedPlayerProfile] = useState<string | null>(null);
@@ -492,6 +491,7 @@ export default function App() {
   });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
+  const [backupMessage, setBackupMessage] = useState('');
   const [hapticsEnabled, setHapticsEnabled] = useState(() => {
     try { return localStorage.getItem('pn-haptics') !== 'false'; } catch { return true; }
   });
@@ -499,7 +499,7 @@ export default function App() {
     try { return localStorage.getItem('pn-reduce-motion') === 'true'; } catch { return false; }
   });
   const [currentGamePenaltyCounts, setCurrentGamePenaltyCounts] = useState<Record<string, number>>(() => {
-    try { return JSON.parse(localStorage.getItem('pn-v2-game-penalties') || '{}'); } catch { return {}; }
+    try { const value=JSON.parse(localStorage.getItem('pn-v2-game-penalties')||'{}'); return value&&typeof value==='object'&&!Array.isArray(value)?value:{}; } catch { return {}; }
   });
   const [lastGameSummary, setLastGameSummary] = useState<any>(null);
   const [showGameSummary, setShowGameSummary] = useState(false);
@@ -509,7 +509,7 @@ export default function App() {
   const [screen, setScreen] = useState('setup');
   const [closingScreen, setClosingScreen] = useState(false);
   const [players, setPlayers] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('pn-v2-players') || '[]'); } catch { return []; }
+    try { const value=JSON.parse(localStorage.getItem('pn-v2-players')||'[]'); return Array.isArray(value)?value.filter((player:unknown)=>typeof player==='string'):[]; } catch { return []; }
   });
   const [newPlayer, setNewPlayer] = useState("");
   const [draggedPlayer, setDraggedPlayer] = useState(null);
@@ -611,17 +611,17 @@ export default function App() {
       }
 
       const release = await response.json();
-      const tag = String(release.tag_name || release.name || '').match(/v?\d+\.\d+\.\d+/i)?.[0];
+      const tag = String(release.tag_name || release.name || '').match(/v?\d+\.\d+\.\d+b?/i)?.[0];
       if (!tag) throw new Error('La darrera release no conté un número de versió vàlid.');
-
-      const remoteParts = tag.replace(/^v/i, '').split('.').map(part => Number.parseInt(part, 10) || 0);
-      const currentParts = APP_VERSION.split('.').map(part => Number.parseInt(part, 10) || 0);
-      let comparison = 0;
-      for (let index = 0; index < 3; index++) {
-        if ((remoteParts[index] || 0) !== (currentParts[index] || 0)) {
-          comparison = (remoteParts[index] || 0) > (currentParts[index] || 0) ? 1 : -1;
-          break;
-        }
+      const parseVersion = (value: string) => {
+        const match = value.match(/^v?(\d+)\.(\d+)\.(\d+)(b)?$/i);
+        return match ? [Number(match[1]),Number(match[2]),Number(match[3]),match[4]?1:0] : null;
+      };
+      const remoteParts=parseVersion(tag), currentParts=parseVersion(APP_VERSION);
+      if(!remoteParts||!currentParts)throw new Error('No s’ha pogut interpretar la versió.');
+      let comparison=0;
+      for(let index=0;index<4;index++){
+        if(remoteParts[index]!==currentParts[index]){comparison=remoteParts[index]>currentParts[index]?1:-1;break;}
       }
 
       setLatestRelease(release);
@@ -853,9 +853,10 @@ export default function App() {
     setScreen('setup');
   };
 
-  const triggerHaptic = async (style = ImpactStyle.Light) => {
+  const triggerHaptic = async (style: 'LIGHT' | 'MEDIUM' = 'LIGHT') => {
     if (!hapticsEnabled) return;
     try {
+      const { Haptics } = await import('@capacitor/haptics');
       await Haptics.impact({ style });
     } catch {
       try {
@@ -869,7 +870,7 @@ export default function App() {
     setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     recordSessionEvent('penalty', { player, amount, game: mode || activeSession?.currentGame?.key || 'unknown' });
-    void triggerHaptic(ImpactStyle.Light);
+    void triggerHaptic('LIGHT');
     if (enableAccumulativePenalty) {
        setGlobalStrikes(prev => {
           const currentStrikes = prev[player] || 0;
@@ -1461,6 +1462,71 @@ export default function App() {
      recordSessionEvent('survey-result', { game: 'encuesta', winners: losers, votes: encuestaState.votes, penalty: encuestaState.penalty });
      losers.forEach(l => processPenalty(l, encuestaState.penalty));
      triggerNewEncuesta();
+  };
+
+
+  const exportBackup = async () => {
+    try {
+      const data: Record<string, string> = {};
+      Object.keys(localStorage).filter(key => key.startsWith('pn-')).sort().forEach(key => {
+        const value = localStorage.getItem(key); if (value !== null) data[key] = value;
+      });
+      const backup = { format:'party-night-backup', schemaVersion:1, app:'Party Night', appVersion:APP_VERSION, exportedAt:new Date().toISOString(), data };
+      const json = JSON.stringify(backup,null,2);
+      const fileName = `party-night-backup-${new Date().toISOString().slice(0,10)}.json`;
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+          const [{Filesystem,Directory},{Share}] = await Promise.all([import('@capacitor/filesystem'),import('@capacitor/share')]);
+          const saved = await Filesystem.writeFile({path:fileName,data:json,directory:Directory.Cache,encoding:'utf8'});
+          await Share.share({title:'Party Night · Backup',text:'Còpia de seguretat de Party Night',url:saved.uri,dialogTitle:t('Desa la còpia de seguretat')});
+          setBackupMessage(t('Còpia preparada. Tria on desar-la.'));
+          return;
+        }
+      } catch(nativeError) {
+        console.warn('No s’ha pogut obrir el menú natiu de còpia; es provarà la descàrrega web.',nativeError);
+      }
+      const url=URL.createObjectURL(new Blob([json],{type:'application/json;charset=utf-8'}));
+      const link=document.createElement('a'); link.href=url; link.download=fileName; link.style.display='none';
+      document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+      setBackupMessage(t('S’ha generat el fitxer de còpia de seguretat.'));
+    } catch(error) {
+      console.error('Error exportant les dades de Party Night:',error);
+      setBackupMessage(t('No s’ha pogut crear la còpia de seguretat.'));
+    }
+  };
+
+  const importBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input=event.currentTarget; const file=input.files?.[0]; if(!file)return;
+    try {
+      if(file.size>10*1024*1024)throw new Error('backup-too-large');
+      const backup=JSON.parse(await file.text());
+      if(!backup||backup.format!=='party-night-backup'||backup.schemaVersion!==1||!backup.data||typeof backup.data!=='object'||Array.isArray(backup.data))throw new Error('invalid-backup');
+      const entries=Object.entries(backup.data) as Array<[string,unknown]>;
+      if(!entries.length||entries.some(([key,value])=>!key.startsWith('pn-')||typeof value!=='string'))throw new Error('invalid-backup-entries');
+      const restored=Object.fromEntries(entries) as Record<string,string>;
+      const read=(key:string)=>restored[key]===undefined?undefined:JSON.parse(restored[key]);
+      const playersValue=read('pn-v2-players'), sessionsValue=read('pn-v2-sessions'), activeValue=read('pn-v2-active-session');
+      if((playersValue!==undefined&&(!Array.isArray(playersValue)||playersValue.some((p:unknown)=>typeof p!=='string')))||
+        (sessionsValue!==undefined&&!Array.isArray(sessionsValue))||
+        (activeValue!==undefined&&activeValue!==null&&(typeof activeValue!=='object'||Array.isArray(activeValue))))throw new Error('invalid-backup-data');
+      if(!window.confirm(t('La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?')))return;
+      const previous:Record<string,string>={};
+      Object.keys(localStorage).filter(key=>key.startsWith('pn-')).forEach(key=>{const value=localStorage.getItem(key);if(value!==null)previous[key]=value;});
+      try {
+        Object.keys(localStorage).filter(key=>key.startsWith('pn-')).forEach(key=>localStorage.removeItem(key));
+        entries.forEach(([key,value])=>localStorage.setItem(key,value as string));
+      } catch(storageError) {
+        Object.keys(localStorage).filter(key=>key.startsWith('pn-')).forEach(key=>localStorage.removeItem(key));
+        Object.entries(previous).forEach(([key,value])=>localStorage.setItem(key,value));
+        throw storageError;
+      }
+      window.location.reload();
+    } catch(error) {
+      console.error('Error important la còpia de Party Night:',error);
+      setBackupMessage(t('El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.'));
+    } finally { input.value=''; }
   };
 
   // --- HELPERS UI ---
@@ -2164,7 +2230,7 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
-              <h3 className="text-lg font-black text-white mb-1">v2.0.1 (The Party Re-Rebuild)</h3>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.1b (The Party Re-Rebuild)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Android:")}</b> {t("espais segurs perquè el contingut no quedi sota la barra d'estat ni la navegació inferior.")}<br/>
                 - <b>{t("Careta:")}</b> {t("animació més lleugera, sense botó per saltar i amb inici més net.")}<br/>
@@ -2319,7 +2385,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.1</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.1b</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2346,15 +2412,24 @@ export default function App() {
               <button type="button" role="switch" aria-checked={hapticsEnabled} onClick={() => {
                 const next = !hapticsEnabled;
                 setHapticsEnabled(next);
-                if (next) void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {
-                  try { if (navigator.vibrate) navigator.vibrate(25); } catch {}
-                });
+                if (next) void triggerHaptic('MEDIUM');
               }} className={hapticsEnabled ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
               <div><p className="font-bold text-white">{t('Reduir animacions')}</p><p className="text-xs text-gray-400">{t('Menys moviment en dispositius lents.')}</p></div>
               <button type="button" role="switch" aria-checked={reduceMotion} onClick={() => setReduceMotion(value => !value)}
                 className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-4">
+              <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-bold text-white">{t('Còpia de seguretat')}</p><p className="text-xs text-gray-400">{t('Desa jugadors, sessions, historial i configuració en un fitxer.')}</p></div></div>
+              <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Download size={16}/> {t('Exportar dades')}</button>
+                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Upload size={16}/> {t('Importar dades')}</button>
+              </div>
+              {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
+              <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.')}</p>
             </div>
           </div>
           <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>
@@ -2386,7 +2461,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.1 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.1b • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
@@ -2433,7 +2508,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1b</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2596,7 +2671,7 @@ export default function App() {
       {screen === 'setup' && mainTab === 'history' && (
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.1b</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (

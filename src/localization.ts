@@ -475,6 +475,16 @@ const UI_TRANSLATIONS: Record<'ca' | 'en', Record<string, string>> = {
 
 
 Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+"Exportar dades":"Exportar dades","Importar dades":"Importar dades","Còpia de seguretat":"Còpia de seguretat",
+"Desa jugadors, sessions, historial i configuració en un fitxer.":"Desa jugadors, sessions, historial i configuració en un fitxer.",
+"La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.",
+"Desa la còpia de seguretat":"Desa la còpia de seguretat","Còpia preparada. Tria on desar-la.":"Còpia preparada. Tria on desar-la.",
+"S’ha generat el fitxer de còpia de seguretat.":"S’ha generat el fitxer de còpia de seguretat.","No s’ha pogut crear la còpia de seguretat.":"No s’ha pogut crear la còpia de seguretat.",
+"La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?":"La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?",
+"El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.":"El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir."
+});
+
+Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
   "Mete a un colega...": "Afegeix una amistat...",
   "Castigos acumulativos": "Penalitzacions acumulatives",
   "Rànquing de partida": "Rànquing de la partida",
@@ -504,6 +514,16 @@ Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
   "¡COMODÍN SORPRESA!": "COMODÍ SORPRESA!", "El desafío es...": "El repte és...",
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
+Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+"Exportar dades":"Export data","Importar dades":"Import data","Còpia de seguretat":"Backup",
+"Desa jugadors, sessions, historial i configuració en un fitxer.":"Save players, sessions, history and settings to a file.",
+"La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"The backup includes data stored on this device, including player names and session results.",
+"Desa la còpia de seguretat":"Save backup","Còpia preparada. Tria on desar-la.":"Backup ready. Choose where to save it.",
+"S’ha generat el fitxer de còpia de seguretat.":"The backup file has been created.","No s’ha pogut crear la còpia de seguretat.":"The backup could not be created.",
+"La importació substituirà les dades locals actuals de Party Night. Abans, exporta-les si vols conservar-les. Vols continuar?":"Importing will replace Party Night's current local data. Export it first if you want to keep it. Continue?",
+"El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.":"This is not a valid Party Night backup or the file could not be read."
+});
+
 Object.assign(EXTRA_UI_TRANSLATIONS.en, {
   "Mete a un colega...": "Add a friend...", "Castigos acumulativos": "Cumulative penalties",
   "Rànquing de partida": "Game leaderboard", "Rànquing de la sessió": "Session leaderboard",

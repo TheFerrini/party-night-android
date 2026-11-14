@@ -1,5 +1,24 @@
 # Changelog — Party Night
 
+## [2.0.1b] — 2026-11-14 · Hotfix & Backup
+
+### Arrencada i estabilitat
+- La vibració nativa es carrega sota demanda, sense intervenir en l’arrencada de l’app.
+- Validació defensiva de les dades locals abans de construir l’estat inicial.
+- Pantalla d’error visible amb detalls copiables en lloc d’una pantalla negra si falla el renderitzat.
+
+### Còpies de seguretat
+- Exportació de totes les dades persistents de Party Night en un fitxer JSON.
+- A Android, el fitxer es crea temporalment i s’obre el menú natiu per desar-lo o compartir-lo.
+- Importació de còpies amb validació del format, contingut i estructura.
+- La restauració substitueix només les claus locals de Party Night; no toca les dades d’altres apps.
+- Confirmació abans de substituir dades i restauració de les dades actuals si falla l’escriptura.
+
+### Android
+- Package ID conservat: `com.theferrini.partynight`.
+- Nom de versió Android: `2.0.1b`; `versionCode` incrementat respecte de la 2.0.1.
+- Signatura debug persistent conservada per permetre instal·lar l’actualització sense desinstal·lar.
+
 ## [2.0.1] — 2026-11-14 · The Party Re-Rebuild
 
 ### Idiomes i interfície

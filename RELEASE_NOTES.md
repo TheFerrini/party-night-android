@@ -1,26 +1,17 @@
-## Party Night v2.0.1 — The Party Re-Rebuild
+## Party Night v2.0.1b — Hotfix & Backup
 
-### 🌐 Idiomes
-- Selector redissenyat amb les banderes de Catalunya, Espanya i el Regne Unit.
-- Tria una bandera i confirma per desar l'idioma i reiniciar l'app.
-- Traduccions de la interfície i dels 246 textos de joc al català i a l'anglès; es conserva el castellà original.
-- Els noms inserits en preguntes i reptes es mantenen intactes.
+### 🛠️ Estabilitat
+- Càrrega de la vibració nativa sota demanda per reduir dependències durant l’arrencada.
+- Validació de les dades locals abans d’inicialitzar jugadors, sessions i ajustos.
+- Pantalla d’error amb informació tècnica copiable en cas que falli el renderitzat.
 
-### 🏆 Guanyadors i estadístiques
-- Criteri global configurable: guanya qui rep més penalitzacions o qui en rep menys.
-- Estadístiques amb noms de jocs llegibles, rànquing de cada joc en un pop-up i ordenació de jugadors.
-- Registre de penalitzacions de cada jugador agrupat per joc.
-
-### 📚 Historial
-- Configuració de cada partida presentada en camps llegibles.
-- Esdeveniments desplegables amb descripcions, jugadors i hora, sense codi JSON.
-
-### ⚙️ Configuració
-- Penalitzacions acumulatives centralitzades a Configuració general.
-- Interruptors visuals corregits, vibració tàctil nativa i mode de reducció de moviment funcional.
-- Eliminat el botó «Volver al Inicio» del selector de jocs.
-- Eliminada l'opció de canviar idioma de Configuració general.
+### 💾 Còpies de seguretat
+- Exporta jugadors, sessions, historial i preferències en un fitxer JSON.
+- A Android, s’obre el menú natiu per desar o compartir el fitxer.
+- Importa una còpia des de l’emmagatzematge del dispositiu.
+- Validació del fitxer abans de tocar les dades actuals.
+- La restauració només substitueix les dades de Party Night i demana confirmació.
 
 ### 📱 Android
-- Identificador conservat: `com.theferrini.partynight`.
-- Versió 2.0.1; actualització signada amb la clau persistent de la 2.0.0.
+- Es manté l’identificador `com.theferrini.partynight`.
+- `versionCode` incrementat i signatura persistent conservada: instal·lació directa sobre la 2.0.1, sense desinstal·lar.
