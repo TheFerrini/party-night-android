@@ -738,7 +738,7 @@ export default function App() {
     if (screen !== 'setup') return;
     const activePage = mainCanvasRefs.current[mainTabIndex];
     if (!activePage) return;
-    const measure = () => setMainCanvasHeight(Math.max(activePage.scrollHeight, window.innerHeight));
+    const measure = () => setMainCanvasHeight(Math.max(activePage.scrollHeight, 1));
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
