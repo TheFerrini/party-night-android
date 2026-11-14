@@ -1,5 +1,20 @@
 # Changelog — Party Night
 
+## [2.0.5] — 2026-11-14 · Smooth Canvas & Count-up
+
+### Animacions
+- La careta d'inici dura una mica més, amb una sortida més pausada.
+- Les subseccions d'Estadístiques es desplacen com un únic llenç horitzontal amb desacceleració suau.
+- Els valors numèrics de les estadístiques compten fins al resultat final.
+- Les animacions respecten la preferència de reduir moviment.
+
+### Actualitzacions
+- L'avís automàtic d'una nova versió es mostra només una vegada per cada release detectada.
+- La comprovació manual continua mostrant el resultat de la consulta.
+
+### Projecte
+- Versió actualitzada a 2.0.5 als metadades del projecte i a la interfície.
+
 ## [2.0.3] — 2026-11-14 · The Comeback Intro & Full UI Language
 
 ### Careta
