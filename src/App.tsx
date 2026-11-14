@@ -167,7 +167,6 @@ const PHRASES = {
       "Yo nunca he enviado una captura al grupo equivocado y he tenido que improvisar.",
       "Yo nunca he cambiado mi plan de una noche porque quizá iba a aparecer alguien."
 ,
-      "¿A quién de aquí elegirías para organizar una cita sorpresa?"
 ],
     picante: [
       "Yo nunca me he grabado en vídeo o audio manteniendo relaciones con alguien.",
@@ -190,7 +189,6 @@ const PHRASES = {
       "Yo nunca he tenido una cita que terminó con una conversación mucho más íntima de lo previsto.",
       "Yo nunca he tenido que improvisar una excusa para cortar un momento íntimo que no me apetecía."
 ,
-      "¿Qué cita ideal te daría un poco de vergüenza reconocer delante del grupo?"
 ],
     asco: [
       "Yo nunca he vomitado y me he vuelto a tragar un poco por no manchar.",
