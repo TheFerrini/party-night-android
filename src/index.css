@@ -154,3 +154,7 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 .pn-history-details-grid.is-open{grid-template-rows:1fr;opacity:1;}
 .pn-history-details-inner{min-height:0;overflow:hidden;}
 @media(prefers-reduced-motion:reduce){.pn-history-details-grid{transition:none}}
+
+.pn-stats-page{opacity:0;transition:opacity 220ms ease;backface-visibility:hidden;}
+.pn-stats-page.is-active{opacity:1;}
+@media(prefers-reduced-motion:reduce){.pn-stats-page{transition:none}}
