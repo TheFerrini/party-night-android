@@ -1,16 +1,12 @@
 # Party Night — Android
+Party Night és una app d'Android que consisteix en minijocs pensats per jugar amb amics i poder ampliar/enfortir amistats (o destruïr-les).
+Pensat per jugar amb alcohol de per mig.
 
+PENSAT PER A MAJORS D'EDAT - BEU RESPONSABLEMENT
+
+# ÚLTIMA ACTUALITZACIÓ
 **Party Night v2.0.1b · Hotfix & Backup**
-
-App de jocs per a grups, feta amb React, Vite i Capacitor 8.
-
-## Novetats de la 2.0.1b
-- Arrencada més defensiva: les dades locals es validen abans d'inicialitzar l'app.
-- La vibració nativa es carrega només quan s'utilitza.
-- Error Boundary amb missatge tècnic visible per evitar pantalles negres sense informació.
-- Exportació de jugadors, sessions, historial i configuració en JSON.
-- Importació de còpies JSON amb validació i confirmació abans de substituir dades.
-- A Android, l'exportació obre el menú natiu per desar o compartir el fitxer.
+Intent d'arreglar l'app, que no s'executa.
 
 ## Navegació
 - **Jugar:** gestió de jugadors, sessions, idioma i configuració general.
@@ -18,7 +14,8 @@ App de jocs per a grups, feta amb React, Vite i Capacitor 8.
 - **Historial:** sessions desades amb configuracions, esdeveniments i rànquings.
 
 ## Dades i privacitat
-Les dades es desen localment al dispositiu. Les còpies poden contenir noms de jugadors, preguntes, vots, penalitzacions i resultats. No comparteixis el fitxer amb persones no autoritzades.
+Les dades es desen localment al dispositiu. **No s'envia cap dada a cap servidor.** 
+Les còpies poden contenir noms de jugadors, preguntes, vots, penalitzacions i resultats. No comparteixis el fitxer amb persones no autoritzades.
 
 La importació substitueix totes les claus locals que comencen per `pn-` i conserva les dades d'altres aplicacions.
 
