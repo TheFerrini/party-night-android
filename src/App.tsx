@@ -653,11 +653,15 @@ export default function App() {
       }
 
       const release = await response.json();
-      const tag = String(release.tag_name || release.name || '').match(/v?\d+\.\d+\.\d+b?/i)?.[0];
+      const tag = String(release.tag_name || release.name || '').match(/v?\d+\.\d+\.\d+[a-z]?/i)?.[0];
       if (!tag) throw new Error('La darrera release no conté un número de versió vàlid.');
       const parseVersion = (value: string) => {
-        const match = value.match(/^v?(\d+)\.(\d+)\.(\d+)(b)?$/i);
-        return match ? [Number(match[1]),Number(match[2]),Number(match[3]),match[4]?1:0] : null;
+        const match = value.match(/^v?(\d+)\.(\d+)\.(\d+)([a-z])?$/i);
+        if (!match) return null;
+        const suffixRank: Record<string, number> = { b: 1, c: 2 };
+        const suffix = (match[4] || '').toLowerCase();
+        if (suffix && suffixRank[suffix] === undefined) return null;
+        return [Number(match[1]), Number(match[2]), Number(match[3]), suffixRank[suffix] || 0];
       };
       const remoteParts=parseVersion(tag), currentParts=parseVersion(APP_VERSION);
       if(!remoteParts||!currentParts)throw new Error('No s’ha pogut interpretar la versió.');
@@ -2456,7 +2460,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.5c</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.6</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2521,7 +2525,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5c</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.6</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2697,7 +2701,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.5c • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.6 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
