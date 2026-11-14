@@ -905,8 +905,8 @@ export function translateText(language: AppLanguage, value: string): string {
 
 export function translateUiText(language: AppLanguage, value: string): string {
   if (!value) return value;
-  const leading = value.match(/^\\s*/)?.[0] ?? '';
-  const trailing = value.match(/\\s*$/)?.[0] ?? '';
+  const leading = value.match(/^\s*/)?.[0] ?? '';
+  const trailing = value.match(/\s*$/)?.[0] ?? '';
   const core = value.slice(leading.length, value.length - trailing.length);
   if (!core) return value;
   const exact = UI_TRANSLATIONS[language]?.[core];
