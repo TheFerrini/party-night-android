@@ -947,6 +947,40 @@ Object.assign(UI_TRANSLATIONS.en, {
   "el APK se instala directamente, sin desinstalar la versión anterior.": "the APK installs directly over the previous version, without uninstalling."
 });
 
+Object.assign(UI_TRANSLATIONS.es, {
+  "Resum": "Resumen",
+  "Sessions": "Sesiones",
+  "Jocs": "Juegos",
+  "Jugadors": "Jugadores",
+  "Estadístiques": "Estadísticas",
+  "Historial": "Historial",
+  "Tot el que ha passat a les vostres sessions.": "Todo lo que ha pasado en vuestras sesiones.",
+  "Jocs més jugats": "Juegos más jugados",
+  "Encara no hi ha cap sessió registrada.": "Todavía no hay ninguna sesión registrada.",
+  "Quan acabeu una partida, aquí apareixeran els resultats.": "Cuando terminéis una partida, aquí aparecerán los resultados.",
+  "Tots els perfils": "Todos los perfiles",
+  "Victòries": "Victorias",
+  "Penalitzacions": "Penalizaciones",
+  "Registre per joc": "Registro por juego",
+  "Més penalitzacions": "Más penalizaciones",
+  "Menys penalitzacions": "Menos penalizaciones",
+  "jugadors": "jugadores",
+  "esdeveniments": "eventos",
+  "penalitzacions": "penalizaciones",
+  "Nova versió disponible!": "¡Nueva versión disponible!",
+  "Buscant versions...": "Buscando versiones...",
+  "No s’ha pogut comprovar": "No se ha podido comprobar",
+  "Tot al dia!": "¡Todo al día!",
+  "Party Night · Actualitzacions": "Party Night · Actualizaciones",
+  "Consultant les releases públiques de GitHub...": "Consultando las releases públicas de GitHub...",
+  "Estàs utilitzant la versió més recent.": "Estás utilizando la versión más reciente.",
+  "Tornar a provar": "Volver a intentar",
+  "Comprova la connexió i torna-ho a provar.": "Comprueba la conexión y vuelve a intentarlo.",
+  "Fi de la sessió": "Fin de la sesión",
+  "Sessió desada": "Sesión guardada",
+  "Finalitzar sessió": "Finalizar sesión"
+});
+
 export function translateText(language: AppLanguage, value: string): string {
   if (!value) return value;
   // Les frases i reptes de joc es mantenen en castellà per ara.
