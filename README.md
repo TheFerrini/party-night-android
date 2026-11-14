@@ -1,8 +1,11 @@
 # Party Night — Android
 
-**Party Night v2.0.2 · Boot & Update Fix**
+**Party Night v2.0.2b · Localization hotfix**
 
 App de jocs per a grups, feta amb React, Vite i Capacitor 8.
+
+## Novetats de la 2.0.2b
+- Corregit el nom del mapa de traduccions que causava `EXTRA_UI_TRANSLATIONS is not defined`.
 
 ## Novetats de la 2.0.2
 - Recursos Vite amb rutes relatives per al WebView Android.

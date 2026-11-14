@@ -474,7 +474,7 @@ const UI_TRANSLATIONS: Record<'ca' | 'en', Record<string, string>> = {
 };
 
 
-Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+Object.assign(UI_TRANSLATIONS.ca, {
 "Exportar dades":"Exportar dades","Importar dades":"Importar dades","Còpia de seguretat":"Còpia de seguretat",
 "Desa jugadors, sessions, historial i configuració en un fitxer.":"Desa jugadors, sessions, historial i configuració en un fitxer.",
 "La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.",
@@ -484,7 +484,7 @@ Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
 "El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.":"El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir."
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+Object.assign(UI_TRANSLATIONS.ca, {
   "Mete a un colega...": "Afegeix una amistat...",
   "Castigos acumulativos": "Penalitzacions acumulatives",
   "Rànquing de partida": "Rànquing de la partida",
@@ -514,7 +514,7 @@ Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
   "¡COMODÍN SORPRESA!": "COMODÍ SORPRESA!", "El desafío es...": "El repte és...",
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
-Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+Object.assign(UI_TRANSLATIONS.en, {
 "Exportar dades":"Export data","Importar dades":"Import data","Còpia de seguretat":"Backup",
 "Desa jugadors, sessions, historial i configuració en un fitxer.":"Save players, sessions, history and settings to a file.",
 "La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"The backup includes data stored on this device, including player names and session results.",
@@ -524,7 +524,7 @@ Object.assign(EXTRA_UI_TRANSLATIONS.en, {
 "El fitxer no és una còpia de Party Night vàlida o no s’ha pogut llegir.":"This is not a valid Party Night backup or the file could not be read."
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+Object.assign(UI_TRANSLATIONS.en, {
   "Mete a un colega...": "Add a friend...", "Castigos acumulativos": "Cumulative penalties",
   "Rànquing de partida": "Game leaderboard", "Rànquing de la sessió": "Session leaderboard",
   "Vida familiar": "Family life", "Estudiantil": "Student life", "Personales": "Personal",
@@ -553,7 +553,7 @@ Object.assign(EXTRA_UI_TRANSLATIONS.en, {
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+Object.assign(UI_TRANSLATIONS.ca, {
   "Exportar datos":"Exportar dades","Importar datos":"Importar dades","Copia de seguridad":"Còpia de seguretat",
   "Guarda jugadores, sesiones, historial y ajustes en un archivo.":"Desa jugadors, sessions, historial i ajustos en un fitxer.",
   "La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.":"La còpia inclou dades desades al dispositiu, inclosos noms i resultats de les sessions.",
@@ -563,7 +563,7 @@ Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
   "El archivo no es una copia válida de Party Night o no se ha podido leer.":"El fitxer no és una còpia vàlida de Party Night o no s’ha pogut llegir."
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+Object.assign(UI_TRANSLATIONS.en, {
   "Exportar datos":"Export data","Importar datos":"Import data","Copia de seguridad":"Backup",
   "Guarda jugadores, sesiones, historial y ajustes en un archivo.":"Save players, sessions, history and settings to a file.",
   "La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.":"The backup includes data stored on this device, including player names and session results.",
@@ -573,12 +573,12 @@ Object.assign(EXTRA_UI_TRANSLATIONS.en, {
   "El archivo no es una copia válida de Party Night o no se ha podido leer.":"This is not a valid Party Night backup or the file could not be read."
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.ca, {
+Object.assign(UI_TRANSLATIONS.ca, {
   "Elige el idioma de la aplicación. El cambio se aplica inmediatamente.":"Tria l’idioma de l’app. El canvi s’aplica immediatament.",
   "Guardar idioma":"Desa l’idioma"
 });
 
-Object.assign(EXTRA_UI_TRANSLATIONS.en, {
+Object.assign(UI_TRANSLATIONS.en, {
   "Elige el idioma de la aplicación. El cambio se aplica inmediatamente.":"Choose the app language. The change applies immediately.",
   "Guardar idioma":"Save language"
 });
