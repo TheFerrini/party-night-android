@@ -1904,6 +1904,7 @@ export default function App() {
           padding: max(24px, var(--pn-safe-top)) 24px max(24px, var(--pn-safe-bottom));
           background: radial-gradient(ellipse at 50% 42%, #4a1742 0%, #211025 38%, #090a12 78%);
           animation: pn-intro-exit .35s ease-in 2.75s forwards;
+          pointer-events: none;
           -webkit-tap-highlight-color: transparent;
           contain: strict;
         }
