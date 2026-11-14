@@ -52,7 +52,16 @@ const PHRASES = {
       "Yo nunca he tirado la comida de mi madre o abuela a la basura a escondidas porque no me gustaba.",
       "Yo nunca he fingido estar súper enfermo para no ir a una visita familiar aburridísima.",
       "Yo nunca me he tirado un pedo y le he echado la culpa descaradamente al perro/gato."
-    ],
+    ,
+      "Yo nunca he fingido que me gustaba un regalo para no herir a quien me lo dio.",
+      "Yo nunca he culpado a un hermano o compañero de algo que había hecho yo.",
+      "Yo nunca he salido de casa diciendo que volvía pronto y he aparecido al día siguiente.",
+      "Yo nunca he escondido una compra para que mi familia no preguntara cuánto me había gastado.",
+      "Yo nunca he usado la cuenta de streaming de un familiar sin pedir permiso.",
+      "Yo nunca he fingido estar dormido para no tener que ayudar en casa.",
+      "Yo nunca he llamado a alguien de mi familia por el nombre de otra persona.",
+      "Yo nunca he tenido una discusión familiar por el mando de la tele o el aire acondicionado."
+],
     estudiantil: [
       "Yo nunca he falsificado la firma de un padre, tutor o empresa para unas prácticas/justificante.",
       "Yo nunca he copiado en un examen final y he sentido la mirada del profe clavada en mí.",
@@ -64,7 +73,16 @@ const PHRASES = {
       "Yo nunca he suspendido un examen de milagro por haber salido de fiesta el día antes.",
       "Yo nunca he intentado llorarle o darle pena a un profe para que me subiera a un 5.",
       "Yo nunca he odiado en secreto y con toda mi alma al delegado/a de la clase."
-    ],
+    ,
+      "Yo nunca he enviado un trabajo sin adjuntar el archivo correcto.",
+      "Yo nunca he dicho que había leído un libro obligatorio cuando solo conocía el resumen.",
+      "Yo nunca he estudiado una asignatura entera la noche anterior al examen.",
+      "Yo nunca he llegado tarde a clase por quedarme dormido después de apagar cinco alarmas.",
+      "Yo nunca he hecho un trabajo en grupo casi entero porque el resto desapareció.",
+      "Yo nunca he usado una excusa tecnológica para justificar una entrega tardía.",
+      "Yo nunca he abierto el campus virtual solo para comprobar si habían publicado una nota.",
+      "Yo nunca he asentido en clase sin entender absolutamente nada de lo que explicaban."
+],
     personales: [
       "Yo nunca he stalkeado a mi ex (o al nuevo ligue de mi ex) desde una cuenta sapa.",
       "Yo nunca he montado un drama o llorado en el metro/bus con música triste de fondo.",
@@ -76,7 +94,16 @@ const PHRASES = {
       "Yo nunca he fingido recibir una llamada o mirar el móvil para evitar saludar a alguien por la calle.",
       "Yo nunca he tenido una cuenta secreta de Twitter (X) o TikTok para rajar o ser friki.",
       "Yo nunca me he arrepentido profundamente de un tatuaje, piercing o corte de pelo."
-    ],
+    ,
+      "Yo nunca he buscado el móvil teniéndolo en la mano.",
+      "Yo nunca he escrito un mensaje larguísimo y lo he borrado antes de enviarlo.",
+      "Yo nunca he practicado cómo pedir algo delante del espejo.",
+      "Yo nunca he llegado a un sitio y olvidado por completo por qué había ido.",
+      "Yo nunca he mirado una conversación antigua para recordar cómo empezó una relación.",
+      "Yo nunca he fingido reconocer a alguien para evitar admitir que había olvidado su nombre.",
+      "Yo nunca he puesto una alarma y la he apagado sin recordar haberlo hecho.",
+      "Yo nunca he tenido una playlist para una situación muy específica que me da vergüenza enseñar."
+],
     traumas: [
       "Yo nunca he sufrido la humillación de que me dejaran por un simple mensaje de WhatsApp.",
       "Yo nunca me he enterado de que me ponían los cuernos gracias a una historia de Instagram.",
@@ -88,7 +115,16 @@ const PHRASES = {
       "Yo nunca he sufrido ghosting salvaje justo después de una primera cita que creía perfecta.",
       "Yo nunca he enviado un testamento de 500 palabras y me han respondido con un humillante 'ok'.",
       "Yo nunca me he liado con alguien que no me gustaba nada solo para darle celos a otra persona."
-    ],
+    ,
+      "Yo nunca he vuelto a leer un mensaje de ruptura buscando una explicación diferente.",
+      "Yo nunca he esperado una respuesta mirando el móvil cada treinta segundos.",
+      "Yo nunca he confundido amabilidad con interés romántico y me he montado una película.",
+      "Yo nunca he tenido que escuchar una canción porque me recordaba demasiado a alguien.",
+      "Yo nunca he fingido que ya había superado a alguien cuando todavía no era verdad.",
+      "Yo nunca he comparado una nueva relación con una anterior.",
+      "Yo nunca he sentido celos de una historia de Instagram que ni siquiera iba dirigida a mí.",
+      "Yo nunca he guardado una foto o un recuerdo de alguien diciendo que algún día lo borraría."
+],
     trabajo: [
       "Yo nunca he robado material de papelería, comida o café de la empresa.",
       "Yo nunca he tenido que currar un fin de semana o festivo teniendo una resaca mortal.",
@@ -100,7 +136,16 @@ const PHRASES = {
       "Yo nunca he tonteado con un encargado, superior o jefe para tener ventajas.",
       "Yo nunca he usado el ordenador de la oficina para mirarme series piratas o mirar ropa.",
       "Yo nunca le he robado el tupper o la comida de la nevera a un compañero y me he callado."
-    ],
+    ,
+      "Yo nunca he fingido estar ocupado justo cuando alguien preguntaba quién podía ayudar.",
+      "Yo nunca he tenido una reunión que podría haberse resuelto con un solo mensaje.",
+      "Yo nunca he mirado el reloj cada dos minutos esperando la hora de salida.",
+      "Yo nunca he respondido mentalmente a un correo y luego he olvidado contestarlo de verdad.",
+      "Yo nunca he cometido un error pequeño y he tardado más en disimularlo que en arreglarlo.",
+      "Yo nunca he dicho que tenía experiencia con un programa y he aprendido a usarlo sobre la marcha.",
+      "Yo nunca he aprovechado una pausa para alargarla un poquito más de la cuenta.",
+      "Yo nunca he confundido el chat privado con el grupo de trabajo al enviar un mensaje."
+],
     salseo: [
       "Yo nunca me he liado con dos personas distintas en la misma noche sin que lo supieran.",
       "Yo nunca he enviado una captura de pantalla criticando a alguien... a esa misma persona.",
@@ -112,7 +157,25 @@ const PHRASES = {
       "Yo nunca me he inventado o exagerado un salseo ajeno solo para tener tema de conversación.",
       "Yo nunca me he liado con el amigo/a feo/a solo para poder acercarme al guapo/a.",
       "Yo nunca he besado a alguien de fiesta y me he arrepentido a los dos milisegundos."
-    ],
+    ,
+      "Yo nunca he subido una historia esperando que una persona concreta la viera.",
+      "Yo nunca he borrado un mensaje porque la respuesta de la otra persona me había dejado en evidencia.",
+      "Yo nunca he tenido dos conversaciones coquetas abiertas al mismo tiempo.",
+      "Yo nunca he preguntado por alguien disimulando que solo era curiosidad.",
+      "Yo nunca he dado un like antiguo sin querer mientras cotilleaba un perfil.",
+      "Yo nunca he inventado una excusa para coincidir con alguien que me gustaba.",
+      "Yo nunca he enviado una captura al grupo equivocado y he tenido que improvisar.",
+      "Yo nunca he cambiado mi plan de una noche porque quizá iba a aparecer alguien."
+,
+      "¿Quién de aquí crees que tiene más facilidad para ligar sin darse cuenta?",
+      "¿A quién del grupo le confiarías la tarea de investigar un crush y por qué?",
+      "¿Has tenido alguna vez un flechazo con alguien que conociste por internet?",
+      "¿Qué conversación has releído más veces de las que admitirías?",
+      "¿Quién de aquí crees que sería el primero en volver con su ex?",
+      "¿Has mantenido alguna vez una conversación solo porque te gustaba recibir atención?",
+      "¿Qué señal de interés has interpretado mal de la forma más espectacular?",
+      "¿A quién de aquí elegirías para organizar una cita sorpresa?"
+],
     picante: [
       "Yo nunca me he grabado en vídeo o audio manteniendo relaciones con alguien.",
       "Yo nunca he mandado una foto subida de tono (nude) y he rezado para que no la rularan.",
@@ -124,7 +187,25 @@ const PHRASES = {
       "Yo nunca he estado a punto de participar en un trío y me he echado atrás en el último minuto.",
       "Yo nunca he mentido diciendo que tenía más (o menos) experiencia sexual de la real.",
       "Yo nunca he buscado fetichismos súper raros y turbios en el modo incógnito."
-    ],
+    ,
+      "Yo nunca he tenido una cita que acabó siendo mucho más atrevida de lo que esperaba.",
+      "Yo nunca he probado un juego de roles con una pareja.",
+      "Yo nunca he enviado un mensaje subido de tono y después me he arrepentido.",
+      "Yo nunca he tenido una fantasía con alguien que está presente en esta sala.",
+      "Yo nunca he besado a alguien en un lugar donde había que guardar bastante discreción.",
+      "Yo nunca he hablado de mis límites y preferencias íntimas antes de una cita.",
+      "Yo nunca he tenido una cita que terminó con una conversación mucho más íntima de lo previsto.",
+      "Yo nunca he tenido que improvisar una excusa para cortar un momento íntimo que no me apetecía."
+,
+      "¿Qué detalle no sexual te resulta especialmente atractivo en otra persona?",
+      "¿Cuál ha sido el lugar más inesperado en el que has sentido química con alguien?",
+      "¿Qué experiencia íntima te gustaría probar alguna vez, siempre con confianza y consentimiento?",
+      "¿Qué gesto de una cita puede hacer que pierdas todo el interés al instante?",
+      "¿Has tenido alguna vez una tensión romántica que nadie más parecía notar?",
+      "¿Qué es lo que más te cuesta comunicar cuando empiezas a intimar con alguien?",
+      "¿Prefieres tomar la iniciativa o que la otra persona dé el primer paso? ¿Por qué?",
+      "¿Qué cita ideal te daría un poco de vergüenza reconocer delante del grupo?"
+],
     asco: [
       "Yo nunca he vomitado y me he vuelto a tragar un poco por no manchar.",
       "Yo nunca he comido algo de la nevera que sabía perfectamente que estaba caducado.",
@@ -136,7 +217,16 @@ const PHRASES = {
       "Yo nunca he olido mis propias axilas o ropa sucia para ver si aguantaba un día más.",
       "Yo nunca me he liado con alguien a quien le olía fatal la boca.",
       "Yo nunca he usado el cepillo de dientes de otra persona sin pedirle permiso."
-    ],
+    ,
+      "Yo nunca he olido una camiseta para decidir si todavía podía ponérmela.",
+      "Yo nunca he comido directamente de una olla o sartén para no fregar otro plato.",
+      "Yo nunca he encontrado comida olvidada en una mochila y he dudado si seguía siendo comestible.",
+      "Yo nunca he usado una toalla que no estaba seguro de que estuviera limpia.",
+      "Yo nunca he pisado algo descalzo en casa y he preferido no mirar qué era.",
+      "Yo nunca he bebido del vaso de otra persona por confundirlo con el mío.",
+      "Yo nunca he dejado platos en mi habitación tanto tiempo que ya no quería descubrir qué había dentro.",
+      "Yo nunca he tenido que limpiar una mancha misteriosa sin saber de dónde había salido."
+],
     delitos: [
       "Yo nunca he hecho un 'simpa' de leyenda en un restaurante o bar y he huido corriendo.",
       "Yo nunca he robado un cono de obra, una valla o un letrero estando de fiesta.",
@@ -148,7 +238,16 @@ const PHRASES = {
       "Yo nunca me he metido en una pelea física en medio de la calle estando de fiesta.",
       "Yo nunca me he saltado el metro o Renfe pegándome a otra persona como una lapa.",
       "Yo nunca me he colado en un recinto, festival o concierto saltando la valla."
-    ],
+    ,
+      "Yo nunca he salido de una tienda con algo en la mano que había olvidado pagar.",
+      "Yo nunca he cruzado por un sitio prohibido porque el camino oficial parecía demasiado largo.",
+      "Yo nunca he colado comida de fuera en un cine o espectáculo.",
+      "Yo nunca he fingido no ver una señal porque me venía mal hacerle caso.",
+      "Yo nunca he devuelto algo diciendo que estaba defectuoso cuando simplemente ya no lo quería.",
+      "Yo nunca he usado una cuenta, contraseña o suscripción ajena sin permiso.",
+      "Yo nunca he aparcado donde no debía pensando que solo serían cinco minutos.",
+      "Yo nunca he copiado una respuesta de internet y la he presentado como si fuera totalmente mía."
+],
     cachondeo: [
       "Yo nunca he fingido tener acento extranjero, inglés o francés para ligar o reírme de alguien.",
       "Yo nunca he soltado un chiste negrísimo en el peor contexto posible y nadie se ha reído.",
@@ -160,7 +259,16 @@ const PHRASES = {
       "Yo nunca he soltado una frase de un 'trend' de TikTok en una conversación seria.",
       "Yo nunca me he intentado hacer el/la sexy apoyándome en algo y me he caído al suelo.",
       "Yo nunca me he puesto a debatir súper cabreado sobre política con un desconocido de fiesta."
-    ]
+    ,
+      "Yo nunca he saludado con entusiasmo a alguien que en realidad no me estaba saludando.",
+      "Yo nunca he tropezado y he convertido la caída en un paso de baile para disimular.",
+      "Yo nunca he cantado una letra inventada porque no me sabía la original.",
+      "Yo nunca he mandado un audio y he descubierto después que llevaba un ruido vergonzoso de fondo.",
+      "Yo nunca he intentado abrir una puerta empujando cuando había que tirar.",
+      "Yo nunca he contado un chiste y me he reído más que todos los demás juntos.",
+      "Yo nunca he fingido entender una referencia para no quedarme fuera de la conversación.",
+      "Yo nunca he hecho una captura de pantalla para recordar algo y luego he olvidado por qué la hice."
+]
   },
   bomba: [
     "Marcas de Vapers o sabores de cachimba",
@@ -183,7 +291,38 @@ const PHRASES = {
     "Fetiches raros que la gente tiene",
     "Cosas que robarías de un hotel",
     "Marcas de material audiovisual (cámaras, micros...)"
-  ],
+  ,
+    "Excusas absurdas para llegar tarde a una quedada",
+    "Cosas que siempre desaparecen en una casa compartida",
+    "Objetos imprescindibles para sobrevivir a un festival",
+    "Frases típicas de alguien que acaba de romper con su pareja",
+    "Comidas que saben mejor a las tres de la mañana",
+    "Cosas que haces cuando crees que nadie te está mirando",
+    "Señales de que una fiesta está llegando a su fin",
+    "Regalos de amigo invisible que nadie quiere recibir",
+    "Aplicaciones que todos tenemos instaladas",
+    "Cosas que no deberían estar en el baño de una discoteca",
+    "Personajes que serían horribles compañeros de piso",
+    "Motivos ridículos para bloquear a alguien",
+    "Palabras que suenan a insulto pero no lo son",
+    "Trabajos que parecen fáciles hasta que los haces",
+    "Cosas que diría un DJ para animar una fiesta",
+    "Objetos que alguien siempre lleva en el bolso o mochila",
+    "Situaciones incómodas en un ascensor",
+    "Cosas que compras por impulso y luego no utilizas",
+    "Señales de que alguien está mintiendo fatal",
+    "Platos que se suelen pedir para compartir",
+    "Cosas que harías si fueras invisible durante una hora",
+    "Frases que nunca quieres escuchar de un camarero",
+    "Sonidos que reconoces al instante",
+    "Lugares donde sería incómodo encontrarte a tu ex",
+    "Maneras de celebrar que te ha salido bien un examen",
+    "Cosas que se hacen en una despedida de soltero o soltera",
+    "Personas famosas con las que sería raro compartir piso",
+    "Temas que pueden arruinar una cena familiar",
+    "Cosas que se llevan a una escapada improvisada",
+    "Pequeños lujos que parecen de millonario"
+],
   verdad: {
     normal: [
       "¿Qué es lo más patético que has hecho para llamar la atención de tu 'crush' en redes sociales?",
@@ -196,7 +335,16 @@ const PHRASES = {
       "¿Cuál fue tu época más 'cringe' o que más vergüenza ajena te da de tu adolescencia?",
       "Di el nombre de alguien a quien tienes envidia (sana o no) y dinos exactamente por qué.",
       "¿Cuál es la búsqueda más turbia que tienes ahora mismo en el historial de tu móvil o navegador?"
-    ],
+    ,
+      "¿Qué habilidad inútil se te da sorprendentemente bien?",
+      "¿Qué pequeña mentira cuentas con tanta frecuencia que casi te la crees?",
+      "¿Qué plan aceptas por compromiso y luego siempre acabas disfrutando?",
+      "¿Qué cosa popular no entiendes por qué le gusta tanto a la gente?",
+      "¿Qué compra pequeña te ha hecho más feliz de lo que debería?",
+      "¿Qué costumbre tuya sería insoportable si la hiciera otra persona?",
+      "¿Qué momento cotidiano convertirías en una competición si pudieras?",
+      "¿Qué opinión tienes que suele provocar un debate absurdo en tu grupo?"
+],
     salseo: [
       "¿A quién del grupo ves con el peor gusto y criterio absoluto para elegir a sus parejas?",
       "Si tuvieras que liarte obligatoriamente con alguien de esta sala (sin contar parejas actuales), ¿con quién sería?",
@@ -232,7 +380,16 @@ const PHRASES = {
       "¿Alguna vez has hecho la vista gorda ante una injusticia o bullying porque no querías pringar tú?",
       "¿Has destrozado propiedad ajena o pública borracho y has huido como un cobarde?",
       "¿Qué es lo más rastrero que has hecho por no gastar dinero o por racanería extrema?"
-    ]
+    ,
+      "¿Qué decisión egoísta tomaste y todavía te cuesta reconocer?",
+      "¿Qué opinión guardas para ti porque sabes que el grupo no estaría de acuerdo?",
+      "¿Cuándo fue la última vez que te alegraste en secreto de que otra persona se equivocara?",
+      "¿Qué promesa hiciste sabiendo que probablemente no la cumplirías?",
+      "¿Qué es lo más cobarde que has hecho para evitar una conversación difícil?",
+      "¿Qué parte de tu personalidad intentas disimular cuando conoces gente nueva?",
+      "¿Qué secreto pequeño mantienes porque te da pereza explicar la historia completa?",
+      "¿Qué límite personal te costó más aprender a defender?"
+]
   },
   reto: {
     casa: [
@@ -246,7 +403,16 @@ const PHRASES = {
       "Ponte un calcetín sucio en la mano como si fuera una marioneta. Solo puedes hablar a través de ella 2 rondas.",
       "Túmbate en el suelo, hazte el muerto y no te muevas ni hables hasta que sea tu turno de nuevo.",
       "Chúpale el dedo índice a [Player] mirándole fijamente a los ojos durante 3 segundos."
-    ],
+    ,
+      "Construye una torre con cinco objetos cercanos y mantenla en pie durante diez segundos.",
+      "Explica cómo se hace un café como si narraras una final deportiva.",
+      "Imita durante veinte segundos a un presentador de teletienda vendiendo un objeto de la habitación.",
+      "Canta el estribillo de una canción como si estuvieras en una ópera dramática.",
+      "Dedica un piropo elegante y exagerado a [Player], solo si le apetece recibirlo.",
+      "Haz una declaración de amor de película a un objeto cotidiano de la casa.",
+      "Graba un anuncio de diez segundos con la cámara frontal, sin publicarlo ni enviarlo.",
+      "Escribe un mensaje usando solo emojis para que [Player] adivine una película."
+],
     bar: [
       "Acércate a una mesa de desconocidos y pídeles muy en serio que si te invitan a un chupito les cuentas el futuro.",
       "Ponte en medio del bar y da un brindis a gritos por 'la salud mental de los que estamos aquí'.",
@@ -258,7 +424,16 @@ const PHRASES = {
       "Graba un story llorando falsamente diciendo que tu vida es un desastre y súbelo 5 minutos.",
       "Dale tu móvil a [Player] para que le dé un 'Like' a una foto antigua del ex que elija.",
       "Siéntate en el regazo de [Player] durante todo tu turno como si fuera lo más normal del mundo."
-    ],
+    ,
+      "Brinda con agua por el logro más absurdo que haya conseguido el grupo esta semana.",
+      "Narra durante treinta segundos lo que está haciendo [Player] como si fuera un documental de naturaleza.",
+      "Inventa un nombre artístico para cada persona del grupo y presenta su entrada al escenario.",
+      "Haz una coreografía de quince segundos usando solo movimientos de brazos.",
+      "Improvisa una frase de ligue dirigida a [Player]; la otra persona puede puntuar la interpretación.",
+      "Representa una ruptura dramática con una servilleta como si fuera tu gran amor.",
+      "Envía al grupo de amigos un audio de cinco segundos narrando una noticia inventada.",
+      "Describe el ambiente del local como si fueras crítico gastronómico, aunque solo estés mirando la decoración."
+],
     discoteca: [
       "Abre círculo en medio de la pista de baile y baila como un robot desengrasado durante 20 segundos.",
       "Acércate a la cabina del DJ (o lo más cerca que puedas) y suplícale a gritos que ponga el Aserejé.",
@@ -270,7 +445,16 @@ const PHRASES = {
       "Pide a un desconocido que te abroche un botón de la camisa o te coloque bien el pelo de forma seductora.",
       "Tírate al suelo y simula hacer breakdance (la croqueta) aunque se te queden mirando mal los seguratas.",
       "Sácate un selfie con el flash a tope apuntando a un desconocido de fondo y ponlo de foto de perfil 10 minutos."
-    ],
+    ,
+      "Baila durante veinte segundos como si estuvieras en un videoclip de los años dos mil.",
+      "Imita el movimiento de baile más reconocible de una persona del grupo.",
+      "Haz playback de una canción imaginaria y deja que el grupo adivine el género.",
+      "Camina en cámara lenta durante diez segundos como si acabaras de ganar un premio.",
+      "Si [Player] acepta, ensayad juntos un paso de baile sincronizado durante quince segundos.",
+      "Dedica una reverencia teatral al DJ desde vuestro sitio, sin interrumpirle.",
+      "Representa cómo bailaría un robot al escuchar una balada romántica.",
+      "Inventad entre todos un gesto de victoria y repetidlo como si fuera el himno del grupo."
+],
     parque: [
       "Abraza el tronco de un árbol y empieza a decirle cosas bonitas y guarras en voz alta durante 30 segundos.",
       "Descalzate y pisa la tierra o el césped quejándote dramáticamente de lo mucho que te pincha la vida.",
@@ -282,14 +466,28 @@ const PHRASES = {
       "Coge un palo, acércate a [Player], pon una rodilla en el suelo y nómbrale Caballero/Dama del parque.",
       "Haz 5 sentadillas gritando '¡Por el ecosistema!' en cada una de ellas.",
       "Túmbate apoyando la cabeza en las piernas de [Player] y que te acaricie el pelo hasta tu próximo turno."
-    ],
+    ,
+      "Presenta un banco cercano como si fuera una atracción turística de lujo.",
+      "Camina diez pasos como si estuvieras en una pasarela de moda y el suelo fuera una alfombra roja.",
+      "Imita el sonido de tres animales y deja que el grupo los adivine.",
+      "Cuenta una historia épica de veinte segundos sobre una hoja que encuentres en el suelo.",
+      "Reta a [Player] a una pose de foto de portada; ambos podéis pasar si no os apetece.",
+      "Haz diez segundos de tai chi imaginario como si fueras un maestro legendario.",
+      "Da un discurso de investidura prometiendo mejorar el parque con medidas absurdas.",
+      "Pon voz de guía turístico y presenta el árbol más cercano como una maravilla mundial."
+],
     comodines: [
       "¡SALVACIÓN DIVINA! Elige a la persona que quieras para que se beba tu castigo enterito.",
       "¡FIESTA COMUNISTA! Aquí pringamos todos. Todos los jugadores, incluido tú, beben 2 tragos.",
       "¡DICTADOR! Obliga a [Player] a beber 3 tragos o a hacer un reto físico ahora mismo sin rechistar.",
       "¡AMNESIA! Pierdes tu turno de jugar pero te salvas de beber. La paz sea contigo.",
       "¡LEY DEL HIELO! Nadie puede mirarte a los ojos ni dirigirte la palabra hasta tu próximo turno. Si alguien falla, bebe."
-    ]
+    ,
+      "¡CAMBIO DE GUION! Puedes cambiar tu reto por una actuación de diez segundos inventada por ti.",
+      "¡DIRECTOR DE JUEGO! Elige a dos personas para que hagan una pose de película durante cinco segundos.",
+      "¡TIEMPO MUERTO! Te libras de este turno y eliges la próxima canción o tema de conversación.",
+      "¡DUPLA LEGENDARIA! Invita a alguien que acepte a cumplir el próximo reto contigo."
+]
   },
   duelos: [
     "Pulso de manos tradicional. El que toque la mesa pierde.",
@@ -306,7 +504,18 @@ const PHRASES = {
     "Duelo de insultos sin usar palabrotas. Turnaos. El primero que se ría o se quede en blanco, pierde.",
     "Adivinar el color de la ropa interior del otro. Si los dos fallan o aciertan, empate. Si uno acierta, el otro bebe.",
     "Pulso de fuerza de piernas (chocar los pies y empujar). El que ceda, pierde."
-  ],
+  ,
+    "Duelo de trabalenguas: decid el mismo trabalenguas tres veces; quien se equivoque primero pierde.",
+    "Duelo de memoria: observad diez objetos durante quince segundos y nombrad tantos como recordéis.",
+    "Duelo de dibujo: dibujad un gato con los ojos cerrados; el grupo decide cuál se entiende mejor.",
+    "Duelo de improvisación: inventad una excusa para llegar tarde; gana la más convincente.",
+    "Duelo de equilibrio: aguantad sobre un pie durante veinte segundos, sin empujar ni tocar al rival.",
+    "Duelo de canciones: nombrad canciones que contengan una palabra elegida; quien se atasque pierde.",
+    "Duelo de categorías: decid animales por turnos; no se puede repetir ni tardar más de tres segundos.",
+    "Duelo de acentos: leed la misma frase con un acento inventado; el grupo vota la interpretación.",
+    "Duelo de titulares: inventad el titular más absurdo para una noticia cotidiana.",
+    "Duelo de mímica: representad una película sin hablar; gana quien la adivine antes."
+],
   encuestas: [
     "¿Quién de aquí tiene más probabilidades de acabar en la cárcel por una estupidez?",
     "¿Quién sería la peor pareja para tener una relación seria y estable?",
@@ -335,7 +544,20 @@ const PHRASES = {
     "¿A quién le huele peor los pies o es más probable que no se duche un fin de semana entero?",
     "¿Quién sería más capaz de robar comida en el supermercado por no pagar 3 euros?",
     "¿Quién es más probable que mande un mensaje a su ex borracho/a esta misma noche?"
-  ]
+  ,
+    "¿Quién del grupo sería capaz de hacerse amigo de alguien en una cola de cinco minutos?",
+    "¿Quién tiene más probabilidades de perder el móvil y encontrarlo en su propia mano?",
+    "¿Quién sería el mejor presentador de un concurso de televisión?",
+    "¿Quién sobreviviría mejor una semana sin redes sociales?",
+    "¿Quién se apuntaría a un viaje improvisado sin preguntar el destino?",
+    "¿Quién sería el peor compañero para montar un mueble?",
+    "¿Quién tiene más probabilidades de hacerse famoso por una anécdota absurda?",
+    "¿Quién sería capaz de reconocer una canción con solo dos notas?",
+    "¿Quién del grupo sería el primero en organizar una fiesta sorpresa?",
+    "¿Quién tiene más posibilidades de quedarse dormido viendo su propia película favorita?",
+    "¿Quién sería el mejor negociador en un mercadillo?",
+    "¿Quién podría mantener una conversación más larga con una estatua?"
+]
 };
 
 // --- PERKS DE CUMPLEAÑOS DE IAN (MEJORADOS DIRECTOS)
@@ -372,28 +594,28 @@ const PENALTY_LEVELS = [
 // quantes vegades entra cada grup al sorteig, sense duplicar les frases al fitxer.
 const DARE_CATEGORY_INDEXES = {
   casa: {
-    chill: [0, 2, 5, 8],
-    ridiculo: [3, 6, 7],
-    picante: [1, 9],
-    movil: [4]
+    chill: [0, 2, 5, 8, 10, 11],
+    ridiculo: [3, 6, 7, 12, 13],
+    picante: [1, 9, 14, 15],
+    movil: [4, 16, 17]
   },
   bar: {
-    chill: [0, 4],
-    ridiculo: [0, 1, 2, 6],
-    picante: [3, 5, 9],
-    movil: [7, 8]
+    chill: [0, 4, 10, 11],
+    ridiculo: [0, 1, 2, 6, 12, 13],
+    picante: [3, 5, 9, 14, 15],
+    movil: [7, 8, 16, 17]
   },
   discoteca: {
-    chill: [2],
-    ridiculo: [0, 1, 6, 8],
-    picante: [3, 4, 7],
-    movil: [5, 9]
+    chill: [2, 10, 11],
+    ridiculo: [0, 1, 6, 8, 12, 13],
+    picante: [3, 4, 7, 14, 15],
+    movil: [5, 9, 16, 17]
   },
   parque: {
-    chill: [1, 3, 8],
-    ridiculo: [0, 4, 5, 7],
-    picante: [2, 9],
-    movil: [6]
+    chill: [1, 3, 8, 10, 11],
+    ridiculo: [0, 4, 5, 7, 12, 13],
+    picante: [2, 9, 14, 15],
+    movil: [6, 16, 17]
   }
 };
 
