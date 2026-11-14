@@ -561,6 +561,23 @@ Object.assign(UI_TRANSLATIONS.en, {
   "¡COMODÍN SORPRESA!": "SURPRISE WILD CARD!", "El desafío es...": "The challenge is...",
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
+Object.assign(UI_TRANSLATIONS.en, {
+  "Nova versió disponible!": "New version available!",
+  "Buscant versions...": "Checking for updates...",
+  "No s’ha pogut comprovar": "Could not check for updates",
+  "Tot al dia!": "You're up to date!",
+  "Sessions": "Sessions",
+  "Resum": "Overview",
+  "Esdeveniments": "Events",
+  "Historial": "History",
+  "Jugadors": "Players",
+  "Comprova la connexió i torna-ho a provar.": "Check your connection and try again.",
+  "Estàs utilitzant la versió més recent.": "You are using the latest version.",
+  "Tornar a provar": "Try again",
+  "Party Night · Actualitzacions": "Party Night · Updates",
+  "Consultant les releases públiques de GitHub...": "Checking public GitHub releases..."
+});
+
 
 Object.assign(UI_TRANSLATIONS.ca, {
   "Exportar datos":"Exportar dades","Importar datos":"Importar dades","Copia de seguridad":"Còpia de seguretat",
