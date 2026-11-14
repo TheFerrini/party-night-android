@@ -120,3 +120,11 @@ body,
 .pn-switch-thumb{position:absolute;left:4px;top:4px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.32);transition:transform .18s ease}
 .pn-switch.is-on .pn-switch-thumb{transform:translateX(22px)}
 html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+
+/* v2.0.5 — llenç horitzontal d'estadístiques */
+.pn-stats-viewport{width:100%;overflow:hidden;contain:paint;}
+.pn-stats-canvas{display:flex;width:300%;align-items:flex-start;transition:transform 760ms cubic-bezier(.22,1,.36,1);will-change:transform;}
+.pn-stats-page{width:33.333333%;min-width:33.333333%;flex:0 0 33.333333%;box-sizing:border-box;}
+.pn-stats-number{display:inline-block;font-variant-numeric:tabular-nums;animation:pn-number-pop .72s cubic-bezier(.16,1,.3,1) both;}
+@keyframes pn-number-pop{0%{opacity:.55;transform:translateY(7px) scale(.94)}65%{opacity:1;transform:translateY(-1px) scale(1.025)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.pn-stats-canvas{transition:none}.pn-stats-number{animation:none}}
