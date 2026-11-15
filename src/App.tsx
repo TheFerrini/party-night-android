@@ -18,6 +18,7 @@ const normalizeCloudValue = (value: any): any => {
   return value;
 };
 const stringifyCloudValue = (value: any) => JSON.stringify(normalizeCloudValue(value));
+const cloudBaselineStorageKey = (userId: string) => 'partynight-cloud-baseline-' + userId;
 const getPartyNightLocalSnapshot = (): Record<string, string> => {
   const snapshot: Record<string, string> = {};
   Object.keys(localStorage).filter((key) => key.startsWith('pn-')).sort().forEach((key) => { const value = localStorage.getItem(key); if (value !== null) snapshot[key] = value; });
@@ -1879,6 +1880,7 @@ export default function App() {
       .select('data, schema_version, updated_at').single();
     if (error) throw error;
     cloudBaselineRef.current = stringifyCloudValue(snapshot);
+    try { localStorage.setItem(cloudBaselineStorageKey(cloudUser.id), cloudBaselineRef.current); } catch {}
     setCloudRemoteSnapshot(data.data || {});
     setCloudRemoteUpdatedAt(data.updated_at || new Date().toISOString());
     setCloudRemoteBytes(getCloudByteSize(data.data || {}));
@@ -1892,6 +1894,7 @@ export default function App() {
     Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
     entries.forEach(([key, value]) => localStorage.setItem(key, value));
     cloudBaselineRef.current = stringifyCloudValue(snapshot);
+    if (cloudUser?.id) { try { localStorage.setItem(cloudBaselineStorageKey(cloudUser.id), cloudBaselineRef.current); } catch {} }
     window.location.reload();
   };
 
@@ -1905,6 +1908,7 @@ export default function App() {
     try {
       const local = getPartyNightLocalSnapshot();
       const localSignature = stringifyCloudValue(local);
+      if (!cloudBaselineRef.current) { try { cloudBaselineRef.current = localStorage.getItem(cloudBaselineStorageKey(cloudUser.id)) || null; } catch {} }
       const { data: row, error } = await supabase.from('partynight_data')
         .select('data, schema_version, updated_at').eq('user_id', cloudUser.id).maybeSingle();
       if (error) throw error;
@@ -1919,7 +1923,7 @@ export default function App() {
       setCloudRemoteSnapshot(remote); setCloudRemoteUpdatedAt(row.updated_at || null); setCloudRemoteBytes(getCloudByteSize(remote));
       if (!cloudBaselineRef.current) {
         if (localSignature === remoteSignature) {
-          cloudBaselineRef.current = localSignature; setCloudStatus('synced'); setCloudMessage(t('Los datos locales y de la nube coinciden.'));
+          cloudBaselineRef.current = localSignature; try { localStorage.setItem(cloudBaselineStorageKey(cloudUser.id), localSignature); } catch {} setCloudStatus('synced'); setCloudMessage(t('Los datos locales y de la nube coinciden.'));
         } else if (!hasSavedPartyContent(local) && hasSavedPartyContent(remote)) restoreCloudSnapshot(remote);
         else if (hasSavedPartyContent(local) && !hasSavedPartyContent(remote)) await uploadCloudSnapshot(local);
         else if (!hasSavedPartyContent(local) && !hasSavedPartyContent(remote)) await uploadCloudSnapshot(local);
@@ -1989,7 +1993,7 @@ export default function App() {
     setCloudBusy(true);
     try {
       const { error } = await supabase.from('partynight_data').delete().eq('user_id', cloudUser.id); if (error) throw error;
-      cloudBaselineRef.current = null; setCloudRemoteSnapshot(null); setCloudRemoteBytes(0); setCloudRemoteUpdatedAt(null); setCloudStatus('empty'); setCloudMessage(t('Copia de la nube eliminada. Los datos locales se conservan.'));
+      cloudBaselineRef.current = null; try { localStorage.removeItem(cloudBaselineStorageKey(cloudUser.id)); } catch {} setCloudRemoteSnapshot(null); setCloudRemoteBytes(0); setCloudRemoteUpdatedAt(null); setCloudStatus('empty'); setCloudMessage(t('Copia de la nube eliminada. Los datos locales se conservan.'));
     } catch (error: any) { setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido eliminar la copia de la nube.')); }
     finally { setCloudBusy(false); }
   };
@@ -2765,6 +2769,7 @@ export default function App() {
           <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={async () => {
             try {
               try { await supabase.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('No s’ha pogut tancar la sessió del núvol abans de netejar les dades locals.', signOutError); }
+              if (cloudUser?.id) { try { localStorage.removeItem(cloudBaselineStorageKey(cloudUser.id)); } catch {} }
               Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
               setShowDeleteDataConfirm(false);
               window.location.reload();
