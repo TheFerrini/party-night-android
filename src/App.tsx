@@ -2739,15 +2739,13 @@ export default function App() {
       <AnimatedModal isOpen={showDeleteDataConfirm} onClose={() => setShowDeleteDataConfirm(false)} zIndex="z-[190]">
         <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-gray-900 p-6 shadow-2xl">
           <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><AlertOctagon size={24}/></div><h2 className="text-xl font-black text-white">{t('Borrar todos los datos?')}</h2></div>
-          <p className="text-sm leading-relaxed text-gray-300">{t('Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.')}</p>
-          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => {
+          <p className="text-sm leading-relaxed text-gray-300">{t('Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes de este dispositivo. También se cerrará la sesión en la nube para evitar que los datos se restauren automáticamente. La copia en la nube se conservará y podrás recuperarla iniciando sesión de nuevo.')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={async () => {
             try {
-              void (async () => {
-                try { await supabase.auth.signOut(); } catch (signOutError) { console.warn('No s’ha pogut tancar la sessió del núvol abans de netejar les dades locals.', signOutError); }
-                Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
-                setShowDeleteDataConfirm(false);
-                window.location.reload();
-              })();
+              try { await supabase.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('No s’ha pogut tancar la sessió del núvol abans de netejar les dades locals.', signOutError); }
+              Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
+              setShowDeleteDataConfirm(false);
+              window.location.reload();
             } catch (error) {
               console.error('No s’han pogut esborrar totes les dades locals de Party Night:', error);
               window.alert(t('No se han podido borrar los datos. Inténtalo de nuevo.'));
