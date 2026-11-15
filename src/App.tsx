@@ -788,6 +788,7 @@ export default function App() {
   const [autoSyncRevision, setAutoSyncRevision] = useState(0);
   const cloudBaselineRef = useRef<string | null>(null);
   const cloudAutoSyncPendingRef = useRef(false);
+  const cloudSyncInFlightRef = useRef(false);
   const [showDeleteDataConfirm, setShowDeleteDataConfirm] = useState(false);
   const [showFinishSessionConfirm, setShowFinishSessionConfirm] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
@@ -1871,7 +1872,8 @@ export default function App() {
 
   const syncCloudData = async (reason: 'initial' | 'manual' | 'automatic' = 'manual') => {
     if (!cloudUser?.id) return;
-    if (cloudBusy) { if (reason === 'automatic') cloudAutoSyncPendingRef.current = true; return; }
+    if (cloudSyncInFlightRef.current) { if (reason === 'automatic') cloudAutoSyncPendingRef.current = true; return; }
+    cloudSyncInFlightRef.current = true;
     setCloudBusy(true);
     setCloudStatus('syncing');
     setCloudMessage(reason === 'automatic' ? t('Guardando la partida en la nube...') : t('Comparando los datos locales y de la nube...'));
@@ -1910,6 +1912,7 @@ export default function App() {
     } catch (error: any) {
       setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido sincronizar con la nube.'));
     } finally {
+      cloudSyncInFlightRef.current = false;
       setCloudBusy(false);
       if (cloudAutoSyncPendingRef.current) { cloudAutoSyncPendingRef.current = false; window.setTimeout(() => { void syncCloudData('automatic'); }, 250); }
     }
