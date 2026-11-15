@@ -1,17 +1,21 @@
-## Party Night v2.0.7 — Stats Motion & Data Hub
+## Party Night v2.0.8 — Cloud Sync & Reliability
 
-### 📊 Estadísticas con animaciones recuperadas
-- Los bloques de Resumen, Juegos y Jugadores vuelven a entrar desde abajo con una desaceleración suave.
-- Los contadores numéricos vuelven a animarse al entrar en cada subapartado.
+### ☁️ Cloud management
+- Independent cloud-management page with account registration, sign-in and sign-out.
+- Local/cloud content comparison, estimated data size and last cloud update.
+- Automatic cloud sync after each completed game and session.
+- Conflict detection protects changes made on another device. No copy is overwritten until you choose which one to keep.
+- Party Night uses its own Supabase table with per-user Row Level Security. The same FollowGym account can be used.
 
-### 💾 Nuevo centro de gestión de datos
-- Nuevo apartado independiente accesible desde Configuración general.
-- Muestra el espacio local estimado, elementos guardados, jugadores y sesiones.
-- Importar y exportar copias de seguridad pasan a este nuevo apartado.
-- Añadida una sección de gestión en la nube marcada como **En desarrollo / Próximamente**. La sincronización todavía no está activa.
+### 💾 Data safety
+- Reviewed the delete-data action: it clears all Party Night local keys and boots the app cleanly.
+- Local deletion and cloud-copy deletion are separate actions, so one does not silently erase the other.
 
-### 🔔 Comprobación automática de actualizaciones
-- Comprueba GitHub una vez en cada arranque, después de la careta inicial, sin depender de la pestaña seleccionada.
-- Evita el estado persistente de sessionStorage que podía impedir nuevas comprobaciones.
-- Consulta GitHub evitando respuestas en caché.
-- Si hay una versión superior, el aviso aparece siempre, aunque se hubiera cerrado en una apertura anterior.
+### ✨ Interface
+- History always displays the installed app version dynamically.
+- Statistics entrance animations now use a smooth rise with no bounce in all three subpages.
+- Language changes apply live. Confirming the language already selected simply closes the selector without restarting the app.
+
+### 📦 Android
+- APK is always named **Party Night-vX.Y.Z.apk**.
+- The current stable signing key is preserved, allowing direct updates without uninstalling.
