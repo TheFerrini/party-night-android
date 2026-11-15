@@ -24,6 +24,21 @@ const getPartyNightLocalSnapshot = (): Record<string, string> => {
   return snapshot;
 };
 const getCloudByteSize = (value: any) => new TextEncoder().encode(JSON.stringify(value ?? {})).length;
+const getCloudSnapshotStats = (snapshot: Record<string, string> | null) => {
+  const read = (key: string, fallback: any) => {
+    try { return snapshot?.[key] === undefined ? fallback : JSON.parse(snapshot[key]); } catch { return fallback; }
+  };
+  const players = read('pn-v2-players', []);
+  const history = read('pn-v2-sessions', []);
+  const active = read('pn-v2-active-session', null);
+  const sessions = [...(Array.isArray(history) ? history : []), ...(active ? [active] : [])];
+  return {
+    players: Array.isArray(players) ? players.length : 0,
+    sessions: sessions.length,
+    games: sessions.reduce((total: number, session: any) => total + (session.games?.length || 0), 0)
+  };
+};
+
 const hasSavedPartyContent = (snapshot: Record<string, string>) => {
   const read = (key: string, fallback: any) => {
     try { return snapshot[key] === undefined ? fallback : JSON.parse(snapshot[key]); } catch { return fallback; }
@@ -2982,8 +2997,8 @@ export default function App() {
               <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
                 <div className="mb-3 flex items-center justify-between"><p className="font-black text-white">{t('Comparación de datos')}</p><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (cloudStatus === 'synced' ? "bg-emerald-500/15 text-emerald-300" : cloudStatus === 'conflict' ? "bg-amber-500/15 text-amber-300" : cloudStatus === 'error' ? "bg-red-500/15 text-red-300" : "bg-gray-700 text-gray-300")}>{t(cloudStatus === 'synced' ? 'Sincronizado' : cloudStatus === 'conflict' ? 'Conflicto' : cloudStatus === 'error' ? 'Error' : cloudStatus === 'syncing' ? 'Sincronizando' : cloudStatus === 'empty' ? 'Nube vacía' : 'Pendiente')}</span></div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Este dispositivo')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(getCloudByteSize(getPartyNightLocalSnapshot()))}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(getPartyNightLocalSnapshot()).length} {t('elementos')}</p></div>
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Copia en la nube')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(cloudRemoteBytes)}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(cloudRemoteSnapshot || {}).length} {t('elementos')}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Este dispositivo')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(getCloudByteSize(getPartyNightLocalSnapshot()))}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(getPartyNightLocalSnapshot()).length} {t('elementos')}</p><p className="mt-1 text-[9px] leading-relaxed text-gray-500">{getCloudSnapshotStats(getPartyNightLocalSnapshot()).players} {t('jugadores')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).sessions} {t('sesiones')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).games} {t('partidas')}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Copia en la nube')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(cloudRemoteBytes)}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(cloudRemoteSnapshot || {}).length} {t('elementos')}</p><p className="mt-1 text-[9px] leading-relaxed text-gray-500">{getCloudSnapshotStats(cloudRemoteSnapshot).players} {t('jugadores')} · {getCloudSnapshotStats(cloudRemoteSnapshot).sessions} {t('sesiones')} · {getCloudSnapshotStats(cloudRemoteSnapshot).games} {t('partidas')}</p></div>
                 </div>
                 <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('El tamaño es una estimación del JSON de la aplicación, no del disco total utilizado por Supabase.')}</p>
                 {cloudRemoteUpdatedAt && <p className="mt-2 text-[10px] text-gray-500">{t('Última actualización en la nube')}: {new Date(cloudRemoteUpdatedAt).toLocaleString()}</p>}
