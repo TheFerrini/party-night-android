@@ -1,5 +1,25 @@
 # Changelog — Party Night
 
+## [2.0.8] — 2026-11-15 · Cloud Sync & Reliability
+
+### Dades i còpies
+- Revisat el botó d'esborrar dades: elimina totes les claus locals de Party Night i reinicia l'app amb l'estat net.
+- La còpia del núvol es gestiona en una pàgina independent, amb registre, inici i tancament de sessió.
+- Comparació real del contingut local i remot, mida estimada de les dues còpies i data de l'última sincronització.
+- Sincronització automàtica en acabar cada partida i cada sessió.
+- Detecció de canvis simultanis entre dispositius; no sobreescriu cap còpia en conflicte fins que l'usuari tria quina conservar.
+- Dades de Party Night aïllades en una taula pròpia de Supabase, amb RLS per usuari.
+
+### Interfície
+- Historial mostra sempre la versió actual de l'app.
+- Animacions d'estadístiques sense rebot als tres subapartats.
+- Canvi d'idioma aplicat sense reiniciar l'app; confirmar l'idioma ja seleccionat simplement tanca el selector.
+
+### Android
+- L'APK es publica sempre amb el nom Party Night-vX.Y.Z.apk.
+- Es conserva la clau de signatura estable actual per permetre actualitzacions directes sense desinstal·lar.
+
+
 ## [2.0.7] — 2026-11-15 · Stats Motion & Data Hub
 
 ### Estadístiques
