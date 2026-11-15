@@ -1290,3 +1290,13 @@ Object.assign(UI_TRANSLATIONS.en, {
   "Android:": "Android:",
   "APK con nombre Party Night y número de versión, manteniendo la firma estable.": "APK named with Party Night and the version number, keeping the stable signature."
 });
+
+
+Object.assign(UI_TRANSLATIONS.ca, {
+  "partidas": "partides",
+  "sesiones": "sessions"
+});
+Object.assign(UI_TRANSLATIONS.en, {
+  "partidas": "games",
+  "sesiones": "sessions"
+});
