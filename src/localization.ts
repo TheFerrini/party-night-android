@@ -1266,3 +1266,27 @@ Object.assign(UI_TRANSLATIONS.en, {
   "Aplicar idioma": "Apply language",
   "No se han podido borrar los datos. Inténtalo de nuevo.": "Could not delete the data. Please try again."
 });
+
+
+Object.assign(UI_TRANSLATIONS.ca, {
+  "Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes de este dispositivo. También se cerrará la sesión en la nube para evitar que los datos se restauren automáticamente. La copia en la nube se conservará y podrás recuperarla iniciando sesión de nuevo.": "S’esborraran els jugadors, les sessions, l’historial, les estadístiques i els ajustos d’aquest dispositiu. També es tancarà la sessió al núvol per evitar que les dades es restaurin automàticament. La còpia al núvol es conservarà i podràs recuperar-la iniciant sessió de nou.",
+  "Gestión en la nube:": "Gestió al núvol:",
+  "cuentas, comparación local/nube, espacio estimado y sincronización automática al terminar cada partida.": "comptes, comparació local/núvol, espai estimat i sincronització automàtica en acabar cada partida.",
+  "Seguridad de datos:": "Seguretat de les dades:",
+  "comparación de cambios entre dispositivos y elección de copia para evitar sobrescrituras.": "comparació dels canvis entre dispositius i elecció de la còpia per evitar sobreescriptures.",
+  "Interfaz:": "Interfície:",
+  "historial con versión dinámica, animaciones de estadísticas sin rebote y cambio de idioma sin reiniciar.": "historial amb versió dinàmica, animacions d’estadístiques sense rebot i canvi d’idioma sense reiniciar.",
+  "Android:": "Android:",
+  "APK con nombre Party Night y número de versión, manteniendo la firma estable.": "APK amb el nom Party Night i el número de versió, mantenint la signatura estable."
+});
+Object.assign(UI_TRANSLATIONS.en, {
+  "Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes de este dispositivo. También se cerrará la sesión en la nube para evitar que los datos se restauren automáticamente. La copia en la nube se conservará y podrás recuperarla iniciando sesión de nuevo.": "Players, sessions, history, statistics and settings on this device will be deleted. You will also be signed out of the cloud to prevent the data from being restored automatically. The cloud backup will remain and you can restore it by signing in again.",
+  "Gestión en la nube:": "Cloud management:",
+  "cuentas, comparación local/nube, espacio estimado y sincronización automática al terminar cada partida.": "accounts, local/cloud comparison, estimated storage and automatic sync after each game.",
+  "Seguridad de datos:": "Data safety:",
+  "comparación de cambios entre dispositivos y elección de copia para evitar sobrescrituras.": "cross-device change comparison and copy selection to prevent overwriting.",
+  "Interfaz:": "Interface:",
+  "historial con versión dinámica, animaciones de estadísticas sin rebote y cambio de idioma sin reiniciar.": "dynamic version in history, bounce-free statistics animations and language changes without restarting.",
+  "Android:": "Android:",
+  "APK con nombre Party Night y número de versión, manteniendo la firma estable.": "APK named with Party Night and the version number, keeping the stable signature."
+});
