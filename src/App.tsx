@@ -24,6 +24,16 @@ const getPartyNightLocalSnapshot = (): Record<string, string> => {
   return snapshot;
 };
 const getCloudByteSize = (value: any) => new TextEncoder().encode(JSON.stringify(value ?? {})).length;
+const hasSavedPartyContent = (snapshot: Record<string, string>) => {
+  const read = (key: string, fallback: any) => {
+    try { return snapshot[key] === undefined ? fallback : JSON.parse(snapshot[key]); } catch { return fallback; }
+  };
+  const players = read('pn-v2-players', []);
+  const sessions = read('pn-v2-sessions', []);
+  const active = read('pn-v2-active-session', null);
+  return (Array.isArray(players) && players.length > 0) || (Array.isArray(sessions) && sessions.length > 0) || !!active;
+};
+
 const formatCloudBytes = (value: number) => value < 1024 ? value + ' B' : value < 1024 * 1024 ? (value / 1024).toFixed(1) + ' KB' : (value / (1024 * 1024)).toFixed(2) + ' MB';
 
 const LocalizedUi = ({ language, children }: { language: AppLanguage; children: React.ReactNode }) => {
@@ -1895,8 +1905,9 @@ export default function App() {
       if (!cloudBaselineRef.current) {
         if (localSignature === remoteSignature) {
           cloudBaselineRef.current = localSignature; setCloudStatus('synced'); setCloudMessage(t('Los datos locales y de la nube coinciden.'));
-        } else if (!Object.keys(local).length) restoreCloudSnapshot(remote);
-        else if (!Object.keys(remote).length) await uploadCloudSnapshot(local);
+        } else if (!hasSavedPartyContent(local) && hasSavedPartyContent(remote)) restoreCloudSnapshot(remote);
+        else if (hasSavedPartyContent(local) && !hasSavedPartyContent(remote)) await uploadCloudSnapshot(local);
+        else if (!hasSavedPartyContent(local) && !hasSavedPartyContent(remote)) await uploadCloudSnapshot(local);
         else { setCloudStatus('conflict'); setCloudMessage(t('Los datos locales y los de la nube son diferentes. Elige qué copia quieres conservar.')); }
         return;
       }
@@ -2731,9 +2742,12 @@ export default function App() {
           <p className="text-sm leading-relaxed text-gray-300">{t('Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.')}</p>
           <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => {
             try {
-              Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
-              setShowDeleteDataConfirm(false);
-              window.location.reload();
+              void (async () => {
+                try { await supabase.auth.signOut(); } catch (signOutError) { console.warn('No s’ha pogut tancar la sessió del núvol abans de netejar les dades locals.', signOutError); }
+                Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
+                setShowDeleteDataConfirm(false);
+                window.location.reload();
+              })();
             } catch (error) {
               console.error('No s’han pogut esborrar totes les dades locals de Party Night:', error);
               window.alert(t('No se han podido borrar los datos. Inténtalo de nuevo.'));
