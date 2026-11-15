@@ -975,12 +975,15 @@ export default function App() {
 
   useEffect(() => {
     // Una comprovació per cada arrencada real de l'app, independentment de la pestanya activa.
-    // No fem servir sessionStorage: alguns WebView poden conservar-lo entre reobertures.
-    if (screen !== 'setup' || showLanguagePicker || showIntro || updateCheckStartedRef.current) return;
-    updateCheckStartedRef.current = true;
-    const updateTimer = window.setTimeout(() => { void checkForUpdates(false); }, 900);
+    // El ref es marca dins del temporitzador per no perdre la comprovació amb el doble muntatge de React StrictMode.
+    if (screen !== 'setup' || showIntro || updateCheckStartedRef.current) return;
+    const updateTimer = window.setTimeout(() => {
+      if (updateCheckStartedRef.current) return;
+      updateCheckStartedRef.current = true;
+      void checkForUpdates(false);
+    }, 900);
     return () => window.clearTimeout(updateTimer);
-  }, [screen, showIntro, showLanguagePicker]);
+  }, [screen, showIntro]);
 
   useEffect(() => {
     try {
