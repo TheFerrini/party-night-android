@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Browser } from '@capacitor/browser';
+import { supabase } from './supabase';
 import { APP_VERSION } from './version';
 import { translateText, translateUiText, type AppLanguage } from './localization';
 import {
@@ -10,6 +11,20 @@ import {
   GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload, Database, Cloud, HardDrive
 } from 'lucide-react';
 
+
+const normalizeCloudValue = (value: any): any => {
+  if (Array.isArray(value)) return value.map(normalizeCloudValue);
+  if (value && typeof value === 'object') return Object.keys(value).sort().reduce((result: Record<string, any>, key) => { result[key] = normalizeCloudValue(value[key]); return result; }, {});
+  return value;
+};
+const stringifyCloudValue = (value: any) => JSON.stringify(normalizeCloudValue(value));
+const getPartyNightLocalSnapshot = (): Record<string, string> => {
+  const snapshot: Record<string, string> = {};
+  Object.keys(localStorage).filter((key) => key.startsWith('pn-')).sort().forEach((key) => { const value = localStorage.getItem(key); if (value !== null) snapshot[key] = value; });
+  return snapshot;
+};
+const getCloudByteSize = (value: any) => new TextEncoder().encode(JSON.stringify(value ?? {})).length;
+const formatCloudBytes = (value: number) => value < 1024 ? value + ' B' : value < 1024 * 1024 ? (value / 1024).toFixed(1) + ' KB' : (value / (1024 * 1024)).toFixed(2) + ' MB';
 
 const LocalizedUi = ({ language, children }: { language: AppLanguage; children: React.ReactNode }) => {
   const translateNode = (node: React.ReactNode): React.ReactNode => {
@@ -759,6 +774,20 @@ export default function App() {
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
   const [showDataManagement, setShowDataManagement] = useState(false);
+  const [showCloudManagement, setShowCloudManagement] = useState(false);
+  const [cloudUser, setCloudUser] = useState<any>(null);
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
+  const [cloudAuthMode, setCloudAuthMode] = useState<'login' | 'register'>('login');
+  const [cloudBusy, setCloudBusy] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<'idle' | 'syncing' | 'synced' | 'empty' | 'conflict' | 'error'>('idle');
+  const [cloudMessage, setCloudMessage] = useState('');
+  const [cloudRemoteSnapshot, setCloudRemoteSnapshot] = useState<Record<string, string> | null>(null);
+  const [cloudRemoteUpdatedAt, setCloudRemoteUpdatedAt] = useState<string | null>(null);
+  const [cloudRemoteBytes, setCloudRemoteBytes] = useState(0);
+  const [autoSyncRevision, setAutoSyncRevision] = useState(0);
+  const cloudBaselineRef = useRef<string | null>(null);
+  const cloudAutoSyncPendingRef = useRef(false);
   const [showDeleteDataConfirm, setShowDeleteDataConfirm] = useState(false);
   const [showFinishSessionConfirm, setShowFinishSessionConfirm] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
@@ -929,12 +958,16 @@ export default function App() {
   };
 
   const confirmLanguageChange = () => {
+    if (pendingLanguage === language) {
+      setShowLanguagePicker(false);
+      return;
+    }
     try {
       localStorage.setItem('pn-language', pendingLanguage);
       localStorage.removeItem('pn-languageChosen');
     } catch {}
-    // Reinicia l'app perquè el nou idioma s'apliqui a totes les pantalles.
-    window.location.reload();
+    setLanguage(pendingLanguage);
+    setShowLanguagePicker(false);
   };
 
   const updateWinnerMode = (nextMode: 'least' | 'most') => {
@@ -1089,6 +1122,7 @@ export default function App() {
       ...prev, updatedAt: summary.endedAt, events: [...(prev.events || []), endedEvent],
       games: [...(prev.games || []), summary], currentGame: null
     } : prev);
+    setAutoSyncRevision((revision) => revision + 1);
     setLastGameSummary(summary);
     setCurrentGamePenaltyCounts({});
     if (showSummary) setShowGameSummary(true);
@@ -1116,6 +1150,7 @@ export default function App() {
       const interrupted = buildGameSummary(activeSession.currentGame);
       interrupted.interrupted = true;
       setActiveSession((prev: any) => prev ? { ...prev, games: [...(prev.games || []), interrupted], currentGame: null } : prev);
+      setAutoSyncRevision((revision) => revision + 1);
       setLastGameSummary(interrupted);
       setShowGameSummary(true);
       setCurrentGamePenaltyCounts({});
@@ -1138,6 +1173,7 @@ export default function App() {
     };
     setSessionHistory((prev: any[]) => [completed, ...prev].slice(0, 100));
     setActiveSession(null);
+    setAutoSyncRevision((revision) => revision + 1);
     setLastSessionSummary(completed);
     setShowSessionSummary(true);
     setDrinkCounts({});
@@ -1809,6 +1845,136 @@ export default function App() {
       setBackupMessage(t('El archivo no es una copia válida de Party Night o no se ha podido leer.'));
     } finally { input.value=''; }
   };
+
+  const uploadCloudSnapshot = async (snapshot: Record<string, string>) => {
+    if (!cloudUser?.id) throw new Error(t('Inicia sesión para sincronizar.'));
+    const { data, error } = await supabase.from('partynight_data')
+      .upsert({ user_id: cloudUser.id, data: snapshot, schema_version: 1 }, { onConflict: 'user_id' })
+      .select('data, schema_version, updated_at').single();
+    if (error) throw error;
+    cloudBaselineRef.current = stringifyCloudValue(snapshot);
+    setCloudRemoteSnapshot(data.data || {});
+    setCloudRemoteUpdatedAt(data.updated_at || new Date().toISOString());
+    setCloudRemoteBytes(getCloudByteSize(data.data || {}));
+    setCloudStatus('synced');
+    setCloudMessage(t('Copia local sincronizada con la nube.'));
+  };
+
+  const restoreCloudSnapshot = (snapshot: Record<string, string>) => {
+    const entries = Object.entries(snapshot || {});
+    if (entries.some(([key, value]) => !key.startsWith('pn-') || typeof value !== 'string')) throw new Error(t('La copia de la nube no tiene un formato válido.'));
+    Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
+    entries.forEach(([key, value]) => localStorage.setItem(key, value));
+    cloudBaselineRef.current = stringifyCloudValue(snapshot);
+    window.location.reload();
+  };
+
+  const syncCloudData = async (reason: 'initial' | 'manual' | 'automatic' = 'manual') => {
+    if (!cloudUser?.id) return;
+    if (cloudBusy) { if (reason === 'automatic') cloudAutoSyncPendingRef.current = true; return; }
+    setCloudBusy(true);
+    setCloudStatus('syncing');
+    setCloudMessage(reason === 'automatic' ? t('Guardando la partida en la nube...') : t('Comparando los datos locales y de la nube...'));
+    try {
+      const local = getPartyNightLocalSnapshot();
+      const localSignature = stringifyCloudValue(local);
+      const { data: row, error } = await supabase.from('partynight_data')
+        .select('data, schema_version, updated_at').eq('user_id', cloudUser.id).maybeSingle();
+      if (error) throw error;
+      if (!row) {
+        setCloudRemoteSnapshot(null); setCloudRemoteUpdatedAt(null); setCloudRemoteBytes(0);
+        if (Object.keys(local).length) await uploadCloudSnapshot(local);
+        else { cloudBaselineRef.current = localSignature; setCloudStatus('empty'); setCloudMessage(t('Todavía no hay datos en la nube.')); }
+        return;
+      }
+      const remote = row.data && typeof row.data === 'object' && !Array.isArray(row.data) ? row.data as Record<string, string> : {};
+      const remoteSignature = stringifyCloudValue(remote);
+      setCloudRemoteSnapshot(remote); setCloudRemoteUpdatedAt(row.updated_at || null); setCloudRemoteBytes(getCloudByteSize(remote));
+      if (!cloudBaselineRef.current) {
+        if (localSignature === remoteSignature) {
+          cloudBaselineRef.current = localSignature; setCloudStatus('synced'); setCloudMessage(t('Los datos locales y de la nube coinciden.'));
+        } else if (!Object.keys(local).length) restoreCloudSnapshot(remote);
+        else if (!Object.keys(remote).length) await uploadCloudSnapshot(local);
+        else { setCloudStatus('conflict'); setCloudMessage(t('Los datos locales y los de la nube son diferentes. Elige qué copia quieres conservar.')); }
+        return;
+      }
+      const baseline = cloudBaselineRef.current;
+      const localChanged = localSignature !== baseline;
+      const remoteChanged = remoteSignature !== baseline;
+      if (localChanged && remoteChanged && localSignature !== remoteSignature) {
+        setCloudStatus('conflict');
+        setCloudMessage(t('Hay cambios diferentes en los dos dispositivos. Elige qué copia quieres conservar antes de seguir sincronizando.'));
+      } else if (localChanged) await uploadCloudSnapshot(local);
+      else if (remoteChanged) restoreCloudSnapshot(remote);
+      else { setCloudStatus('synced'); setCloudMessage(t('Los datos locales y de la nube coinciden.')); }
+    } catch (error: any) {
+      setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido sincronizar con la nube.'));
+    } finally {
+      setCloudBusy(false);
+      if (cloudAutoSyncPendingRef.current) { cloudAutoSyncPendingRef.current = false; window.setTimeout(() => { void syncCloudData('automatic'); }, 250); }
+    }
+  };
+
+  const handleCloudAuth = async (event: React.FormEvent) => {
+    event.preventDefault(); setCloudBusy(true); setCloudMessage('');
+    try {
+      const email = cloudEmail.trim().toLowerCase();
+      if (cloudAuthMode === 'register') {
+        const { data, error } = await supabase.auth.signUp({ email, password: cloudPassword });
+        if (error) throw error;
+        if (data.session) { setCloudUser(data.session.user); setCloudPassword(''); setCloudMessage(t('Cuenta creada correctamente. Preparando la sincronización...')); }
+        else setCloudMessage(t('Cuenta creada. Revisa tu correo para confirmar el registro.'));
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: cloudPassword });
+        if (error) throw error;
+        setCloudUser(data.user); setCloudPassword(''); setCloudMessage(t('Sesión iniciada. Comparando los datos...'));
+      }
+    } catch (error: any) { setCloudMessage(error?.message || t('No se ha podido iniciar sesión.')); }
+    finally { setCloudBusy(false); }
+  };
+
+  const handleCloudSignOut = async () => {
+    setCloudBusy(true);
+    try {
+      const { error } = await supabase.auth.signOut(); if (error) throw error;
+      cloudBaselineRef.current = null; setCloudUser(null); setCloudStatus('idle'); setCloudRemoteSnapshot(null); setCloudRemoteBytes(0); setCloudRemoteUpdatedAt(null); setCloudMessage(t('Sesión cerrada.'));
+    } catch (error: any) { setCloudMessage(error?.message || t('No se ha podido cerrar sesión.')); }
+    finally { setCloudBusy(false); }
+  };
+
+  const useLocalCloudCopy = async () => {
+    setCloudBusy(true);
+    try { await uploadCloudSnapshot(getPartyNightLocalSnapshot()); }
+    catch (error: any) { setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido subir la copia local.')); }
+    finally { setCloudBusy(false); }
+  };
+
+  const useRemoteCloudCopy = () => {
+    if (!cloudRemoteSnapshot) return;
+    try { restoreCloudSnapshot(cloudRemoteSnapshot); }
+    catch (error: any) { setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido restaurar la copia de la nube.')); }
+  };
+
+  const deleteCloudCopy = async () => {
+    if (!cloudUser?.id || !window.confirm(t('¿Quieres eliminar la copia de Party Night de la nube? Los datos locales de este dispositivo no se borrarán.'))) return;
+    setCloudBusy(true);
+    try {
+      const { error } = await supabase.from('partynight_data').delete().eq('user_id', cloudUser.id); if (error) throw error;
+      cloudBaselineRef.current = null; setCloudRemoteSnapshot(null); setCloudRemoteBytes(0); setCloudRemoteUpdatedAt(null); setCloudStatus('empty'); setCloudMessage(t('Copia de la nube eliminada. Los datos locales se conservan.'));
+    } catch (error: any) { setCloudStatus('error'); setCloudMessage(error?.message || t('No se ha podido eliminar la copia de la nube.')); }
+    finally { setCloudBusy(false); }
+  };
+
+  useEffect(() => {
+    let alive = true;
+    void supabase.auth.getSession().then(({ data }) => { if (alive) setCloudUser(data.session?.user || null); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCloudUser((previous: any) => { if (previous?.id !== session?.user?.id) cloudBaselineRef.current = null; return session?.user || null; });
+    });
+    return () => { alive = false; subscription.unsubscribe(); };
+  }, []);
+  useEffect(() => { if (cloudUser?.id) void syncCloudData('initial'); }, [cloudUser?.id]);
+  useEffect(() => { if (autoSyncRevision > 0 && cloudUser?.id) void syncCloudData('automatic'); }, [autoSyncRevision, cloudUser?.id]);
 
   // --- HELPERS UI ---
 
@@ -2560,7 +2726,16 @@ export default function App() {
         <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-gray-900 p-6 shadow-2xl">
           <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><AlertOctagon size={24}/></div><h2 className="text-xl font-black text-white">{t('Borrar todos los datos?')}</h2></div>
           <p className="text-sm leading-relaxed text-gray-300">{t('Se borrarán los jugadores, sesiones, historial, estadísticas y ajustes guardados en este dispositivo. Esta acción no se puede deshacer. Exporta una copia antes si quieres conservar los datos.')}</p>
-          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => { Object.keys(localStorage).filter(key => key.startsWith('pn-')).forEach(key => localStorage.removeItem(key)); window.location.reload(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Esborrar dades')}</button></div>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => {
+            try {
+              Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
+              setShowDeleteDataConfirm(false);
+              window.location.reload();
+            } catch (error) {
+              console.error('No s’han pogut esborrar totes les dades locals de Party Night:', error);
+              window.alert(t('No se han podido borrar los datos. Inténtalo de nuevo.'));
+            }
+          }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Esborrar dades')}</button></div>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showFinishSessionConfirm} onClose={() => setShowFinishSessionConfirm(false)} zIndex="z-[190]">
@@ -2682,14 +2857,14 @@ export default function App() {
           </div>
           <button type="button" onClick={confirmLanguageChange}
             className="mt-5 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-4 font-black uppercase tracking-wider text-white shadow-lg active:scale-[.98]">
-            {t('Guardar idioma y reiniciar')}
+            {t('Aplicar idioma')}
           </button>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.7</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night v{APP_VERSION}</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2728,7 +2903,7 @@ export default function App() {
       <AnimatedModal isOpen={showDataManagement} onClose={() => setShowDataManagement(false)} zIndex="z-[165]">
         <div className="w-full max-w-md max-h-[86dvh] overflow-y-auto overscroll-contain rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
           <div className="mb-5 flex items-center justify-between gap-3">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.7</p><h2 className="text-2xl font-black text-white">{t('Gestión de datos')}</h2><p className="mt-1 text-xs text-gray-400">{t('Controla tus copias y el almacenamiento local.')}</p></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · v{APP_VERSION}</p><h2 className="text-2xl font-black text-white">{t('Gestión de datos')}</h2><p className="mt-1 text-xs text-gray-400">{t('Controla tus copias y el almacenamiento local.')}</p></div>
             <button type="button" onClick={() => setShowDataManagement(false)} aria-label="Cerrar" className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           {(() => {
@@ -2758,11 +2933,48 @@ export default function App() {
             {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
             <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
           </div>
-          <div className="rounded-2xl border border-violet-500/30 bg-violet-950/20 p-4">
-            <div className="flex items-center gap-2"><div className="rounded-xl bg-violet-500/15 p-2 text-violet-300"><Cloud size={19}/></div><div className="min-w-0 flex-1"><p className="font-black text-white">{t('Gestión en la nube')}</p><p className="text-xs text-gray-400">{t('Sincroniza tus datos entre dispositivos.')}</p></div><span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase text-amber-300">{t('Próximamente')}</span></div>
-            <p className="mt-3 text-xs leading-relaxed text-gray-300">{t('La sincronización en la nube está en desarrollo. Tus datos siguen guardándose únicamente en este dispositivo.')}</p>
-          </div>
+          <button type="button" onClick={() => { setShowDataManagement(false); setCloudMessage(''); setShowCloudManagement(true); }} className="w-full rounded-2xl border border-violet-500/40 bg-violet-950/30 p-4 text-left transition-colors hover:bg-violet-900/40 active:scale-[.99]">
+            <span className="flex items-center gap-3"><span className="rounded-xl bg-violet-500/15 p-3 text-violet-300"><Cloud size={21}/></span><span className="min-w-0 flex-1"><span className="block font-black text-white">{t('Gestión en la nube')}</span><span className="mt-1 block text-xs text-gray-400">{t('Cuenta, sincronización, comparación y almacenamiento.')}</span></span><ChevronLeft size={18} className="rotate-180 text-violet-300"/></span>
+          </button>
           <button type="button" onClick={() => { setShowDataManagement(false); setShowGeneralSettings(true); }} className="mt-5 w-full rounded-xl bg-gray-800 py-3 font-bold text-gray-200">{t('Volver a configuración')}</button>
+        </div>
+      </AnimatedModal>
+
+      <AnimatedModal isOpen={showCloudManagement} onClose={() => setShowCloudManagement(false)} zIndex="z-[168]">
+        <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto overscroll-contain rounded-3xl border border-violet-500/30 bg-gray-900 p-5 shadow-2xl">
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-violet-300">Party Night · Cloud</p><h2 className="text-2xl font-black text-white">{t('Gestión en la nube')}</h2><p className="mt-1 text-xs text-gray-400">{t('Sincroniza y compara los datos entre dispositivos.')}</p></div>
+            <button type="button" onClick={() => setShowCloudManagement(false)} aria-label="Cerrar" className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
+          </div>
+          {!cloudUser ? (
+            <form onSubmit={handleCloudAuth} className="space-y-3">
+              <div className="rounded-2xl border border-violet-500/25 bg-violet-950/20 p-4"><div className="mb-2 flex items-center gap-2 text-violet-300"><Cloud size={20}/><span className="font-black">{t('Copia privada en la nube')}</span></div><p className="text-xs leading-relaxed text-gray-300">{t('Inicia sesión o crea una cuenta para guardar tus partidas y recuperarlas en otros dispositivos. Puedes utilizar la misma cuenta de FollowGym.')}</p></div>
+              <div><label className="mb-1 block text-xs font-bold text-gray-300">{t('Correo electrónico')}</label><input type="email" required autoComplete="email" value={cloudEmail} onChange={(event) => setCloudEmail(event.target.value)} placeholder="email@example.com" className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white outline-none focus:border-violet-400"/></div>
+              <div><label className="mb-1 block text-xs font-bold text-gray-300">{t('Contraseña')}</label><input type="password" required minLength={6} autoComplete={cloudAuthMode === 'register' ? 'new-password' : 'current-password'} value={cloudPassword} onChange={(event) => setCloudPassword(event.target.value)} placeholder="••••••••" className="w-full rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-white outline-none focus:border-violet-400"/></div>
+              <button type="submit" disabled={cloudBusy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-black text-white disabled:opacity-50">{cloudBusy ? <Loader2 size={18} className="animate-spin"/> : <Cloud size={18}/>} {t(cloudAuthMode === 'register' ? 'Crear cuenta' : 'Iniciar sesión')}</button>
+              <button type="button" onClick={() => { setCloudAuthMode(cloudAuthMode === 'login' ? 'register' : 'login'); setCloudMessage(''); }} className="w-full py-2 text-xs font-bold text-violet-300">{t(cloudAuthMode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión')}</button>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-emerald-500/25 bg-emerald-950/20 p-4"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400"/><p className="text-xs font-black uppercase tracking-widest text-emerald-300">{t('Cuenta conectada')}</p></div><p className="mt-2 break-all text-sm font-bold text-white">{cloudUser.email}</p><p className="mt-1 text-[10px] text-gray-400">{t('La copia está protegida por tu cuenta y solo tú tienes acceso.')}</p></div>
+              <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+                <div className="mb-3 flex items-center justify-between"><p className="font-black text-white">{t('Comparación de datos')}</p><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (cloudStatus === 'synced' ? "bg-emerald-500/15 text-emerald-300" : cloudStatus === 'conflict' ? "bg-amber-500/15 text-amber-300" : cloudStatus === 'error' ? "bg-red-500/15 text-red-300" : "bg-gray-700 text-gray-300")}>{t(cloudStatus === 'synced' ? 'Sincronizado' : cloudStatus === 'conflict' ? 'Conflicto' : cloudStatus === 'error' ? 'Error' : cloudStatus === 'syncing' ? 'Sincronizando' : cloudStatus === 'empty' ? 'Nube vacía' : 'Pendiente')}</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Este dispositivo')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(getCloudByteSize(getPartyNightLocalSnapshot()))}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(getPartyNightLocalSnapshot()).length} {t('elementos')}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Copia en la nube')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(cloudRemoteBytes)}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(cloudRemoteSnapshot || {}).length} {t('elementos')}</p></div>
+                </div>
+                <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('El tamaño es una estimación del JSON de la aplicación, no del disco total utilizado por Supabase.')}</p>
+                {cloudRemoteUpdatedAt && <p className="mt-2 text-[10px] text-gray-500">{t('Última actualización en la nube')}: {new Date(cloudRemoteUpdatedAt).toLocaleString()}</p>}
+              </div>
+              {cloudStatus === 'conflict' && <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4"><p className="font-black text-amber-200">{t('Las dos copias tienen cambios diferentes')}</p><p className="mt-1 text-xs leading-relaxed text-gray-300">{t('Para evitar perder partidas, la sincronización automática se detiene hasta que elijas qué copia quieres conservar.')}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={cloudBusy} onClick={() => void useLocalCloudCopy()} className="rounded-xl bg-violet-600 px-3 py-3 text-xs font-black text-white disabled:opacity-50">{t('Conservar este dispositivo')}</button><button type="button" disabled={cloudBusy || !cloudRemoteSnapshot} onClick={useRemoteCloudCopy} className="rounded-xl bg-gray-700 px-3 py-3 text-xs font-black text-white disabled:opacity-50">{t('Restaurar desde la nube')}</button></div></div>}
+              <button type="button" disabled={cloudBusy} onClick={() => void syncCloudData('manual')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3 font-black text-white disabled:opacity-50">{cloudBusy ? <Loader2 size={18} className="animate-spin"/> : <RefreshCcw size={18}/>} {t('Comparar y sincronizar ahora')}</button>
+              <div className="rounded-xl border border-cyan-500/20 bg-cyan-950/15 p-3"><p className="text-xs font-bold text-cyan-200">{t('Sincronización automática')}</p><p className="mt-1 text-[11px] leading-relaxed text-gray-300">{t('Al terminar cada partida, Party Night guarda la copia local en la nube. Si detecta cambios diferentes en otro dispositivo, te preguntará antes de sustituir los datos.')}</p></div>
+              <button type="button" disabled={cloudBusy} onClick={() => void deleteCloudCopy()} className="w-full rounded-xl border border-red-500/30 bg-red-950/20 py-3 text-xs font-bold text-red-300 disabled:opacity-50">{t('Eliminar la copia de la nube')}</button>
+              <button type="button" disabled={cloudBusy} onClick={() => void handleCloudSignOut()} className="w-full rounded-xl bg-gray-800 py-3 text-xs font-bold text-gray-300 disabled:opacity-50">{t('Cerrar sesión')}</button>
+            </div>
+          )}
+          {cloudMessage && <p role="status" className="mt-4 rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-xs leading-relaxed text-gray-200">{cloudMessage}</p>}
+          <button type="button" onClick={() => { setShowCloudManagement(false); setShowDataManagement(true); }} className="mt-4 w-full rounded-xl bg-gray-800 py-3 text-xs font-bold text-gray-300">{t('Volver a gestión de datos')}</button>
         </div>
       </AnimatedModal>
 
@@ -2788,7 +3000,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.7</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · v{APP_VERSION}</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -3007,7 +3219,7 @@ export default function App() {
             <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[2] = node; }}>
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
-            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.5c</p>
+            <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · v{APP_VERSION}</p>
             <h1 className="text-3xl font-black mb-1">{t('Historial')}</h1>
             <p className="text-sm text-gray-400 mb-5">{t('Les vostres sessions, jocs i rànquings.')}</p>
             {sessionHistory.length === 0 ? (
