@@ -35,6 +35,7 @@ begin
 end;
 $$;
 revoke all on function public.set_partynight_updated_at() from public, anon, authenticated;
+grant execute on function public.set_partynight_updated_at() to authenticated;
 drop trigger if exists partynight_data_updated_at on public.partynight_data;
 create trigger partynight_data_updated_at
 before update on public.partynight_data
