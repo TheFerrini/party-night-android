@@ -1,5 +1,24 @@
 # Changelog — Party Night
 
+## [2.0.7] — 2026-11-15 · Stats Motion & Data Hub
+
+### Estadístiques
+- Restaurades les animacions d'entrada dels blocs a Resum, Jocs i Jugadors, amb moviment ascendent i desacceleració suau.
+- Els comptadors numèrics tornen a començar i animar-se en entrar a cada subapartat.
+
+### Gestió de dades
+- Afegit un apartat independent de Gestió de dades accessible des de Configuració general.
+- Mostra una estimació de l'espai local ocupat, elements desats, jugadors i sessions.
+- Reubicades les opcions d'importar i exportar còpies de seguretat a aquest apartat.
+- Afegida la secció de gestió al núvol marcada com a «Pròximament» i en desenvolupament.
+
+### Actualitzacions
+- La comprovació automàtica s'executa una vegada a cada arrencada, després de la careta inicial, independentment de la pestanya oberta.
+- S'evita dependre de sessionStorage, que podia conservar l'estat entre obertures del WebView.
+- Consulta de GitHub amb paràmetres i capçaleres per evitar respostes en memòria cau.
+- Si existeix una versió més nova, l'avís es mostra sempre, també si ja s'havia tancat en una arrencada anterior.
+
+
 ## [2.0.6] — 2026-11-14 · Expanded Party Deck
 
 ### Base de datos de juegos
