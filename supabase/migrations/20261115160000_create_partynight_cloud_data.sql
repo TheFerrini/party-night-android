@@ -8,6 +8,7 @@ create table if not exists public.partynight_data (
   constraint partynight_data_object check (jsonb_typeof(data) = 'object')
 );
 alter table public.partynight_data enable row level security;
+revoke all on public.partynight_data from anon, public;
 grant select, insert, update, delete on public.partynight_data to authenticated;
 drop policy if exists "Users can read their own Party Night data" on public.partynight_data;
 create policy "Users can read their own Party Night data"
