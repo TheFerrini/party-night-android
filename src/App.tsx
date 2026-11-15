@@ -2935,9 +2935,9 @@ export default function App() {
               );
               return (
                 <>
-                  <div key={statsCanvasIndex === 0 ? 'overview-active' : 'overview-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
-                  <div key={statsCanvasIndex === 1 ? 'games-active' : 'games-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
-                  <div key={statsCanvasIndex === 2 ? 'players-active-' + (selectedPlayerProfile || 'list') : 'players-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
+                  <div key={mainTab === 'stats' && statsCanvasIndex === 0 ? 'overview-active' : 'overview-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
+                  <div key={mainTab === 'stats' && statsCanvasIndex === 1 ? 'games-active' : 'games-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
+                  <div key={mainTab === 'stats' && statsCanvasIndex === 2 ? 'players-active-' + (selectedPlayerProfile || 'list') : 'players-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
                 </>
               );
                 })()}
