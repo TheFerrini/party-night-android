@@ -7,7 +7,7 @@ import {
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
   Laugh, Music, History, Info, Dices, TreePine, Settings, Cctv, Clock, BellRing, Trophy,
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
-  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload
+  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload, Database, Cloud, HardDrive
 } from 'lucide-react';
 
 
@@ -758,6 +758,7 @@ export default function App() {
   });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
+  const [showDataManagement, setShowDataManagement] = useState(false);
   const [showDeleteDataConfirm, setShowDeleteDataConfirm] = useState(false);
   const [showFinishSessionConfirm, setShowFinishSessionConfirm] = useState(false);
   const [backupMessage, setBackupMessage] = useState('');
@@ -786,6 +787,7 @@ export default function App() {
   const [latestRelease, setLatestRelease] = useState(null);
   const [updateCheckStatus, setUpdateCheckStatus] = useState('idle');
   const [updateCheckError, setUpdateCheckError] = useState('');
+  const updateCheckStartedRef = useRef(false);
   const [showPlayerManager, setShowPlayerManager] = useState(false);
   const [activeSettings, setActiveSettings] = useState(null);
 
@@ -865,9 +867,9 @@ export default function App() {
     if (showResult) setShowUpdatePopup(true);
 
     try {
-      const response = await fetch('https://api.github.com/repos/TheFerrini/party-night-android/releases/latest', {
-        headers: { Accept: 'application/vnd.github+json' },
-        cache: 'no-store'
+      const response = await fetch(`https://api.github.com/repos/TheFerrini/party-night-android/releases/latest?nocache=${Date.now()}`, {
+        headers: { Accept: 'application/vnd.github+json', 'Cache-Control': 'no-cache, no-store, max-age=0', Pragma: 'no-cache' },
+        cache: 'no-store', credentials: 'omit'
       });
       if (!response.ok) {
         if (response.status === 403 || response.status === 429) {
@@ -897,13 +899,8 @@ export default function App() {
       setLatestRelease(release);
       if (comparison > 0) {
         setUpdateCheckStatus('available');
-        // Avís automàtic només una vegada per cada release detectada.
-        let alreadyAnnounced = false;
-        try { alreadyAnnounced = localStorage.getItem('pn-update-announced') === tag; } catch {}
-        if (showResult || !alreadyAnnounced) {
-          setShowUpdatePopup(true);
-          try { localStorage.setItem('pn-update-announced', tag); } catch {}
-        }
+        // Si hi ha una versió superior, l'avís apareix sempre, també en cada arrencada.
+        setShowUpdatePopup(true);
       } else {
         setUpdateCheckStatus('up-to-date');
         if (showResult) setShowUpdatePopup(true);
@@ -977,15 +974,13 @@ export default function App() {
   }, [screen, mainTabIndex, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId]);
 
   useEffect(() => {
-    // La comprovació automàtica només es fa en la primera entrada a Jugar.
-    if (screen !== 'setup' || mainTab !== 'play' || showLanguagePicker || showIntro) return;
-    let hasChecked = false;
-    try { hasChecked = sessionStorage.getItem('pn-update-checked-this-launch') === 'true'; } catch {}
-    if (hasChecked) return;
-    try { sessionStorage.setItem('pn-update-checked-this-launch', 'true'); } catch {}
-    const updateTimer = window.setTimeout(() => checkForUpdates(false), 500);
+    // Una comprovació per cada arrencada real de l'app, independentment de la pestanya activa.
+    // No fem servir sessionStorage: alguns WebView poden conservar-lo entre reobertures.
+    if (screen !== 'setup' || showLanguagePicker || showIntro || updateCheckStartedRef.current) return;
+    updateCheckStartedRef.current = true;
+    const updateTimer = window.setTimeout(() => { void checkForUpdates(false); }, 900);
     return () => window.clearTimeout(updateTimer);
-  }, [screen, mainTab, showIntro, showLanguagePicker]);
+  }, [screen, showIntro, showLanguagePicker]);
 
   useEffect(() => {
     try {
@@ -2684,7 +2679,7 @@ export default function App() {
       <AnimatedModal isOpen={showGeneralSettings} onClose={() => setShowGeneralSettings(false)} zIndex="z-[160]">
         <div className="w-full max-w-md max-h-[84dvh] overflow-y-auto overscroll-contain rounded-3xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
           <div className="flex items-center justify-between mb-5">
-            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.6</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-purple-300">Party Night 2.0.7</p><h2 className="text-2xl font-black text-white">{t('Configuració general')}</h2></div>
             <button onClick={() => setShowGeneralSettings(false)} className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
           <div className="space-y-3">
@@ -2712,21 +2707,55 @@ export default function App() {
                 className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
 
-            <div className="rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-4">
-              <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-bold text-white">{t('Copia de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
-              <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Upload size={16}/> {t('Exportar datos')}</button>
-                <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Download size={16}/> {t('Importar datos')}</button>
-              </div>
-              {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
-              <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
-            </div>
+            <button type="button" onClick={() => { setShowGeneralSettings(false); setBackupMessage(''); setShowDataManagement(true); }} className="w-full rounded-2xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-left transition-colors hover:bg-cyan-900/40 active:scale-[.99]">
+              <span className="flex items-center gap-3"><span className="rounded-xl bg-cyan-500/15 p-3 text-cyan-300"><Database size={21}/></span><span className="min-w-0 flex-1"><span className="block font-black text-white">{t('Gestión de datos')}</span><span className="mt-1 block text-xs text-gray-400">{t('Consulta el espacio ocupado e importa o exporta tus copias de seguridad.')}</span></span><ChevronLeft size={18} className="rotate-180 text-cyan-300"/></span>
+            </button>
             <button type="button" onClick={() => setShowDeleteDataConfirm(true)} className="w-full rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-left text-sm font-black text-red-300 active:scale-[.99]">{t('Borrar todos los datos')}</button>
           </div>
           <p className="mt-5 text-center text-[10px] text-gray-500">{t('Els ajustos s’apliquen a les sessions noves i es desen automàticament.')}</p>
         </div>
       </AnimatedModal>
+      <AnimatedModal isOpen={showDataManagement} onClose={() => setShowDataManagement(false)} zIndex="z-[165]">
+        <div className="w-full max-w-md max-h-[86dvh] overflow-y-auto overscroll-contain rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.7</p><h2 className="text-2xl font-black text-white">{t('Gestión de datos')}</h2><p className="mt-1 text-xs text-gray-400">{t('Controla tus copias y el almacenamiento local.')}</p></div>
+            <button type="button" onClick={() => setShowDataManagement(false)} aria-label="Cerrar" className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
+          </div>
+          {(() => {
+            const keys = Object.keys(localStorage).filter(key => key.startsWith('pn-'));
+            const bytes = keys.reduce((total, key) => total + new Blob([key, localStorage.getItem(key) || '']).size, 0);
+            const formatBytes = (value: number) => value < 1024 ? String(value) + ' B' : value < 1024 * 1024 ? (value / 1024).toFixed(1) + ' KB' : (value / (1024 * 1024)).toFixed(2) + ' MB';
+            return (
+              <div className="mb-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
+                <div className="mb-3 flex items-center gap-2"><HardDrive size={19} className="text-cyan-300"/><p className="font-black text-white">{t('Almacenamiento local')}</p><span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase text-emerald-300">{t('En este dispositivo')}</span></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Espacio utilizado')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{formatBytes(bytes)}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Elementos guardados')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{keys.length}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Jugadores')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{players.length}</p></div>
+                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Sesiones guardadas')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{sessionHistory.length + (activeSession ? 1 : 0)}</p></div>
+                </div>
+                <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('El tamaño es una estimación de los datos de Party Night guardados en el almacenamiento del navegador de este dispositivo.')}</p>
+              </div>
+            );
+          })()}
+          <div className="mb-4 rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-4">
+            <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-black text-white">{t('Copias de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
+            <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Upload size={16}/> {t('Exportar datos')}</button>
+              <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Download size={16}/> {t('Importar datos')}</button>
+            </div>
+            {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
+            <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
+          </div>
+          <div className="rounded-2xl border border-violet-500/30 bg-violet-950/20 p-4">
+            <div className="flex items-center gap-2"><div className="rounded-xl bg-violet-500/15 p-2 text-violet-300"><Cloud size={19}/></div><div className="min-w-0 flex-1"><p className="font-black text-white">{t('Gestión en la nube')}</p><p className="text-xs text-gray-400">{t('Sincroniza tus datos entre dispositivos.')}</p></div><span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[9px] font-black uppercase text-amber-300">{t('Próximamente')}</span></div>
+            <p className="mt-3 text-xs leading-relaxed text-gray-300">{t('La sincronización en la nube está en desarrollo. Tus datos siguen guardándose únicamente en este dispositivo.')}</p>
+          </div>
+          <button type="button" onClick={() => { setShowDataManagement(false); setShowGeneralSettings(true); }} className="mt-5 w-full rounded-xl bg-gray-800 py-3 font-bold text-gray-200">{t('Volver a configuración')}</button>
+        </div>
+      </AnimatedModal>
+
       <AnimatedModal isOpen={showGameSummary} onClose={() => setShowGameSummary(false)} zIndex="z-[170]">
         <div className="w-full max-w-md max-h-[82dvh] overflow-y-auto rounded-3xl border border-yellow-500/30 bg-gray-900 p-6 shadow-2xl">
           <div className="text-center mb-5"><Trophy size={42} className="mx-auto mb-2 text-yellow-400"/><p className="text-[10px] font-black uppercase tracking-[.2em] text-yellow-300">{t("Partida finalitzada")}</p><h2 className="text-2xl font-black text-white">{gameDisplayName(lastGameSummary?.key, lastGameSummary?.title || t("Rànquing de partida"))}</h2></div>
@@ -2749,7 +2778,7 @@ export default function App() {
         <div className="min-h-screen px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
-              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.6</p>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · 2.0.7</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
@@ -2903,9 +2932,9 @@ export default function App() {
               );
               return (
                 <>
-                  <div className={"pn-stats-page " + (statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
-                  <div className={"pn-stats-page " + (statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
-                  <div className={"pn-stats-page " + (statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
+                  <div key={statsCanvasIndex === 0 ? 'overview-active' : 'overview-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
+                  <div key={statsCanvasIndex === 1 ? 'games-active' : 'games-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
+                  <div key={statsCanvasIndex === 2 ? 'players-active-' + (selectedPlayerProfile || 'list') : 'players-inactive'} className={"pn-stats-page " + (statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
                 </>
               );
                 })()}
@@ -2925,7 +2954,7 @@ export default function App() {
               </h1>
               <div className="mt-3">
                 <span className="text-[10px] md:text-xs text-white font-black tracking-widest bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 rounded-md border border-pink-500 shadow-md uppercase flex items-center justify-center gap-1.5">
-                  v2.0.6 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
+                  v2.0.7 • THE PARTY RE-REBUILD <Sparkles size={12} className="text-yellow-300" />
                 </span>
               </div>
               <p className="text-gray-400 mt-4 font-medium italic text-sm md:text-base">{t("para estudiantes con pretensiones alcohólicas")}</p>
