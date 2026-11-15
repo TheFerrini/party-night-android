@@ -10,7 +10,7 @@
     "android:init": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug && VERSION=$(grep -oE '[0-9]+\\\\.[0-9]+\\\\.[0-9]+' ../src/version.ts | head -1) && mv app/build/outputs/apk/debug/app-debug.apk \"app/build/outputs/apk/debug/Party Night-v${VERSION}.apk\""
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
