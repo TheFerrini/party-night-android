@@ -2693,6 +2693,13 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.8 (Cloud Sync & Reliability)</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                - <b>{t("Gestión en la nube:")}</b> {t("cuentas, comparación local/nube, espacio estimado y sincronización automática al terminar cada partida.")}<br/>
+                - <b>{t("Seguridad de datos:")}</b> {t("comparación de cambios entre dispositivos y elección de copia para evitar sobrescrituras.")}<br/>
+                - <b>{t("Interfaz:")}</b> {t("historial con versión dinámica, animaciones de estadísticas sin rebote y cambio de idioma sin reiniciar.")}<br/>
+                - <b>{t("Android:")}</b> {t("APK con nombre Party Night y número de versión, manteniendo la firma estable.")}
+              </p>
               <h3 className="text-lg font-black text-white mb-1">v2.0.7 (Stats Motion & Data Hub)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Estadístiques:")}</b> {t("animacions d'entrada i comptadors recuperats a Resum, Jocs i Jugadors.")}<br/>
@@ -2851,7 +2858,7 @@ export default function App() {
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300"><Globe size={30}/></div>
             <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300 mb-2">{t("Party Night · Language")}</p>
             <h2 className="text-2xl font-black text-white">{t('Tria l’idioma')}</h2>
-            <p className="mt-2 text-xs text-gray-400">{t('El cambio se aplicará al volver a iniciar la app.')}</p>
+            <p className="mt-2 text-xs text-gray-400">{t('El cambio se aplica inmediatamente. Si mantienes el idioma actual, la aplicación no se reinicia.')}</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
             <button type="button" aria-pressed={pendingLanguage === 'ca'} onClick={() => chooseLanguage('ca')}
