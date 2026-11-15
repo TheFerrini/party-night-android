@@ -2513,6 +2513,13 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.7 (Stats Motion & Data Hub)</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                - <b>{t("Estadístiques:")}</b> {t("animacions d'entrada i comptadors recuperats a Resum, Jocs i Jugadors.")}<br/>
+                - <b>{t("Gestió de dades:")}</b> {t("nou espai per consultar l'emmagatzematge local i importar o exportar còpies.")}<br/>
+                - <b>{t("Núvol:")}</b> {t("sincronització en desenvolupament, disponible pròximament.")}<br/>
+                - <b>{t("Actualitzacions:")}</b> {t("comprovació automàtica a cada arrencada i avís sempre que hi hagi una versió nova.")}
+              </p>
               <h3 className="text-lg font-black text-white mb-1">v2.0.5c (Smooth Canvas & Count-up)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
