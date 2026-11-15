@@ -128,7 +128,7 @@ jobs:
         id: rename-apk
         shell: bash
         run: |
-          VERSION="$(node -e 'const s=require("fs").readFileSync("src/version.ts","utf8"); const m=s.match(/APP_VERSION\\s*=\\s*["\\x27]([^"\\x27]+)["\\x27]/); if (!m) process.exit(1); console.log(m[1]);')"
+          VERSION="$(node -e 'const s=require("fs").readFileSync("src/version.ts","utf8"); const m=s.match(/APP_VERSION\s*=\s*["\x27]([^"\x27]+)["\x27]/); if (!m) process.exit(1); console.log(m[1]);')"
           SOURCE="android/app/build/outputs/apk/debug/app-debug.apk"
           DEST="android/app/build/outputs/apk/debug/Party Night-v${VERSION}.apk"
           test -f "$SOURCE"
