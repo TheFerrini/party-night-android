@@ -1109,3 +1109,38 @@ export function translateUiText(language: AppLanguage, value: string): string {
   }
   return value;
 }
+
+Object.assign(UI_TRANSLATIONS.ca, {
+  "Gestión de datos": "Gestió de dades",
+  "Consulta el espacio ocupado e importa o exporta tus copias de seguridad.": "Consulta l'espai ocupat i importa o exporta les còpies de seguretat.",
+  "Controla tus copias y el almacenamiento local.": "Controla les còpies i l'emmagatzematge local.",
+  "Almacenamiento local": "Emmagatzematge local",
+  "En este dispositivo": "En aquest dispositiu",
+  "Espacio utilizado": "Espai utilitzat",
+  "Elementos guardados": "Elements desats",
+  "Sesiones guardadas": "Sessions desades",
+  "El tamaño es una estimación de los datos de Party Night guardados en el almacenamiento del navegador de este dispositivo.": "La mida és una estimació de les dades de Party Night desades a l'emmagatzematge del navegador d'aquest dispositiu.",
+  "Copias de seguridad": "Còpies de seguretat",
+  "Gestión en la nube": "Gestió al núvol",
+  "Sincroniza tus datos entre dispositivos.": "Sincronitza les dades entre dispositius.",
+  "Próximamente": "Ben aviat",
+  "La sincronización en la nube está en desarrollo. Tus datos siguen guardándose únicamente en este dispositivo.": "La sincronització al núvol està en desenvolupament. Les dades continuen desant-se només en aquest dispositiu.",
+  "Volver a configuración": "Tornar a la configuració"
+});
+Object.assign(UI_TRANSLATIONS.en, {
+  "Gestión de datos": "Data management",
+  "Consulta el espacio ocupado e importa o exporta tus copias de seguridad.": "Check storage usage and import or export your backups.",
+  "Controla tus copias y el almacenamiento local.": "Manage your backups and local storage.",
+  "Almacenamiento local": "Local storage",
+  "En este dispositivo": "On this device",
+  "Espacio utilizado": "Space used",
+  "Elementos guardados": "Stored items",
+  "Sesiones guardadas": "Saved sessions",
+  "El tamaño es una estimación de los datos de Party Night guardados en el almacenamiento del navegador de este dispositivo.": "This is an estimate of Party Night data saved in this device's browser storage.",
+  "Copias de seguridad": "Backups",
+  "Gestión en la nube": "Cloud management",
+  "Sincroniza tus datos entre dispositivos.": "Sync your data across devices.",
+  "Próximamente": "Coming soon",
+  "La sincronización en la nube está en desarrollo. Tus datos siguen guardándose únicamente en este dispositivo.": "Cloud sync is in development. Your data is still stored only on this device.",
+  "Volver a configuración": "Back to settings"
+});
