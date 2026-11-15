@@ -2769,7 +2769,7 @@ export default function App() {
           <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowDeleteDataConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={async () => {
             try {
               try { await supabase.auth.signOut({ scope: 'local' }); } catch (signOutError) { console.warn('No s’ha pogut tancar la sessió del núvol abans de netejar les dades locals.', signOutError); }
-              if (cloudUser?.id) { try { localStorage.removeItem(cloudBaselineStorageKey(cloudUser.id)); } catch {} }
+              Object.keys(localStorage).filter((key) => key.startsWith('partynight-cloud-baseline-')).forEach((key) => localStorage.removeItem(key));
               Object.keys(localStorage).filter((key) => key.startsWith('pn-')).forEach((key) => localStorage.removeItem(key));
               setShowDeleteDataConfirm(false);
               window.location.reload();
