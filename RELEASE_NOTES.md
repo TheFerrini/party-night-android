@@ -1,16 +1,17 @@
-## Party Night v2.0.6 — Expanded Party Deck
+## Party Night v2.0.7 — Stats Motion & Data Hub
 
-### 🎲 200 propuestas nuevas
-- **Yo Nunca:** 80 frases nuevas, repartidas entre las diez categorías.
-- **Verdad:** 32 preguntas nuevas en normal, salseo, picante y oscuro.
-- **Retos:** 32 pruebas nuevas entre casa, bar, discoteca y parque, más 4 comodines.
-- **La Bomba:** 30 temas adicionales.
-- **Duelos:** 10 pruebas adicionales.
-- **Encuestas:** 12 nuevas preguntas.
+### 📊 Estadísticas con animaciones recuperadas
+- Los bloques de Resumen, Juegos y Jugadores vuelven a entrar desde abajo con una desaceleración suave.
+- Los contadores numéricos vuelven a animarse al entrar en cada subapartado.
 
-Todo el contenido nuevo está en castellano y se integra en sus categorías actuales. Los índices de selección de retos también se han ampliado para incluir las nuevas propuestas.
+### 💾 Nuevo centro de gestión de datos
+- Nuevo apartado independiente accesible desde Configuración general.
+- Muestra el espacio local estimado, elementos guardados, jugadores y sesiones.
+- Importar y exportar copias de seguridad pasan a este nuevo apartado.
+- Añadida una sección de gestión en la nube marcada como **En desarrollo / Próximamente**. La sincronización todavía no está activa.
 
-### 🔢 Versión estable
-- La app pasa a **2.0.6**, sin letras al final.
-- El comprobador sigue entendiendo instalaciones antiguas 2.0.5b/2.0.5c.
-- El workflow valida el formato numérico y calcula un versionCode Android válido.
+### 🔔 Comprobación automática de actualizaciones
+- Comprueba GitHub una vez en cada arranque, después de la careta inicial, sin depender de la pestaña seleccionada.
+- Evita el estado persistente de sessionStorage que podía impedir nuevas comprobaciones.
+- Consulta GitHub evitando respuestas en caché.
+- Si hay una versión superior, el aviso aparece siempre, aunque se hubiera cerrado en una apertura anterior.
