@@ -868,7 +868,7 @@ export default function App() {
 
     try {
       const response = await fetch(`https://api.github.com/repos/TheFerrini/party-night-android/releases/latest?nocache=${Date.now()}`, {
-        headers: { Accept: 'application/vnd.github+json', 'Cache-Control': 'no-cache, no-store, max-age=0', Pragma: 'no-cache' },
+        headers: { Accept: 'application/vnd.github+json' },
         cache: 'no-store', credentials: 'omit'
       });
       if (!response.ok) {
