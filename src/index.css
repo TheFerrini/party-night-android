@@ -177,3 +177,14 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 @media(prefers-reduced-motion:reduce){.pn-stats-page.is-active> *,.pn-stats-page.is-active> * > *,.pn-stats-page.is-active> * > * > *{animation:none!important;}}
 
 .pn-reduce-motion .pn-stats-page.is-active> *,.pn-reduce-motion .pn-stats-page.is-active> * > *,.pn-reduce-motion .pn-stats-page.is-active> * > * > *{animation:none!important;}
+
+/* v2.1.0 — the bottom-nav canvas owns page motion; stats panels only cross-fade. */
+.pn-stats-page.is-active> *,
+.pn-stats-page.is-active> * > *,
+.pn-stats-page.is-active> * > * > *{animation:none!important;}
+.pn-stats-page .pn-stats-number{animation:pn-number-pop .72s cubic-bezier(.16,1,.3,1) both!important;}
+.pn-stats-page{will-change:opacity;}
+.pn-play-page{min-height:calc(100dvh - var(--pn-safe-top) - var(--pn-safe-bottom) - 7rem);}
+@media(prefers-reduced-motion:reduce){.pn-stats-page{will-change:auto}}
+@media(prefers-reduced-motion:reduce){.pn-stats-page .pn-stats-number{animation:none!important}}
+.pn-reduce-motion .pn-stats-page .pn-stats-number{animation:none!important}

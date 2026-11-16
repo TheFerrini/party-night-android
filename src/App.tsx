@@ -8,7 +8,7 @@ import {
   AlertTriangle, Sparkles, Skull, Ghost, Zap, Smartphone, Briefcase, Users as FamilyIcon,
   Laugh, Music, History, Info, Dices, TreePine, Settings, Cctv, Clock, BellRing, Trophy,
   ChevronLeft, Undo2, Crown, Medal, Loader2, Bomb, Timer, Hammer, Gift,
-  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload, Database, Cloud, HardDrive
+  GripHorizontal, Swords, BarChart3, AlertOctagon, RefreshCcw, PartyPopper, ChevronUp, ChevronDown, Download, Upload, Database, Cloud, HardDrive, Trash2
 } from 'lucide-react';
 
 
@@ -783,7 +783,7 @@ export default function App() {
   const [mainCanvasHeight, setMainCanvasHeight] = useState(0);
   const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
-    try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value:[]; } catch { return []; }
+    try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value.filter((session: any) => Array.isArray(session?.games) && session.games.length > 0):[]; } catch { return []; }
   });
   const [activeSession, setActiveSession] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-active-session')||'null'); return value&&typeof value==='object'&&!Array.isArray(value)?value:null; } catch { return null; }
@@ -798,6 +798,7 @@ export default function App() {
     try { return (localStorage.getItem('pn-winner-mode') as 'least' | 'most') || 'least'; } catch { return 'least'; }
   });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [sessionToDeleteId, setSessionToDeleteId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
   const [showDataManagement, setShowDataManagement] = useState(false);
   const [showCloudManagement, setShowCloudManagement] = useState(false);
@@ -1198,11 +1199,13 @@ export default function App() {
       ...activeSession, games, currentGame: null, status: 'completed',
       completedAt: new Date().toISOString(), finalPlayers: [...players]
     };
-    setSessionHistory((prev: any[]) => [completed, ...prev].slice(0, 100));
+    if (games.length > 0) setSessionHistory((prev: any[]) => [completed, ...prev].slice(0, 100));
     setActiveSession(null);
     setAutoSyncRevision((revision) => revision + 1);
-    setLastSessionSummary(completed);
-    setShowSessionSummary(true);
+    if (games.length > 0) {
+      setLastSessionSummary(completed);
+      setShowSessionSummary(true);
+    }
     setDrinkCounts({});
     setGlobalStrikes({});
     setCurrentGamePenaltyCounts({});
@@ -2712,6 +2715,13 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v2.1.0 (History, Motion & Android Icon)</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                - <b>{t("Historial:")}</b> {t("las sesiones sin juegos no se guardan y puedes eliminar registros antiguos.")}<br/>
+                - <b>{t("Estadísticas:")}</b> {t("transiciones más limpias al cambiar de pestaña.")}<br/>
+                - <b>{t("Android:")}</b> {t("nuevo icono con jarras de cerveza y el fondo de Party Night.")}<br/>
+                - <b>{t("Jugar:")}</b> {t("tarjeta más compacta para dejar más espacio libre en la pantalla.")}
+              </p>
               <h3 className="text-lg font-black text-white mb-1">v2.0.8 (Cloud Sync & Reliability)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Gestión en la nube:")}</b> {t("cuentas, comparación local/nube, espacio estimado y sincronización automática al terminar cada partida.")}<br/>
@@ -2783,8 +2793,22 @@ export default function App() {
       <AnimatedModal isOpen={showFinishSessionConfirm} onClose={() => setShowFinishSessionConfirm(false)} zIndex="z-[190]">
         <div className="w-full max-w-sm rounded-3xl border border-amber-500/40 bg-gray-900 p-6 shadow-2xl">
           <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-amber-500/15 p-3 text-amber-300"><Flag size={24}/></div><h2 className="text-xl font-black text-white">{t('¿Finalizar la sesión?')}</h2></div>
-          <p className="text-sm leading-relaxed text-gray-300">{t('La sesión se guardará en el historial y volveréis al menú principal. ¿Seguro que quieres finalizarla?')}</p>
+          <p className="text-sm leading-relaxed text-gray-300">{activeSession && !(activeSession.games || []).length && !activeSession.currentGame ? t('Si no has jugado ningún juego, la sesión no se guardará en el historial.') : t('La sesión se guardará en el historial y volveréis al menú principal. ¿Seguro que quieres finalizarla?')}</p>
           <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setShowFinishSessionConfirm(false)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Seguir jugando')}</button><button type="button" onClick={() => { setShowFinishSessionConfirm(false); finishSession(); }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Finalitzar sessió')}</button></div>
+        </div>
+      </AnimatedModal>
+      <AnimatedModal isOpen={sessionToDeleteId !== null} onClose={() => setSessionToDeleteId(null)} zIndex="z-[190]">
+        <div className="w-full max-w-sm rounded-3xl border border-red-500/40 bg-gray-900 p-6 shadow-2xl">
+          <div className="mb-3 flex items-center gap-3"><div className="rounded-xl bg-red-500/15 p-3 text-red-300"><Trash2 size={24}/></div><h2 className="text-xl font-black text-white">{t('¿Eliminar este registro?')}</h2></div>
+          <p className="text-sm leading-relaxed text-gray-300">{t('Esta sesión y todos sus datos se eliminarán del historial de este dispositivo.')}</p>
+          <div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setSessionToDeleteId(null)} className="rounded-xl bg-gray-700 py-3 font-bold text-gray-200">{t('Cancelar')}</button><button type="button" onClick={() => {
+            const id = sessionToDeleteId;
+            if (!id) return;
+            setSessionHistory((prev: any[]) => prev.filter((session) => session.id !== id));
+            setExpandedSessionId((current) => current === id ? null : current);
+            setSessionToDeleteId(null);
+            setAutoSyncRevision((revision) => revision + 1);
+          }} className="rounded-xl bg-red-600 py-3 font-black text-white">{t('Eliminar')}</button></div>
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showUpdatePopup} onClose={() => setShowUpdatePopup(false)} zIndex="z-[150]">
@@ -3196,9 +3220,9 @@ export default function App() {
               );
               return (
                 <>
-                  <div key={mainTab === 'stats' && statsCanvasIndex === 0 ? 'overview-active' : 'overview-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
-                  <div key={mainTab === 'stats' && statsCanvasIndex === 1 ? 'games-active' : 'games-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
-                  <div key={mainTab === 'stats' && statsCanvasIndex === 2 ? 'players-active-' + (selectedPlayerProfile || 'list') : 'players-inactive'} className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
+                  <div key="overview" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
+                  <div key="games" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
+                  <div key="players" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
                 </>
               );
                 })()}
@@ -3208,12 +3232,12 @@ export default function App() {
         </div>
       </div>
             <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[1] = node; }}>
-        <div className={`min-h-screen text-white p-6 pb-28 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : ''}`}>
-          <div className="max-w-md w-full bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-700 relative overflow-hidden">
+        <div className={`pn-play-page text-white p-4 sm:p-5 pb-24 flex flex-col items-center justify-center relative z-10 ${closingScreen ? 'animate-shrink' : ''}`}>
+          <div className="max-w-sm w-full bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-700 relative overflow-hidden">
             <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-purple-600/20 blur-3xl rounded-full pointer-events-none"></div>
             <div className="absolute bottom-[-50px] left-[-50px] w-32 h-32 bg-pink-600/20 blur-3xl rounded-full pointer-events-none"></div>
-            <div className="text-center mb-8 relative z-10 flex flex-col items-center justify-center">
-              <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter pb-1 leading-tight drop-shadow-sm flex flex-col items-center">
+            <div className="text-center mb-5 relative z-10 flex flex-col items-center justify-center">
+              <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 tracking-tighter pb-1 leading-tight drop-shadow-sm flex flex-col items-center">
                 Party Night
               </h1>
               <div className="mt-3">
@@ -3268,19 +3292,22 @@ export default function App() {
               <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-6 text-center">
                 <History size={38} className="mx-auto text-gray-500 mb-3"/>
                 <p className="font-bold text-white">{t('Encara no hi ha sessions desades.')}</p>
-                <p className="text-xs text-gray-400 mt-1">{t('Quan acabeu una sessió, quedarà desada aquí.')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('Cuando juguéis al menos a un juego, la sesión quedará guardada aquí.')}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {sessionHistory.map((session: any, index: number) => (
                   <div key={session.id} className={`pn-history-session overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90 ${mainTab === 'history' ? 'is-active' : ''}`} style={{ animationDelay: `${Math.min(index, 7) * 65}ms` }}>
-                    <button onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)} className="w-full p-4 text-left">
+                    <div className="flex items-start gap-2 p-4">
+                    <button onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)} className="min-w-0 flex-1 text-left">
                       <div className="flex items-center justify-between">
                         <span className="font-black text-white">{new Date(session.startedAt).toLocaleString()}</span>
                         <ChevronDown size={18} className={expandedSessionId === session.id ? "rotate-180 transition-transform" : "transition-transform"}/>
                       </div>
                       <p className="text-xs text-gray-400 mt-1">{(session.players || []).join(' · ')} · {(session.games || []).length} {t('jocs')}</p>
                     </button>
+                    <button type="button" aria-label={t('Eliminar registro')} title={t('Eliminar registro')} onClick={() => setSessionToDeleteId(session.id)} className="shrink-0 rounded-lg border border-red-500/30 bg-red-950/20 p-2 text-red-300 transition-colors hover:bg-red-900/40"><Trash2 size={17}/></button>
+                    </div>
                     <div className={"pn-history-details-grid " + (expandedSessionId === session.id ? "is-open" : "")} aria-hidden={expandedSessionId !== session.id}>
                       <div className="pn-history-details-inner border-t border-gray-700 p-4 space-y-3">
                         {(session.games || []).map((game: any, index: number) => (

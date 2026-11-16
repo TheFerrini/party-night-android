@@ -54,6 +54,9 @@ jobs:
       - name: Sync web app into Android project
         run: npx cap sync android
 
+      - name: Install Party Night launcher icons
+        run: sh ./scripts/install-android-icons.sh
+
       - name: Set Android versionCode and versionName
         shell: bash
         run: |

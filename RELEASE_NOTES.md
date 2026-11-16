@@ -1,3 +1,16 @@
+## Party Night v2.1.0 — History, Motion & Android Icon
+
+### History
+- Sessions with no games played are no longer saved; older empty history rows are cleaned up.
+- History entries can be deleted from the page with a confirmation step. The change is included in cloud sync.
+
+### Interface
+- Statistics panels use a simpler entrance transition and stay mounted while navigating between the bottom tabs.
+- The Play page and player card are more compact.
+
+### Android
+- New launcher icon with two beer mugs over Party Night's dark plum gradient.
+
 ## Party Night v2.0.8 — Cloud Sync & Reliability
 
 ### ☁️ Cloud management

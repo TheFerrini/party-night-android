@@ -1,14 +1,14 @@
 {
   "name": "party-night-android",
   "private": true,
-  "version": "2.0.8",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "android:init": "cap add android",
-    "android:sync": "npm run build && cap sync android",
+    "android:init": "cap add android && sh ./scripts/install-android-icons.sh",
+    "android:sync": "npm run build && cap sync android && sh ./scripts/install-android-icons.sh",
     "android:open": "cap open android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug && VERSION=$(grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+' ../src/version.ts | head -1) && mv app/build/outputs/apk/debug/app-debug.apk \"app/build/outputs/apk/debug/Party Night-v${VERSION}.apk\""
   },

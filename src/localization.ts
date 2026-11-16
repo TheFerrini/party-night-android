@@ -484,6 +484,9 @@ const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
 
 
 Object.assign(UI_TRANSLATIONS.ca, {
+  "Historial:": "Historial:",
+  "Estadísticas:": "Estadístiques:",
+  "Jugar:": "Jugar:",
 "Exportar dades":"Exportar dades","Importar dades":"Importar dades","Còpia de seguretat":"Còpia de seguretat",
 "Desa jugadors, sessions, historial i configuració en un fitxer.":"Desa jugadors, sessions, historial i configuració en un fitxer.",
 "La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.",
@@ -524,6 +527,9 @@ Object.assign(UI_TRANSLATIONS.ca, {
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
 Object.assign(UI_TRANSLATIONS.en, {
+  "Historial:": "History:",
+  "Estadísticas:": "Statistics:",
+  "Jugar:": "Play:",
 "Exportar dades":"Export data","Importar dades":"Import data","Còpia de seguretat":"Backup",
 "Desa jugadors, sessions, historial i configuració en un fitxer.":"Save players, sessions, history and settings to a file.",
 "La còpia conté dades guardades al dispositiu, inclosos noms i resultats de les sessions.":"The backup includes data stored on this device, including player names and session results.",
@@ -1299,4 +1305,29 @@ Object.assign(UI_TRANSLATIONS.ca, {
 Object.assign(UI_TRANSLATIONS.en, {
   "partidas": "games",
   "sesiones": "sessions"
+});
+
+Object.assign(UI_TRANSLATIONS.ca, {
+  "¿Eliminar este registro?": "Vols eliminar aquest registre?",
+  "Esta sesión y todos sus datos se eliminarán del historial de este dispositivo.": "Aquesta sessió i totes les seves dades s’eliminaran de l’historial d’aquest dispositiu.",
+  "Eliminar registro": "Eliminar registre",
+  "Eliminar": "Eliminar",
+  "Si no has jugado ningún juego, la sesión no se guardará en el historial.": "Si no heu jugat a cap joc, la sessió no es desarà a l’historial.",
+  "Cuando juguéis al menos a un juego, la sesión quedará guardada aquí.": "Quan jugueu almenys a un joc, la sessió quedarà desada aquí.",
+  "las sesiones sin juegos no se guardan y puedes eliminar registros antiguos.": "les sessions sense jocs no es desen i pots eliminar registres antics.",
+  "transiciones más limpias al cambiar de pestaña.": "transicions més netes en canviar de pestanya.",
+  "nuevo icono con jarras de cerveza y el fondo de Party Night.": "icona nova amb gerres de cervesa i el fons de Party Night.",
+  "tarjeta más compacta para dejar más espacio libre en la pantalla.": "targeta més compacta per deixar més espai lliure a la pantalla."
+});
+Object.assign(UI_TRANSLATIONS.en, {
+  "¿Eliminar este registro?": "Delete this record?",
+  "Esta sesión y todos sus datos se eliminarán del historial de este dispositivo.": "This session and all its data will be removed from this device's history.",
+  "Eliminar registro": "Delete record",
+  "Eliminar": "Delete",
+  "Si no has jugado ningún juego, la sesión no se guardará en el historial.": "If you haven't played a game, the session won't be saved to history.",
+  "Cuando juguéis al menos a un juego, la sesión quedará guardada aquí.": "Once you play at least one game, the session will appear here.",
+  "las sesiones sin juegos no se guardan y puedes eliminar registros antiguos.": "sessions without games are skipped, and you can delete old records.",
+  "transiciones más limpias al cambiar de pestaña.": "smoother transitions when changing tabs.",
+  "nuevo icono con jarras de cerveza y el fondo de Party Night.": "a new icon with beer mugs and the Party Night background.",
+  "tarjeta más compacta para dejar más espacio libre en la pantalla.": "a more compact card that leaves more free space on screen."
 });

@@ -1,5 +1,18 @@
 # Changelog — Party Night
 
+## [2.1.0] — 2026-11-16 · History, Motion & Android Icon
+
+### Historial
+- Les sessions sense jocs jugats ja no es guarden; també es netegen els registres buits antics.
+- Es poden eliminar sessions des de l’historial, amb confirmació i sincronització del canvi al núvol.
+
+### Interfície
+- Animacions d’Estadístiques simplificades perquè el canvi de pestanya inferior no torni a muntar ni animar en cascada tots els elements.
+- La pàgina Jugar ocupa menys alçada i la targeta és més compacta.
+
+### Android
+- Nova icona de llançador amb dues gerres i el degradat fosc magenta de Party Night.
+
 ## [2.0.8] — 2026-11-15 · Cloud Sync & Reliability
 
 ### Dades i còpies
