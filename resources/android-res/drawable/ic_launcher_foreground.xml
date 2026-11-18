@@ -4,7 +4,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group android:scaleX="0.85" android:scaleY="0.85" android:pivotX="54" android:pivotY="54">
+    <group android:scaleX="0.68" android:scaleY="0.68" android:pivotX="54" android:pivotY="54">
     <group android:rotation="11" android:pivotX="41" android:pivotY="58">
         <path android:fillColor="#00000000" android:strokeColor="#C9C5CE" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M28,48 L21,47 C16,47 14,51 14,57 L14,68 C14,74 17,77 22,78 L28,78" />
         <path android:fillColor="#F4A20B" android:strokeColor="#D8D3DB" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M31,34 L27,75 C26,80 28,83 33,84 L54,88 C59,89 62,86 63,81 L67,47 C68,42 66,39 61,38 Z" />
@@ -15,7 +15,7 @@
         <path android:fillColor="#FFE66D" android:pathData="M43,62 C46,60 48,64 46,67 C44,69 41,66 43,62 Z M54,72 C57,70 59,74 57,77 C54,79 52,75 54,72 Z M53,58 C56,56 58,60 56,62 C53,64 51,60 53,58 Z" />
     </group>
     </group>
-    <group android:scaleX="0.85" android:scaleY="0.85" android:pivotX="54" android:pivotY="54">
+    <group android:scaleX="0.68" android:scaleY="0.68" android:pivotX="54" android:pivotY="54">
     <group android:rotation="-12" android:pivotX="67" android:pivotY="55">
         <path android:fillColor="#00000000" android:strokeColor="#B9B6C0" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M78,45 L85,44 C90,44 92,48 92,54 L92,66 C92,72 89,75 84,76 L78,76" />
         <path android:fillColor="#F5A30B" android:strokeColor="#D8D3DB" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M49,40 C48,35 51,32 56,31 L76,27 C81,26 84,29 85,34 L91,74 C92,79 89,82 84,83 L62,87 C57,88 54,85 53,80 Z" />
