@@ -1,5 +1,20 @@
 # Changelog — Party Night
 
+## [2.2.0] — 2026-11-18 · Mode Déu & interfície adaptativa
+
+### Jocs
+- Mode Déu configurable des de Configuració general.
+- Durant els jocs poden aparèixer tres caixes aleatòries amb comodins, penalitzacions i accions; rebutjar una acció envia dos tragos.
+
+### Interfície i idioma
+- L'alçada d'Estadístiques s'adapta a Resum, Jocs o Jugadors.
+- Tipografia dels reptes llargs més compacta per evitar solapaments.
+- Traduccions corregides per a detalls dinàmics de partida i caixes.
+- El diàleg de novetats queda per sobre de la navegació inferior i respecta l'àrea segura.
+
+### Android
+- Gerres de la icona més petites per millorar-ne la lectura.
+
 ## [2.1.0] — 2026-11-16 · History, Motion & Android Icon
 
 ### Historial
