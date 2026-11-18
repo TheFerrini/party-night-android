@@ -782,6 +782,7 @@ export default function App() {
   const mainCanvasRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [mainCanvasHeight, setMainCanvasHeight] = useState(0);
   const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
+  const [statsPanelHeight, setStatsPanelHeight] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value.filter((session: any) => Array.isArray(session?.games) && session.games.length > 0):[]; } catch { return []; }
   });
@@ -910,6 +911,7 @@ export default function App() {
   // --- MODO DIOS IAN
   const [isIansBirthday, setIsIansBirthday] = useState(false);
   const [godMode, setGodMode] = useState(() => { try { return localStorage.getItem('pn-god-mode') === 'true'; } catch { return false; } });
+  const [godPlayer, setGodPlayer] = useState(() => { try { return localStorage.getItem('pn-god-player') || ''; } catch { return ''; } });
   const [godShields, setGodShields] = useState<string[]>([]);
   const [hasAskedIanBirthday, setHasAskedIanBirthday] = useState(false);
   const [showIanBirthdayPrompt, setShowIanBirthdayPrompt] = useState(false);
@@ -1030,7 +1032,7 @@ export default function App() {
       ? mainCanvasRefs.current[0]?.querySelector('.pn-stats-page.is-active') as HTMLElement | null
       : mainCanvasRefs.current[mainTabIndex];
     if (!activePage) return;
-    const measure = () => setMainCanvasHeight(Math.max(activePage.scrollHeight, 1));
+    const measure = () => { setMainCanvasHeight(Math.max(activePage.scrollHeight, 1)); if (mainTab === 'stats') setStatsPanelHeight(Math.max(activePage.scrollHeight, 1)); };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
@@ -1039,6 +1041,7 @@ export default function App() {
   }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort]);
 
   useEffect(() => { try { localStorage.setItem('pn-god-mode', String(godMode)); } catch {} }, [godMode]);
+  useEffect(() => { try { localStorage.setItem('pn-god-player', godPlayer); } catch {} }, [godPlayer]);
 
   useEffect(() => {
     // Una comprovació per cada arrencada real de l'app, independentment de la pestanya activa.
@@ -1503,30 +1506,31 @@ export default function App() {
 
   const chooseGodBox = (perk: any) => {
     if (perk.kind === 'wildcard') {
-      const target = players[Math.floor(Math.random() * players.length)];
+      const target = godPlayer;
       if (target) setGodShields(prev => [...prev, target]);
       perk = { ...perk, desc: `${target}: ${t('cancel·la la propera penalització que rebi')}` };
     } else if (perk.kind === 'penalty') {
-      const target = players[Math.floor(Math.random() * players.length)];
+      const targets = players.filter(player => player !== godPlayer);
+      const target = targets[Math.floor(Math.random() * targets.length)] || godPlayer;
       const amount = 1 + Math.floor(Math.random() * 3);
       if (target) processPenalty(target, amount);
       perk = { ...perk, desc: `${target}: ${amount} ${t('tragos')}` };
     } else if (perk.kind === 'action') {
-      const target = players[Math.floor(Math.random() * players.length)];
+      const target = godPlayer;
       perk = { ...perk, target, desc: `${target}: ${t(perk.desc)} · ${t('Si es rebutja, s’envien 2 tragos.')}` };
     }
     setActiveIanPerk(perk);
   };
 
   const rejectGodAction = () => {
-    const target = activeIanPerk?.target || players[Math.floor(Math.random() * players.length)];
+    const target = activeIanPerk?.target || godPlayer;
     if (target) processPenalty(target, 2);
     setShowIanBoxes(false);
     setActiveIanPerk(null);
   };
 
   const maybeTriggerGodMode = () => {
-    if (!godMode || showIanBoxes || Math.random() >= 0.18) return;
+    if (!godMode || !godPlayer || !players.includes(godPlayer) || showIanBoxes || Math.random() >= 0.18) return;
     triggerIanBoxes();
   };
 
@@ -3014,9 +3018,10 @@ export default function App() {
                 className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
             <div className="flex items-center justify-between gap-4 rounded-2xl border border-yellow-500/30 bg-yellow-950/20 p-4">
-              <div><p className="font-bold text-white">{t('Mode Déu')}</p><p className="text-xs text-gray-400">{t('Caixes aleatòries amb comodins, tragos i accions.')}</p></div>
-              <button type="button" role="switch" aria-checked={godMode} onClick={() => setGodMode(value => !value)}
+              <div className="min-w-0 flex-1"><p className="font-bold text-white">{t('Mode Déu')}</p><p className="text-xs text-gray-400">{t('Caixes aleatòries amb comodins, tragos i accions.')}</p></div>
+              <button type="button" role="switch" aria-checked={godMode} onClick={() => { setGodMode(value => !value); if (godMode) setGodPlayer(''); }}
                 className={godMode ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+              {godMode && <select aria-label={t('Jugador del Mode Déu')} value={godPlayer} onChange={event => setGodPlayer(event.target.value)} className="mt-3 w-full rounded-xl border border-yellow-500/30 bg-gray-900 p-3 text-sm text-white"><option value="">{t('Tria una persona')}</option>{players.map(player => <option key={player} value={player}>{player}</option>)}</select>}
             </div>
 
             <button type="button" onClick={() => { setShowGeneralSettings(false); setBackupMessage(''); setShowDataManagement(true); }} className="w-full rounded-2xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-left transition-colors hover:bg-cyan-900/40 active:scale-[.99]">
@@ -3143,7 +3148,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="pn-stats-viewport">
+            <div className="pn-stats-viewport" style={statsPanelHeight ? { height: `${statsPanelHeight}px` } : undefined}>
               <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 33.333333}%, 0, 0)` }}>
                 {(() => {
                   const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
