@@ -1,3 +1,9 @@
+## v2.2.4
+- Redesigned the God Mode setting card: the description now has full width, the switch is aligned in the header, and the player selector sits on its own row when enabled.
+- Tightened the Data Management modal with smaller storage metrics, reduced card spacing, and more compact backup/cloud actions.
+- Compact cloud comparison metrics and reduce vertical padding so the key information is easier to scan with less scrolling.
+- Kept scrolling available on short screens and for longer cloud/account states to avoid clipping content.
+
 ## v2.2.3
 - Reworked Statistics into a compact summary with dedicated buttons for the full Games and Players screens; removed the horizontal swipe carousel.
 - Removed the oversized empty statistics canvas and tightened page sizing to prevent excessive scrolling.
