@@ -188,3 +188,63 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 @media(prefers-reduced-motion:reduce){.pn-stats-page{will-change:auto}}
 @media(prefers-reduced-motion:reduce){.pn-stats-page .pn-stats-number{animation:none!important}}
 .pn-reduce-motion .pn-stats-page .pn-stats-number{animation:none!important}
+
+
+/* v2.2.2 — statistics and bottom navigation layout hardening */
+.pn-main-viewport{
+  height:auto !important;
+  min-height:calc(100dvh - var(--pn-safe-top) - var(--pn-safe-bottom) - 6.5rem);
+  overflow:visible;
+  contain:layout;
+}
+.pn-main-canvas{
+  align-items:stretch;
+}
+.pn-main-page{
+  min-height:calc(100dvh - var(--pn-safe-top) - var(--pn-safe-bottom) - 6.5rem);
+  height:auto;
+  overflow:visible;
+}
+.pn-main-page > .min-h-screen{
+  min-height:0 !important;
+  height:auto;
+  padding-bottom:calc(8.5rem + var(--pn-safe-bottom)) !important;
+}
+.pn-stats-viewport{
+  height:auto !important;
+  min-height:0;
+  overflow:visible;
+  contain:none;
+}
+.pn-stats-canvas{
+  align-items:stretch;
+}
+.pn-stats-page{
+  min-height:0;
+  height:auto;
+  overflow:visible;
+  overflow-wrap:anywhere;
+}
+.pn-bottom-nav{
+  bottom:calc(max(8px, env(safe-area-inset-bottom, 0px)) + var(--pn-safe-bottom, 0px));
+  padding-bottom:max(7px, env(safe-area-inset-bottom, 0px));
+  width:min(calc(100vw - 32px), 460px);
+}
+.pn-bottom-nav .pn-nav-item{
+  min-width:0;
+  padding-inline:2px;
+  white-space:normal;
+  text-align:center;
+}
+.pn-bottom-nav .pn-nav-item span{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  line-height:1.15;
+}
+@media(max-width:380px){
+  .pn-bottom-nav{gap:3px;padding:6px;}
+  .pn-nav-item{font-size:9px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .pn-main-canvas,.pn-stats-canvas,.pn-bottom-nav{scroll-behavior:auto;}
+}
