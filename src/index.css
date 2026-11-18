@@ -147,7 +147,7 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 
 
 /* v2.0.5c — estadístiques sense solapaments i desplegables animats */
-.pn-stats-viewport{position:relative;overflow:hidden;isolation:isolate;}
+ .pn-stats-viewport{position:relative;overflow:hidden;isolation:isolate;transition:height 260ms cubic-bezier(.22,1,.36,1);}
 .pn-stats-canvas{display:flex;flex-flow:row nowrap;width:300%;max-width:none;}
 .pn-stats-canvas>.pn-stats-page{display:block;box-sizing:border-box;flex:0 0 33.333333%;width:33.333333%;min-width:33.333333%;max-width:33.333333%;overflow-wrap:anywhere;}
 .pn-history-details-grid{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows 420ms cubic-bezier(.22,1,.36,1),opacity 260ms ease;}
