@@ -7,7 +7,12 @@ const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
     "Caixa": "Caja", "Obre una caixa": "Abre una caja", "Aplicar i continuar": "Aplicar y continuar", "Acceptar acció": "Aceptar acción",
     "Rebutjar i enviar 2 tragos": "Rechazar y enviar 2 tragos", "Si es rebutja, s’envien 2 tragos.": "Si se rechaza, se envían 2 tragos.",
     "Reparteix tragos": "Reparte tragos", "Comodí": "Comodín", "cancel·la la propera penalització que rebi": "cancela la próxima penalización que reciba", "tragos": "tragos", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Guarda este comodín y cancela una penalización que recibas.",
-    "Caixes aleatòries": "Cajas aleatorias"
+    "Caixes aleatòries": "Cajas aleatorias",
+    "Ver todos los juegos": "Ver todos los juegos",
+    "Ver jugadores": "Ver jugadores",
+    "Volver al resumen": "Volver al resumen",
+    "Ampliar más": "Ampliar más",
+    "Mostrar menos": "Mostrar menos"
   },
   ca: {
   "Ranking Etílico": "Rànquing de la sessió",
@@ -256,7 +261,12 @@ const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
   "Rebutjar i enviar 2 tragos": "Rebutjar i enviar 2 tragos", "Si es rebutja, s’envien 2 tragos.": "Si es rebutja, s’envien 2 tragos.",
   "Comodí": "Comodí", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Guarda aquest comodí i cancel·la una penalització que rebis.",
   "Entorn": "Entorn", "Intensitat de penalització": "Intensitat de penalització", "Criteri de victòria": "Criteri de victòria",
-  "Comprova la connexió i torna-ho a provar.": "Comprova la connexió i torna-ho a provar."
+  "Comprova la connexió i torna-ho a provar.": "Comprova la connexió i torna-ho a provar.",
+  "Ver todos los juegos": "Veure tots els jocs",
+  "Ver jugadores": "Veure jugadors",
+  "Volver al resumen": "Tornar al resum",
+  "Ampliar más": "Ampliar més",
+  "Mostrar menos": "Mostrar-ne menys"
 },
   en: {
   "Ranking Etílico": "Session leaderboard",
@@ -1351,5 +1361,10 @@ Object.assign(UI_TRANSLATIONS.en, {
   "las sesiones sin juegos no se guardan y puedes eliminar registros antiguos.": "sessions without games are skipped, and you can delete old records.",
   "transiciones más limpias al cambiar de pestaña.": "smoother transitions when changing tabs.",
   "nuevo icono con jarras de cerveza y el fondo de Party Night.": "a new icon with beer mugs and the Party Night background.",
-  "tarjeta más compacta para dejar más espacio libre en la pantalla.": "a more compact card that leaves more free space on screen."
+  "tarjeta más compacta para dejar más espacio libre en la pantalla.": "a more compact card that leaves more free space on screen.",
+  "Ver todos los juegos": "View all games",
+  "Ver jugadores": "View players",
+  "Volver al resumen": "Back to overview",
+  "Ampliar más": "Show more",
+  "Mostrar menos": "Show less"
 });
