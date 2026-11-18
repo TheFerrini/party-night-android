@@ -86,7 +86,7 @@ Plataforma| Android
 
 Género| Fluido *(vale fuera coñas juego tipo fiesta)*
 
-Versión actual| 2.1.0
+Versión actual| 2.2.0
 
 Idiomas de interfaz| Español, catalán e inglés
 
