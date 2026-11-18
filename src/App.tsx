@@ -3017,11 +3017,24 @@ export default function App() {
               <button type="button" role="switch" aria-checked={reduceMotion} onClick={() => setReduceMotion(value => !value)}
                 className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-2xl border border-yellow-500/30 bg-yellow-950/20 p-4">
-              <div className="min-w-0 flex-1"><p className="font-bold text-white">{t('Mode Déu')}</p><p className="text-xs text-gray-400">{t('Caixes aleatòries amb comodins, tragos i accions.')}</p></div>
-              <button type="button" role="switch" aria-checked={godMode} onClick={() => { setGodMode(value => !value); if (godMode) setGodPlayer(''); }}
-                className={godMode ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
-              {godMode && <select aria-label={t('Jugador del Mode Déu')} value={godPlayer} onChange={event => setGodPlayer(event.target.value)} className="mt-3 w-full rounded-xl border border-yellow-500/30 bg-gray-900 p-3 text-sm text-white"><option value="">{t('Tria una persona')}</option>{players.map(player => <option key={player} value={player}>{player}</option>)}</select>}
+            <div className="overflow-hidden rounded-2xl border border-yellow-500/30 bg-gradient-to-br from-yellow-950/35 via-gray-800/90 to-gray-900 p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10 text-yellow-300"><Crown size={21}/></span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-black text-white">{t('Mode Déu')}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-gray-400">{t('Caixes aleatòries amb comodins, tragos i accions.')}</p>
+                </div>
+                <button type="button" role="switch" aria-label={t('Mode Déu')} aria-checked={godMode} onClick={() => { setGodMode(value => !value); if (godMode) setGodPlayer(''); }}
+                  className={godMode ? "pn-switch is-on shrink-0" : "pn-switch shrink-0"}><span className="pn-switch-thumb"/></button>
+              </div>
+              {godMode && (
+                <div className="mt-4 border-t border-yellow-500/15 pt-3">
+                  <label className="mb-2 block text-[10px] font-black uppercase tracking-widest text-yellow-200">{t('Jugador del Mode Déu')}</label>
+                  <select aria-label={t('Jugador del Mode Déu')} value={godPlayer} onChange={event => setGodPlayer(event.target.value)} className="w-full rounded-xl border border-yellow-500/30 bg-gray-950/70 px-3 py-3 text-sm text-white outline-none focus:border-yellow-300">
+                    <option value="">{t('Tria una persona')}</option>{players.map(player => <option key={player} value={player}>{player}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
 
             <button type="button" onClick={() => { setShowGeneralSettings(false); setBackupMessage(''); setShowDataManagement(true); }} className="w-full rounded-2xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-left transition-colors hover:bg-cyan-900/40 active:scale-[.99]">
@@ -3033,8 +3046,8 @@ export default function App() {
         </div>
       </AnimatedModal>
       <AnimatedModal isOpen={showDataManagement} onClose={() => setShowDataManagement(false)} zIndex="z-[165]">
-        <div className="w-full max-w-md max-h-[86dvh] overflow-y-auto overscroll-contain rounded-3xl border border-cyan-500/30 bg-gray-900 p-6 shadow-2xl">
-          <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-cyan-500/30 bg-gray-900 p-4 shadow-2xl pn-compact-data-modal">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · v{APP_VERSION}</p><h2 className="text-2xl font-black text-white">{t('Gestión de datos')}</h2><p className="mt-1 text-xs text-gray-400">{t('Controla tus copias y el almacenamiento local.')}</p></div>
             <button type="button" onClick={() => setShowDataManagement(false)} aria-label="Cerrar" className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
@@ -3043,38 +3056,38 @@ export default function App() {
             const bytes = keys.reduce((total, key) => total + new Blob([key, localStorage.getItem(key) || '']).size, 0);
             const formatBytes = (value: number) => value < 1024 ? String(value) + ' B' : value < 1024 * 1024 ? (value / 1024).toFixed(1) + ' KB' : (value / (1024 * 1024)).toFixed(2) + ' MB';
             return (
-              <div className="mb-4 rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
-                <div className="mb-3 flex items-center gap-2"><HardDrive size={19} className="text-cyan-300"/><p className="font-black text-white">{t('Almacenamiento local')}</p><span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase text-emerald-300">{t('En este dispositivo')}</span></div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Espacio utilizado')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{formatBytes(bytes)}</p></div>
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Elementos guardados')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{keys.length}</p></div>
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Jugadores')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{players.length}</p></div>
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Sesiones guardadas')}</p><p className="mt-1 text-xl font-black text-white tabular-nums">{sessionHistory.length + (activeSession ? 1 : 0)}</p></div>
+              <div className="mb-3 rounded-2xl border border-gray-700 bg-gray-800/80 p-3">
+                <div className="mb-2 flex items-center gap-2"><HardDrive size={18} className="text-cyan-300"/><p className="font-black text-white">{t('Almacenamiento local')}</p><span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-1 text-[9px] font-black uppercase text-emerald-300">{t('En este dispositivo')}</span></div>
+                <div className="grid grid-cols-2 gap-2 pn-storage-metrics">
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Espacio utilizado')}</p><p className="mt-0.5 text-lg font-black text-white tabular-nums">{formatBytes(bytes)}</p></div>
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Elementos guardados')}</p><p className="mt-0.5 text-lg font-black text-white tabular-nums">{keys.length}</p></div>
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Jugadores')}</p><p className="mt-0.5 text-lg font-black text-white tabular-nums">{players.length}</p></div>
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Sesiones guardadas')}</p><p className="mt-0.5 text-lg font-black text-white tabular-nums">{sessionHistory.length + (activeSession ? 1 : 0)}</p></div>
                 </div>
-                <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('El tamaño es una estimación de los datos de Party Night guardados en el almacenamiento del navegador de este dispositivo.')}</p>
+                <p className="mt-2 text-[9px] leading-relaxed text-gray-500">{t('El tamaño es una estimación de los datos de Party Night guardados en el almacenamiento del navegador de este dispositivo.')}</p>
               </div>
             );
           })()}
-          <div className="mb-4 rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-4">
-            <div className="mb-3 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={18}/></div><div><p className="font-black text-white">{t('Copias de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
+          <div className="mb-3 rounded-2xl border border-cyan-500/30 bg-gray-800/80 p-3">
+            <div className="mb-2 flex items-center gap-2"><div className="rounded-xl bg-cyan-500/15 p-2 text-cyan-300"><History size={17}/></div><div><p className="font-black text-white">{t('Copias de seguridad')}</p><p className="text-xs text-gray-400">{t('Guarda jugadores, sesiones, historial y ajustes en un archivo.')}</p></div></div>
             <input id="pn-backup-file" className="hidden" type="file" accept=".json,application/json" onChange={(event)=>void importBackup(event)} />
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-3 text-xs font-black text-cyan-100 active:scale-[.98]"><Upload size={16}/> {t('Exportar datos')}</button>
-              <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-3 text-xs font-black text-purple-100 active:scale-[.98]"><Download size={16}/> {t('Importar datos')}</button>
+              <button type="button" onClick={()=>void exportBackup()} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-600/20 px-3 py-2.5 text-xs font-black text-cyan-100 active:scale-[.98]"><Upload size={16}/> {t('Exportar datos')}</button>
+              <button type="button" onClick={()=>document.getElementById('pn-backup-file')?.click()} className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-600/20 px-3 py-2.5 text-xs font-black text-purple-100 active:scale-[.98]"><Download size={16}/> {t('Importar datos')}</button>
             </div>
             {backupMessage&&<p role="status" className="mt-3 rounded-lg bg-gray-900 px-3 py-2 text-xs text-cyan-200">{backupMessage}</p>}
             <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('La copia incluye datos guardados en el dispositivo, incluidos nombres y resultados de las sesiones.')}</p>
           </div>
-          <button type="button" onClick={() => { setShowDataManagement(false); setCloudMessage(''); setShowCloudManagement(true); }} className="w-full rounded-2xl border border-violet-500/40 bg-violet-950/30 p-4 text-left transition-colors hover:bg-violet-900/40 active:scale-[.99]">
-            <span className="flex items-center gap-3"><span className="rounded-xl bg-violet-500/15 p-3 text-violet-300"><Cloud size={21}/></span><span className="min-w-0 flex-1"><span className="block font-black text-white">{t('Gestión en la nube')}</span><span className="mt-1 block text-xs text-gray-400">{t('Cuenta, sincronización, comparación y almacenamiento.')}</span></span><ChevronLeft size={18} className="rotate-180 text-violet-300"/></span>
+          <button type="button" onClick={() => { setShowDataManagement(false); setCloudMessage(''); setShowCloudManagement(true); }} className="w-full rounded-2xl border border-violet-500/40 bg-violet-950/30 p-3 text-left transition-colors hover:bg-violet-900/40 active:scale-[.99]">
+            <span className="flex items-center gap-3"><span className="rounded-xl bg-violet-500/15 p-2.5 text-violet-300"><Cloud size={19}/></span><span className="min-w-0 flex-1"><span className="block text-sm font-black text-white">{t('Gestión en la nube')}</span><span className="mt-0.5 block text-[10px] text-gray-400">{t('Cuenta, sincronización, comparación y almacenamiento.')}</span></span><ChevronLeft size={18} className="rotate-180 text-violet-300"/></span>
           </button>
-          <button type="button" onClick={() => { setShowDataManagement(false); setShowGeneralSettings(true); }} className="mt-5 w-full rounded-xl bg-gray-800 py-3 font-bold text-gray-200">{t('Volver a configuración')}</button>
+          <button type="button" onClick={() => { setShowDataManagement(false); setShowGeneralSettings(true); }} className="mt-3 w-full rounded-xl bg-gray-800 py-2.5 text-sm font-bold text-gray-200">{t('Volver a configuración')}</button>
         </div>
       </AnimatedModal>
 
       <AnimatedModal isOpen={showCloudManagement} onClose={() => setShowCloudManagement(false)} zIndex="z-[168]">
-        <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto overscroll-contain rounded-3xl border border-violet-500/30 bg-gray-900 p-5 shadow-2xl">
-          <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto overscroll-contain rounded-3xl border border-violet-500/30 bg-gray-900 p-4 shadow-2xl pn-compact-cloud-modal">
+          <div className="mb-3 flex items-start justify-between gap-3">
             <div><p className="text-[10px] font-black uppercase tracking-[.22em] text-violet-300">Party Night · Cloud</p><h2 className="text-2xl font-black text-white">{t('Gestión en la nube')}</h2><p className="mt-1 text-xs text-gray-400">{t('Sincroniza y compara los datos entre dispositivos.')}</p></div>
             <button type="button" onClick={() => setShowCloudManagement(false)} aria-label="Cerrar" className="rounded-xl bg-gray-800 p-2 text-gray-300"><X size={20}/></button>
           </div>
@@ -3087,15 +3100,15 @@ export default function App() {
               <button type="button" onClick={() => { setCloudAuthMode(cloudAuthMode === 'login' ? 'register' : 'login'); setCloudMessage(''); }} className="w-full py-2 text-xs font-bold text-violet-300">{t(cloudAuthMode === 'login' ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión')}</button>
             </form>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-emerald-500/25 bg-emerald-950/20 p-4"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400"/><p className="text-xs font-black uppercase tracking-widest text-emerald-300">{t('Cuenta conectada')}</p></div><p className="mt-2 break-all text-sm font-bold text-white">{cloudUser.email}</p><p className="mt-1 text-[10px] text-gray-400">{t('La copia está protegida por tu cuenta y solo tú tienes acceso.')}</p></div>
-              <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-4">
-                <div className="mb-3 flex items-center justify-between"><p className="font-black text-white">{t('Comparación de datos')}</p><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (cloudStatus === 'synced' ? "bg-emerald-500/15 text-emerald-300" : cloudStatus === 'conflict' ? "bg-amber-500/15 text-amber-300" : cloudStatus === 'error' ? "bg-red-500/15 text-red-300" : "bg-gray-700 text-gray-300")}>{t(cloudStatus === 'synced' ? 'Sincronizado' : cloudStatus === 'conflict' ? 'Conflicto' : cloudStatus === 'error' ? 'Error' : cloudStatus === 'syncing' ? 'Sincronizando' : cloudStatus === 'empty' ? 'Nube vacía' : 'Pendiente')}</span></div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Este dispositivo')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(getCloudByteSize(getPartyNightLocalSnapshot()))}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(getPartyNightLocalSnapshot()).length} {t('elementos')}</p><p className="mt-1 text-[9px] leading-relaxed text-gray-500">{getCloudSnapshotStats(getPartyNightLocalSnapshot()).players} {t('jugadores')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).sessions} {t('sesiones')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).games} {t('partidas')}</p></div>
-                  <div className="rounded-xl bg-gray-900 p-3"><p className="text-[9px] font-bold uppercase tracking-widest text-gray-500">{t('Copia en la nube')}</p><p className="mt-1 text-xl font-black tabular-nums text-white">{formatCloudBytes(cloudRemoteBytes)}</p><p className="mt-1 text-[10px] text-gray-500">{Object.keys(cloudRemoteSnapshot || {}).length} {t('elementos')}</p><p className="mt-1 text-[9px] leading-relaxed text-gray-500">{getCloudSnapshotStats(cloudRemoteSnapshot).players} {t('jugadores')} · {getCloudSnapshotStats(cloudRemoteSnapshot).sessions} {t('sesiones')} · {getCloudSnapshotStats(cloudRemoteSnapshot).games} {t('partidas')}</p></div>
+            <div className="space-y-3">
+              <div className="rounded-2xl border border-emerald-500/25 bg-emerald-950/20 p-3"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400"/><p className="text-xs font-black uppercase tracking-widest text-emerald-300">{t('Cuenta conectada')}</p></div><p className="mt-2 break-all text-sm font-bold text-white">{cloudUser.email}</p><p className="mt-1 text-[10px] text-gray-400">{t('La copia está protegida por tu cuenta y solo tú tienes acceso.')}</p></div>
+              <div className="rounded-2xl border border-gray-700 bg-gray-800/80 p-3">
+                <div className="mb-2 flex items-center justify-between"><p className="font-black text-white">{t('Comparación de datos')}</p><span className={"rounded-full px-2 py-1 text-[9px] font-black uppercase " + (cloudStatus === 'synced' ? "bg-emerald-500/15 text-emerald-300" : cloudStatus === 'conflict' ? "bg-amber-500/15 text-amber-300" : cloudStatus === 'error' ? "bg-red-500/15 text-red-300" : "bg-gray-700 text-gray-300")}>{t(cloudStatus === 'synced' ? 'Sincronizado' : cloudStatus === 'conflict' ? 'Conflicto' : cloudStatus === 'error' ? 'Error' : cloudStatus === 'syncing' ? 'Sincronizando' : cloudStatus === 'empty' ? 'Nube vacía' : 'Pendiente')}</span></div>
+                <div className="grid grid-cols-2 gap-2 pn-cloud-metrics">
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Este dispositivo')}</p><p className="mt-0.5 text-lg font-black tabular-nums text-white">{formatCloudBytes(getCloudByteSize(getPartyNightLocalSnapshot()))}</p><p className="mt-0.5 text-[9px] text-gray-500">{Object.keys(getPartyNightLocalSnapshot()).length} {t('elementos')}</p><p className="mt-0.5 text-[8px] leading-relaxed text-gray-500">{getCloudSnapshotStats(getPartyNightLocalSnapshot()).players} {t('jugadores')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).sessions} {t('sesiones')} · {getCloudSnapshotStats(getPartyNightLocalSnapshot()).games} {t('partidas')}</p></div>
+                  <div className="rounded-xl bg-gray-900 px-3 py-2"><p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">{t('Copia en la nube')}</p><p className="mt-0.5 text-lg font-black tabular-nums text-white">{formatCloudBytes(cloudRemoteBytes)}</p><p className="mt-0.5 text-[9px] text-gray-500">{Object.keys(cloudRemoteSnapshot || {}).length} {t('elementos')}</p><p className="mt-0.5 text-[8px] leading-relaxed text-gray-500">{getCloudSnapshotStats(cloudRemoteSnapshot).players} {t('jugadores')} · {getCloudSnapshotStats(cloudRemoteSnapshot).sessions} {t('sesiones')} · {getCloudSnapshotStats(cloudRemoteSnapshot).games} {t('partidas')}</p></div>
                 </div>
-                <p className="mt-3 text-[10px] leading-relaxed text-gray-500">{t('El tamaño es una estimación del JSON de la aplicación, no del disco total utilizado por Supabase.')}</p>
+                <p className="mt-2 text-[9px] leading-relaxed text-gray-500">{t('El tamaño es una estimación del JSON de la aplicación, no del disco total utilizado por Supabase.')}</p>
                 {cloudRemoteUpdatedAt && <p className="mt-2 text-[10px] text-gray-500">{t('Última actualización en la nube')}: {new Date(cloudRemoteUpdatedAt).toLocaleString()}</p>}
               </div>
               {cloudStatus === 'conflict' && <div className="rounded-2xl border border-amber-500/40 bg-amber-950/20 p-4"><p className="font-black text-amber-200">{t('Las dos copias tienen cambios diferentes')}</p><p className="mt-1 text-xs leading-relaxed text-gray-300">{t('Para evitar perder partidas, la sincronización automática se detiene hasta que elijas qué copia quieres conservar.')}</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={cloudBusy} onClick={() => void useLocalCloudCopy()} className="rounded-xl bg-violet-600 px-3 py-3 text-xs font-black text-white disabled:opacity-50">{t('Conservar este dispositivo')}</button><button type="button" disabled={cloudBusy || !cloudRemoteSnapshot} onClick={useRemoteCloudCopy} className="rounded-xl bg-gray-700 px-3 py-3 text-xs font-black text-white disabled:opacity-50">{t('Restaurar desde la nube')}</button></div></div>}
@@ -3106,7 +3119,7 @@ export default function App() {
             </div>
           )}
           {cloudMessage && <p role="status" className="mt-4 rounded-xl border border-gray-700 bg-gray-800 px-3 py-3 text-xs leading-relaxed text-gray-200">{cloudMessage}</p>}
-          <button type="button" onClick={() => { setShowCloudManagement(false); setShowDataManagement(true); }} className="mt-4 w-full rounded-xl bg-gray-800 py-3 text-xs font-bold text-gray-300">{t('Volver a gestión de datos')}</button>
+          <button type="button" onClick={() => { setShowCloudManagement(false); setShowDataManagement(true); }} className="mt-3 w-full rounded-xl bg-gray-800 py-2.5 text-xs font-bold text-gray-300">{t('Volver a gestión de datos')}</button>
         </div>
       </AnimatedModal>
 
