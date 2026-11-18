@@ -909,6 +909,8 @@ export default function App() {
 
   // --- MODO DIOS IAN
   const [isIansBirthday, setIsIansBirthday] = useState(false);
+  const [godMode, setGodMode] = useState(() => { try { return localStorage.getItem('pn-god-mode') === 'true'; } catch { return false; } });
+  const [godShields, setGodShields] = useState<string[]>([]);
   const [hasAskedIanBirthday, setHasAskedIanBirthday] = useState(false);
   const [showIanBirthdayPrompt, setShowIanBirthdayPrompt] = useState(false);
   const [ianPromptPhase2, setIanPromptPhase2] = useState(false);
@@ -1024,7 +1026,9 @@ export default function App() {
 
   useEffect(() => {
     if (screen !== 'setup') return;
-    const activePage = mainCanvasRefs.current[mainTabIndex];
+    const activePage = mainTab === 'stats'
+      ? mainCanvasRefs.current[0]?.querySelector('.pn-stats-page.is-active') as HTMLElement | null
+      : mainCanvasRefs.current[mainTabIndex];
     if (!activePage) return;
     const measure = () => setMainCanvasHeight(Math.max(activePage.scrollHeight, 1));
     measure();
@@ -1032,7 +1036,9 @@ export default function App() {
     const observer = new ResizeObserver(measure);
     observer.observe(activePage);
     return () => observer.disconnect();
-  }, [screen, mainTabIndex, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId]);
+  }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort]);
+
+  useEffect(() => { try { localStorage.setItem('pn-god-mode', String(godMode)); } catch {} }, [godMode]);
 
   useEffect(() => {
     // Una comprovació per cada arrencada real de l'app, independentment de la pestanya activa.
@@ -1214,6 +1220,11 @@ export default function App() {
   };
 
   const processPenalty = (player, tragosCount = 1) => {
+    if (godShields.includes(player)) {
+      setGodShields(prev => prev.filter(name => name !== player));
+      recordSessionEvent('wildcard-used', { player });
+      return;
+    }
     const amount = Math.max(0, Number(tragosCount) || 0);
     setDrinkCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
     setCurrentGamePenaltyCounts(prev => ({ ...prev, [player]: (prev[player] || 0) + amount }));
@@ -1480,10 +1491,43 @@ export default function App() {
   };
 
   const triggerIanBoxes = () => {
-    const shuffled = [...IAN_PERKS].sort(() => 0.5 - Math.random());
-    setIanBoxOptions(shuffled.slice(0, 3));
+    const options = [
+      { kind: 'wildcard', title: 'Comodí', desc: 'Guarda aquest comodí i cancel·la una penalització que rebis.' },
+      { kind: 'penalty', title: 'Reparteix tragos', desc: 'Envia una penalització aleatòria a un jugador.' },
+      ...IAN_PERKS.map(perk => ({ kind: 'action', ...perk }))
+    ].sort(() => Math.random() - 0.5);
+    setIanBoxOptions(options.slice(0, 3));
     setShowIanBoxes(true);
     setActiveIanPerk(null);
+  };
+
+  const chooseGodBox = (perk: any) => {
+    if (perk.kind === 'wildcard') {
+      const target = players[Math.floor(Math.random() * players.length)];
+      if (target) setGodShields(prev => [...prev, target]);
+      perk = { ...perk, desc: `${target}: ${t('cancel·la la propera penalització que rebi')}` };
+    } else if (perk.kind === 'penalty') {
+      const target = players[Math.floor(Math.random() * players.length)];
+      const amount = 1 + Math.floor(Math.random() * 3);
+      if (target) processPenalty(target, amount);
+      perk = { ...perk, desc: `${target}: ${amount} ${t('tragos')}` };
+    } else if (perk.kind === 'action') {
+      const target = players[Math.floor(Math.random() * players.length)];
+      perk = { ...perk, target, desc: `${target}: ${t(perk.desc)} · ${t('Si es rebutja, s’envien 2 tragos.')}` };
+    }
+    setActiveIanPerk(perk);
+  };
+
+  const rejectGodAction = () => {
+    const target = activeIanPerk?.target || players[Math.floor(Math.random() * players.length)];
+    if (target) processPenalty(target, 2);
+    setShowIanBoxes(false);
+    setActiveIanPerk(null);
+  };
+
+  const maybeTriggerGodMode = () => {
+    if (!godMode || showIanBoxes || Math.random() >= 0.18) return;
+    triggerIanBoxes();
   };
 
   const startGameYONunca = () => {
@@ -1577,9 +1621,7 @@ export default function App() {
     // MODO REY IAN INVASION
     const nextCount = ynTurnCount + 1;
     setYnTurnCount(nextCount);
-    if (isIansBirthday && false && nextCount % Math.max(2, players.length) === 0) {
-       triggerIanBoxes();
-    }
+    maybeTriggerGodMode();
     
     generateYNPhrase(true);
   };
@@ -1673,6 +1715,7 @@ export default function App() {
 
       // MODO REY IAN INVASION
       if (players[nextIdx] === 'IAN' && isIansBirthday) triggerIanBoxes();
+      else maybeTriggerGodMode();
     }, 250);
   };
 
@@ -1689,9 +1732,7 @@ export default function App() {
     // MODO REY IAN INVASION (cada 2 rondas)
     const nextCount = bombaRoundCount + 1;
     setBombaRoundCount(nextCount);
-    if (isIansBirthday && false && nextCount % 2 === 0) {
-        triggerIanBoxes();
-    }
+    maybeTriggerGodMode();
   };
 
   const passBombToNextPlayer = () => {
@@ -1703,7 +1744,7 @@ export default function App() {
 
   useEffect(() => {
     let timer;
-    if (screen === 'game-bomba') {
+    if (screen === 'game-bomba' && !showIanBoxes) {
       if (bombaState.phase === 'countdown' && bombaState.timeLeft > 0) {
         timer = setTimeout(() => setBombaState(prev => ({ ...prev, timeLeft: prev.timeLeft - 1 })), 1000);
       } else if (bombaState.phase === 'countdown' && bombaState.timeLeft === 0) {
@@ -1724,7 +1765,7 @@ export default function App() {
       }
     }
     return () => clearTimeout(timer);
-  }, [bombaState, screen, bombaConfig]);
+  }, [bombaState, screen, bombaConfig, showIanBoxes]);
 
   // 4. DUELO 1V1
   const startDuelo = () => {
@@ -1746,9 +1787,7 @@ export default function App() {
      // MODO REY IAN INVASION (cada 3 rondas)
      const nextCount = dueloRoundCount + 1;
      setDueloRoundCount(nextCount);
-     if (isIansBirthday && false && nextCount % 3 === 0) {
-         triggerIanBoxes();
-     }
+      maybeTriggerGodMode();
   };
 
   const resolveDuelo = (loser) => {
@@ -1780,9 +1819,7 @@ export default function App() {
      // MODO REY IAN INVASION (cada 2 rondas)
      const nextCount = encuestaRoundCount + 1;
      setEncuestaRoundCount(nextCount);
-     if (isIansBirthday && false && nextCount % 2 === 0) {
-         triggerIanBoxes();
-     }
+      maybeTriggerGodMode();
   };
 
   const registerVote = (votedPlayer) => {
@@ -2476,8 +2513,8 @@ export default function App() {
               <p className="text-gray-400 text-sm mb-6 relative z-10">{t("Es tu turno. Elige un regalo y descubre tu poder divino.")}</p>
               <div className="flex gap-3 justify-center mb-4 relative z-10">
                 {ianBoxOptions.map((perk, idx) => (
-                  <button key={idx} onClick={() => setActiveIanPerk(perk)} className="flex-1 aspect-square bg-gray-800 hover:bg-gray-700 border-2 border-yellow-500/50 rounded-2xl flex items-center justify-center shadow-lg transform transition-all hover:-translate-y-2 hover:shadow-yellow-500/40 group">
-                    <Gift size={40} className="text-yellow-400 group-hover:scale-110 transition-transform" />
+                  <button key={idx} onClick={() => chooseGodBox(perk)} aria-label={t('Obre una caixa')} className="flex-1 aspect-square bg-gray-800 hover:bg-gray-700 border-2 border-yellow-500/50 rounded-2xl flex flex-col items-center justify-center gap-2 shadow-lg transform transition-all hover:-translate-y-1 group">
+                    <Gift size={32} className="text-yellow-400 group-hover:scale-110 transition-transform" /><span className="text-[10px] font-bold text-yellow-100">{t('Caixa')} {idx + 1}</span>
                   </button>
                 ))}
               </div>
@@ -2486,12 +2523,17 @@ export default function App() {
             <div className="animate-expand relative z-10">
               <p className="text-yellow-400 font-bold uppercase tracking-widest text-xs mb-2 mt-4">{t("Has desbloqueado:")}</p>
               <div className="bg-gray-800 border border-yellow-500/50 rounded-2xl p-5 mb-6 shadow-inner">
-                <h3 className="text-xl font-black text-white mb-2">{activeIanPerk.title}</h3>
-                <p className="text-gray-300 italic text-sm">{activeIanPerk.desc}</p>
+                <h3 className="text-lg font-black text-white mb-2">{t(activeIanPerk.title)}</h3>
+                <p className="text-gray-300 italic text-sm leading-relaxed">{t(activeIanPerk.desc)}</p>
               </div>
-              <button onClick={() => setShowIanBoxes(false)} className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-black rounded-xl uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                Aplicar y Seguir
-              </button>
+              {activeIanPerk.kind === 'action' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setShowIanBoxes(false)} className="rounded-xl border border-gray-600 bg-gray-800 px-3 py-3 text-xs font-black uppercase text-white">{t('Acceptar acció')}</button>
+                  <button onClick={rejectGodAction} className="rounded-xl bg-yellow-500 px-3 py-3 text-xs font-black uppercase text-gray-900">{t('Rebutjar i enviar 2 tragos')}</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowIanBoxes(false)} className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-black rounded-xl uppercase tracking-widest shadow-lg active:scale-95 transition-all">{t('Aplicar i continuar')}</button>
+              )}
             </div>
           )}
         </div>
@@ -2692,8 +2734,8 @@ export default function App() {
       </AnimatedModal>
 
       {/* MODAL DE NOTAS DEL PARCHE */}
-      <AnimatedModal isOpen={isChangelogOpen} onClose={() => setIsChangelogOpen(false)} zIndex="z-[50]">
-        <div className="bg-gray-800 p-6 rounded-3xl shadow-2xl border border-gray-700 w-full max-w-lg relative flex flex-col max-h-[85vh] z-10">
+      <AnimatedModal isOpen={isChangelogOpen} onClose={() => setIsChangelogOpen(false)} zIndex="z-[150]">
+        <div className="bg-gray-800 p-6 pb-[calc(1.5rem+var(--pn-safe-bottom))] rounded-3xl shadow-2xl border border-gray-700 w-full max-w-lg relative flex flex-col max-h-[calc(85dvh-var(--pn-safe-bottom))] z-10">
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-700 shrink-0">
             <h2 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500 flex items-center gap-2">
               <History size={24} className="text-emerald-400" /> Historial de Cambios
@@ -2715,6 +2757,8 @@ export default function App() {
           <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-4">
             <div className="relative pl-4 border-l-2 border-emerald-500">
               <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-4 border-gray-800"></div>
+              <h3 className="text-lg font-black text-white mb-1">v2.2.0 (Mode Déu & Interfície adaptativa)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Mode Déu configurable amb tres caixes aleatòries, comodins, penalitzacions i accions rebutjables.<br/>- Estadístiques adaptades a l’alçada de cada subapartat i diàlegs per sobre de la navegació.<br/>- Tipografia dels reptes més compacta, millores de traducció i icona amb gerres més petites.</p>
               <h3 className="text-lg font-black text-white mb-1">v2.1.0 (History, Motion & Android Icon)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Historial:")}</b> {t("las sesiones sin juegos no se guardan y puedes eliminar registros antiguos.")}<br/>
@@ -2736,6 +2780,8 @@ export default function App() {
                 - <b>{t("Núvol:")}</b> {t("sincronització en desenvolupament, disponible pròximament.")}<br/>
                 - <b>{t("Actualitzacions:")}</b> {t("comprovació automàtica a cada arrencada i avís sempre que hi hagi una versió nova.")}
               </p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.6 (Expanded Party Deck)</h3>
+              <p className="text-sm text-gray-400 mb-4">- 200 frases, preguntes i proves noves per als jocs.<br/>- Versió estable 2.0.6 i compatibilitat de versions Android.</p>
               <h3 className="text-lg font-black text-white mb-1">v2.0.5c (Smooth Canvas & Count-up)</h3>
               <p className="text-sm text-gray-400 mb-4">
                 - <b>{t("Careta:")}</b> {t("la careta animada vuelve a mostrarse al abrir la app.")}<br/>
@@ -2743,6 +2789,16 @@ export default function App() {
                 - <b>{t("Interfaz:")}</b> {t("los textos de la app se traducen al español, catalán e inglés; los retos mantienen su idioma original.")}<br/>
                 - <b>{t("Actualizaciones:")}</b> {t("el APK se instala directamente, sin desinstalar la versión anterior.")}.
               </p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.5b (Full Canvas Navigation)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Navegació amb lliscament entre les tres seccions principals.<br/>- Historial animat i alçada del llenç adaptable al contingut.</p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.5 (Smooth Canvas & Count-up)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Transicions suaus a Estadístiques i comptadors animats.<br/>- Respecta la preferència de reducció de moviment.</p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.3 (Full UI Language)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Català, castellà i anglès a tota la interfície.<br/>- Castellà com a idioma per defecte i actualització Android directa.</p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.2b (Localization hotfix)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Corregida una referència de traduccions que impedia iniciar l'aplicació.</p>
+              <h3 className="text-lg font-black text-white mb-1">v2.0.2 (Boot & Update Fix)</h3>
+              <p className="text-sm text-gray-400 mb-4">- Rutes Android corregides, diagnòstic d'arrencada i clau de signatura persistent.</p>
               <h3 className="text-lg font-black text-white mb-1">v1.68.0 (First Round Edition)</h3>
               <p className="text-sm text-gray-400">
                 - <b>{t("Careta animada:")}</b> {t("nova entrada Party Night amb brindis, confeti i opció de saltar-la.")}<br/>
@@ -2956,6 +3012,11 @@ export default function App() {
               <div><p className="font-bold text-white">{t('Reduir animacions')}</p><p className="text-xs text-gray-400">{t('Menys moviment en dispositius lents.')}</p></div>
               <button type="button" role="switch" aria-checked={reduceMotion} onClick={() => setReduceMotion(value => !value)}
                 className={reduceMotion ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-yellow-500/30 bg-yellow-950/20 p-4">
+              <div><p className="font-bold text-white">{t('Mode Déu')}</p><p className="text-xs text-gray-400">{t('Caixes aleatòries amb comodins, tragos i accions.')}</p></div>
+              <button type="button" role="switch" aria-checked={godMode} onClick={() => setGodMode(value => !value)}
+                className={godMode ? "pn-switch is-on" : "pn-switch"}><span className="pn-switch-thumb"/></button>
             </div>
 
             <button type="button" onClick={() => { setShowGeneralSettings(false); setBackupMessage(''); setShowDataManagement(true); }} className="w-full rounded-2xl border border-cyan-500/40 bg-cyan-950/30 p-4 text-left transition-colors hover:bg-cyan-900/40 active:scale-[.99]">
@@ -3987,7 +4048,7 @@ export default function App() {
                        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-5 py-1.5 rounded-full border-2 shadow-lg font-black uppercase tracking-widest text-[10px] bg-teal-600 text-white border-teal-400">
                           EL DESAFÍO
                        </div>
-                       <p className="text-2xl font-black leading-tight">{dueloState.challenge || ''}</p>
+                       <p className="text-lg sm:text-xl font-black leading-snug break-words">{dueloState.challenge || ''}</p>
                     </div>
 
                     <div className="w-full flex flex-col gap-3 animate-slide-up">
@@ -4076,7 +4137,7 @@ export default function App() {
                        <span className="text-xs font-bold text-gray-300 bg-gray-900/50 px-3 py-1 rounded-full uppercase tracking-widest block mb-2">{t("Votando:")} <span className="text-pink-400">{players[encuestaState.currentVoterIndex]}</span></span>
                     </div>
                     <div className="bg-gray-800/90 border-2 border-pink-500/50 shadow-[0_0_30px_rgba(236,72,153,0.2)] p-6 rounded-3xl w-full text-center mb-6">
-                       <p className="text-2xl font-black leading-tight text-white">{encuestaState.question || ''}</p>
+                       <p className="text-lg sm:text-xl font-black leading-snug break-words text-white">{encuestaState.question || ''}</p>
                     </div>
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-widest w-full text-left mb-3 bg-gray-900/50 pl-2 rounded">{t("Elige a alguien en secreto:")}</p>
                     <div className="w-full flex flex-col gap-2 overflow-y-auto max-h-[40vh] custom-scrollbar pr-2">
