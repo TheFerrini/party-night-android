@@ -1,3 +1,7 @@
+## v2.2.1
+- Fixed Statistics panel sizing so each section fits its content without clipping.
+- God Mode now assigns box benefits to a single selected player.
+
 # Changelog — Party Night
 
 ## [2.2.0] — 2026-11-18 · Mode Déu & interfície adaptativa
