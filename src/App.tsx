@@ -781,7 +781,6 @@ export default function App() {
   const mainTabIndex = mainTab === 'stats' ? 0 : mainTab === 'play' ? 1 : 2;
   const mainCanvasRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [mainCanvasHeight, setMainCanvasHeight] = useState(0);
-  const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value.filter((session: any) => Array.isArray(session?.games) && session.games.length > 0):[]; } catch { return []; }
   });
@@ -1039,7 +1038,7 @@ export default function App() {
     const observer = new ResizeObserver(measure);
     observer.observe(activePage);
     return () => observer.disconnect();
-  }, [screen, mainCanvasIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort, showAllHistory]);
+  }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort, showAllHistory]);
 
   useEffect(() => { try { localStorage.setItem('pn-god-mode', String(godMode)); } catch {} }, [godMode]);
   useEffect(() => { try { localStorage.setItem('pn-god-player', godPlayer); } catch {} }, [godPlayer]);
