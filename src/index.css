@@ -248,3 +248,43 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
 @media(prefers-reduced-motion:reduce){
   .pn-main-canvas,.pn-stats-canvas,.pn-bottom-nav{scroll-behavior:auto;}
 }
+
+
+/* v2.2.3 — compact screens, no horizontal stats carousel, expandable history */
+.pn-main-viewport{
+  min-height:0 !important;
+  height:auto;
+  overflow:visible;
+  contain:layout;
+}
+.pn-main-page{
+  min-height:0 !important;
+}
+.pn-main-page > .min-h-screen{
+  min-height:0 !important;
+  height:auto;
+}
+.pn-stats-viewport{
+  height:auto !important;
+  overflow:visible;
+  contain:none;
+}
+.pn-stats-content{
+  display:block;
+  width:100%;
+  min-width:0;
+}
+.pn-bottom-nav{
+  padding:5px !important;
+  gap:4px !important;
+  border-radius:22px !important;
+}
+.pn-bottom-nav .pn-nav-item{
+  min-height:48px !important;
+  gap:3px !important;
+  padding-block:3px !important;
+}
+.pn-bottom-nav .pn-nav-indicator{
+  top:5px;
+  bottom:5px;
+}

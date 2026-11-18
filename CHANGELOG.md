@@ -1,3 +1,9 @@
+## v2.2.3
+- Reworked Statistics into a compact summary with dedicated buttons for the full Games and Players screens; removed the horizontal swipe carousel.
+- Removed the oversized empty statistics canvas and tightened page sizing to prevent excessive scrolling.
+- Reduced the height and padding of the bottom navigation.
+- Added an “Ampliar más” control to reveal the complete session history on the same screen, with an option to collapse it again.
+
 ## v2.2.2
 - Fixed Statistics content clipping by removing stale fixed-height constraints and allowing each active section to size to its content.
 - Added bottom safe-area and navigation clearance so player rows and long lists remain reachable.

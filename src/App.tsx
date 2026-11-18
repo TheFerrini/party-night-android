@@ -781,8 +781,6 @@ export default function App() {
   const mainTabIndex = mainTab === 'stats' ? 0 : mainTab === 'play' ? 1 : 2;
   const mainCanvasRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [mainCanvasHeight, setMainCanvasHeight] = useState(0);
-  const [statsCanvasIndex, setStatsCanvasIndex] = useState(0);
-  const [statsPanelHeight, setStatsPanelHeight] = useState(0);
   const [sessionHistory, setSessionHistory] = useState(() => {
     try { const value=JSON.parse(localStorage.getItem('pn-v2-sessions')||'[]'); return Array.isArray(value)?value.filter((session: any) => Array.isArray(session?.games) && session.games.length > 0):[]; } catch { return []; }
   });
@@ -799,6 +797,7 @@ export default function App() {
     try { return (localStorage.getItem('pn-winner-mode') as 'least' | 'most') || 'least'; } catch { return 'least'; }
   });
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [sessionToDeleteId, setSessionToDeleteId] = useState<string | null>(null);
   const [showGeneralSettings, setShowGeneralSettings] = useState(false);
   const [showDataManagement, setShowDataManagement] = useState(false);
@@ -1028,32 +1027,18 @@ export default function App() {
 
   useEffect(() => {
     if (screen !== 'setup') return;
-    const activePage = mainTab === 'stats'
-      ? mainCanvasRefs.current[0]?.querySelector('.pn-stats-page.is-active') as HTMLElement | null
-      : mainCanvasRefs.current[mainTabIndex];
+    const activePage = mainCanvasRefs.current[mainTabIndex];
     if (!activePage) return;
-
-    // Measure the actual page and its visible statistics panel. The statistics
-    // viewport sits below the title and tab controls, so it must not inherit
-    // the height of the whole stats page (or it will clip the page content).
-    const statsViewport = mainTab === 'stats'
-      ? activePage.closest('.pn-main-page')?.querySelector('.pn-stats-viewport') as HTMLElement | null
-      : null;
     const measure = () => {
       const pageHeight = Math.ceil(Math.max(activePage.scrollHeight, activePage.getBoundingClientRect().height, 1));
       setMainCanvasHeight(pageHeight);
-      if (statsViewport) {
-        const panelHeight = Math.ceil(Math.max(activePage.scrollHeight, activePage.getBoundingClientRect().height, 1));
-        setStatsPanelHeight(panelHeight);
-      }
     };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     observer.observe(activePage);
-    if (statsViewport) observer.observe(statsViewport);
     return () => observer.disconnect();
-  }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort]);
+  }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort, showAllHistory]);
 
   useEffect(() => { try { localStorage.setItem('pn-god-mode', String(godMode)); } catch {} }, [godMode]);
   useEffect(() => { try { localStorage.setItem('pn-god-player', godPlayer); } catch {} }, [godPlayer]);
@@ -3144,27 +3129,15 @@ export default function App() {
         <div className="pn-main-viewport" style={{ height: mainCanvasHeight > 0 ? `${mainCanvasHeight}px` : undefined }}>
           <div className="pn-main-canvas" style={{ transform: `translate3d(-${mainTabIndex * 33.333333}%, 0, 0)` }}>
             <div className="pn-main-page" ref={(node) => { mainCanvasRefs.current[0] = node; }}>
-        <div className="min-h-screen px-4 pt-6 pb-28 text-white">
+        <div className="min-h-0 px-4 pt-6 pb-28 text-white">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-5">
               <p className="text-[10px] font-black uppercase tracking-[.22em] text-cyan-300">Party Night · v{APP_VERSION}</p>
               <h1 className="text-3xl font-black">{t('Estadístiques')}</h1>
               <p className="text-sm text-gray-400">{t('Tot el que ha passat a les vostres sessions.')}</p>
             </div>
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {[
-                { selected: statisticsPage === 'overview', label: 'Resum', page: 'overview' },
-                { selected: statisticsPage === 'games', label: 'Jocs', page: 'games' },
-                { selected: statisticsPage === 'players', label: 'Jugadors', page: 'players' }
-              ].map((item, index) => (
-                <button key={item.page} onClick={() => { setStatisticsPage(item.page as any); setStatsCanvasIndex(index); setSelectedPlayerProfile(null); }}
-                  className={item.selected ? "rounded-xl border border-cyan-400 bg-cyan-500/15 px-2 py-3 text-xs font-black uppercase text-cyan-200" : "rounded-xl border border-gray-700 bg-gray-800 px-2 py-3 text-xs font-black uppercase text-gray-400"}>
-                  {t(item.label)}
-                </button>
-              ))}
-            </div>
             <div className="pn-stats-viewport">
-              <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 33.333333}%, 0, 0)` }}>
+              <div className="pn-stats-content">
                 {(() => {
                   const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
               const allGames = allSessions.flatMap((session: any) => session.games || []);
@@ -3300,11 +3273,26 @@ export default function App() {
                 </div>
               );
               return (
-                <>
-                  <div key="overview" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 0 ? "is-active" : "")}>{overviewPanel}</div>
-                  <div key="games" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 1 ? "is-active" : "")}>{gamesPanel}</div>
-                  <div key="players" className={"pn-stats-page " + (mainTab === 'stats' && statsCanvasIndex === 2 ? "is-active" : "")}>{playersPanel}</div>
-                </>
+                <div className="space-y-4">
+                  {statisticsPage === 'overview' ? (
+                    <>
+                      {overviewPanel}
+                      <div className="grid grid-cols-2 gap-3">
+                        <button onClick={() => setStatisticsPage('games')} className="flex items-center justify-between gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4 text-left font-black text-cyan-200">
+                          <span>{t('Ver todos los juegos')}</span><ArrowRight size={17}/>
+                        </button>
+                        <button onClick={() => { setStatisticsPage('players'); setSelectedPlayerProfile(null); }} className="flex items-center justify-between gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4 text-left font-black text-cyan-200">
+                          <span>{t('Ver jugadores')}</span><ArrowRight size={17}/>
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => { setStatisticsPage('overview'); setSelectedPlayerProfile(null); }} className="inline-flex items-center gap-2 rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-xs font-black uppercase text-cyan-300">← {t('Volver al resumen')}</button>
+                      {statisticsPage === 'games' ? gamesPanel : playersPanel}
+                    </>
+                  )}
+                </div>
               );
                 })()}
               </div>
@@ -3377,7 +3365,7 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-3">
-                {sessionHistory.map((session: any, index: number) => (
+                {sessionHistory.slice(0, showAllHistory ? sessionHistory.length : 5).map((session: any, index: number) => (
                   <div key={session.id} className={`pn-history-session overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/90 ${mainTab === 'history' ? 'is-active' : ''}`} style={{ animationDelay: `${Math.min(index, 7) * 65}ms` }}>
                     <div className="flex items-start gap-2 p-4">
                     <button onClick={() => setExpandedSessionId(expandedSessionId === session.id ? null : session.id)} className="min-w-0 flex-1 text-left">
@@ -3446,6 +3434,11 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+                {sessionHistory.length > 5 && (
+                  <button onClick={() => setShowAllHistory(value => !value)} className="w-full rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 text-xs font-black uppercase tracking-wider text-cyan-200">
+                    {showAllHistory ? t('Mostrar menos') : `${t('Ampliar más')} · ${sessionHistory.length - 5}`}
+                  </button>
+                )}
               </div>
             )}
           </div>
