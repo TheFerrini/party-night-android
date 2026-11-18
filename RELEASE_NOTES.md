@@ -1,4 +1,5 @@
-## Party Night v2.2.1
+## Party Night v2.2.2
 
-- Fixed adaptive Statistics panel height.
-- God Mode perks now belong to one selected player.
+- Fixed Statistics content clipping and stale panel sizing.
+- Added safe spacing for the bottom navigation in long player lists.
+- Improved bottom navigation layout on compact Android screens.
