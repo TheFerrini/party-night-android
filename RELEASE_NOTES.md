@@ -1,5 +1,6 @@
-## Party Night v2.2.2
+## Party Night v2.2.3
 
-- Fixed Statistics content clipping and stale panel sizing.
-- Added safe spacing for the bottom navigation in long player lists.
-- Improved bottom navigation layout on compact Android screens.
+- Statistics now opens on a concise overview with separate buttons to view all games or players; no horizontal swiping between statistics screens.
+- Fixed excessive empty vertical space and scrolling in Statistics.
+- Reduced the height of the bottom navigation.
+- Added “Ampliar más” to expand the full session history in place, plus “Mostrar menos” to collapse it.
