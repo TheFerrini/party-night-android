@@ -1032,11 +1032,26 @@ export default function App() {
       ? mainCanvasRefs.current[0]?.querySelector('.pn-stats-page.is-active') as HTMLElement | null
       : mainCanvasRefs.current[mainTabIndex];
     if (!activePage) return;
-    const measure = () => { setMainCanvasHeight(Math.max(activePage.scrollHeight, 1)); if (mainTab === 'stats') setStatsPanelHeight(Math.max(activePage.scrollHeight, 1)); };
+
+    // Measure the actual page and its visible statistics panel. The statistics
+    // viewport sits below the title and tab controls, so it must not inherit
+    // the height of the whole stats page (or it will clip the page content).
+    const statsViewport = mainTab === 'stats'
+      ? activePage.closest('.pn-main-page')?.querySelector('.pn-stats-viewport') as HTMLElement | null
+      : null;
+    const measure = () => {
+      const pageHeight = Math.ceil(Math.max(activePage.scrollHeight, activePage.getBoundingClientRect().height, 1));
+      setMainCanvasHeight(pageHeight);
+      if (statsViewport) {
+        const panelHeight = Math.ceil(Math.max(activePage.scrollHeight, activePage.getBoundingClientRect().height, 1));
+        setStatsPanelHeight(panelHeight);
+      }
+    };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     observer.observe(activePage);
+    if (statsViewport) observer.observe(statsViewport);
     return () => observer.disconnect();
   }, [screen, mainTabIndex, mainTab, sessionHistory, activeSession, players, statisticsPage, selectedPlayerProfile, expandedSessionId, playerSort]);
 
@@ -3148,7 +3163,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <div className="pn-stats-viewport" style={statsPanelHeight ? { height: `${statsPanelHeight}px` } : undefined}>
+            <div className="pn-stats-viewport">
               <div className="pn-stats-canvas" style={{ transform: `translate3d(-${statsCanvasIndex * 33.333333}%, 0, 0)` }}>
                 {(() => {
                   const allSessions = [...(activeSession ? [activeSession] : []), ...sessionHistory];
