@@ -1,6 +1,6 @@
-## Party Night v2.2.3
+## Party Night v2.2.4
 
-- Statistics now opens on a concise overview with separate buttons to view all games or players; no horizontal swiping between statistics screens.
-- Fixed excessive empty vertical space and scrolling in Statistics.
-- Reduced the height of the bottom navigation.
-- Added “Ampliar más” to expand the full session history in place, plus “Mostrar menos” to collapse it.
+- Redesigned the God Mode setting card for a cleaner layout and a properly aligned player selector.
+- Made local storage statistics and cloud comparison figures smaller and more compact.
+- Reduced spacing in data management, backup and cloud sections to show more information at once.
+- Preserved scrolling where the screen is too short or the account state contains additional actions.

@@ -288,3 +288,33 @@ html.pn-reduce-motion *,html.pn-reduce-motion *::before,html.pn-reduce-motion *:
   top:5px;
   bottom:5px;
 }
+
+
+/* v2.2.4 — compact settings and cloud management */
+.pn-compact-data-modal,
+.pn-compact-cloud-modal{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(148,163,184,.35) transparent;
+}
+.pn-storage-metrics > div,
+.pn-cloud-metrics > div{
+  min-width:0;
+}
+.pn-storage-metrics p,
+.pn-cloud-metrics p{
+  overflow-wrap:anywhere;
+}
+@media (max-height:780px){
+  .pn-compact-data-modal,
+  .pn-compact-cloud-modal{
+    padding:12px !important;
+  }
+  .pn-compact-data-modal .pn-storage-metrics,
+  .pn-compact-cloud-modal .pn-cloud-metrics{
+    gap:6px;
+  }
+  .pn-compact-data-modal .pn-storage-metrics > div,
+  .pn-compact-cloud-modal .pn-cloud-metrics > div{
+    padding:7px 9px;
+  }
+}
