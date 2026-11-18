@@ -1,7 +1,14 @@
 export type AppLanguage = 'ca' | 'es' | 'en';
 
 const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
-  es: {},
+  es: {
+    "Entorn": "Entorno", "Intensitat de penalització": "Intensidad de penalización", "Criteri de victòria": "Criterio de victoria",
+    "Mode Déu": "Modo Dios", "Caixes aleatòries amb comodins, tragos i accions.": "Cajas aleatorias con comodines, tragos y acciones.",
+    "Caixa": "Caja", "Obre una caixa": "Abre una caja", "Aplicar i continuar": "Aplicar y continuar", "Acceptar acció": "Aceptar acción",
+    "Rebutjar i enviar 2 tragos": "Rechazar y enviar 2 tragos", "Si es rebutja, s’envien 2 tragos.": "Si se rechaza, se envían 2 tragos.",
+    "Reparteix tragos": "Reparte tragos", "Comodí": "Comodín", "cancel·la la propera penalització que rebi": "cancela la próxima penalización que reciba", "tragos": "tragos", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Guarda este comodín y cancela una penalización que recibas.",
+    "Caixes aleatòries": "Cajas aleatorias"
+  },
   ca: {
   "Ranking Etílico": "Rànquing de la sessió",
   "Aún no hay borrachos registrados.": "Encara no hi ha penalitzacions registrades.",
@@ -244,6 +251,11 @@ const UI_TRANSLATIONS: Record<AppLanguage, Record<string, string>> = {
   "Esdeveniments": "Esdeveniments",
   "Historial": "Historial",
   "Jugadors": "Jugadors",
+  "Mode Déu": "Mode Déu", "Caixes aleatòries amb comodins, tragos i accions.": "Caixes aleatòries amb comodins, tragos i accions.",
+  "Caixa": "Caixa", "Obre una caixa": "Obre una caixa", "Aplicar i continuar": "Aplicar i continuar",
+  "Rebutjar i enviar 2 tragos": "Rebutjar i enviar 2 tragos", "Si es rebutja, s’envien 2 tragos.": "Si es rebutja, s’envien 2 tragos.",
+  "Comodí": "Comodí", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Guarda aquest comodí i cancel·la una penalització que rebis.",
+  "Entorn": "Entorn", "Intensitat de penalització": "Intensitat de penalització", "Criteri de victòria": "Criteri de victòria",
   "Comprova la connexió i torna-ho a provar.": "Comprova la connexió i torna-ho a provar."
 },
   en: {
@@ -527,6 +539,11 @@ Object.assign(UI_TRANSLATIONS.ca, {
   "v2.0.1 (The Party Re-Rebuild)": "v2.0.1 (The Party Re-Rebuild)"
 });
 Object.assign(UI_TRANSLATIONS.en, {
+  "Mode Déu": "God Mode", "Caixes aleatòries amb comodins, tragos i accions.": "Random boxes with wildcards, drink penalties and actions.",
+  "Caixa": "Box", "Obre una caixa": "Open a box", "Aplicar i continuar": "Apply and continue", "Acceptar acció": "Accept action",
+  "Rebutjar i enviar 2 tragos": "Reject and send 2 drinks", "Si es rebutja, s’envien 2 tragos.": "If rejected, send 2 drinks.",
+  "Comodí": "Wildcard", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Save this wildcard to cancel a penalty you receive.", "cancel·la la propera penalització que rebi": "cancels their next penalty", "tragos": "drinks",
+  "Reparteix tragos": "Deal drinks", "Entorn": "Environment", "Intensitat de penalització": "Penalty intensity", "Criteri de victòria": "Victory criteria",
   "Historial:": "History:",
   "Estadísticas:": "Statistics:",
   "Jugar:": "Play:",
@@ -1031,6 +1048,11 @@ Object.assign(UI_TRANSLATIONS.ca, {
   "Esdeveniments": "Esdeveniments",
   "Historial": "Historial",
   "Jugadors": "Jugadors",
+  "Mode Déu": "Mode Déu", "Caixes aleatòries amb comodins, tragos i accions.": "Caixes aleatòries amb comodins, tragos i accions.",
+  "Caixa": "Caixa", "Obre una caixa": "Obre una caixa", "Aplicar i continuar": "Aplicar i continuar",
+  "Rebutjar i enviar 2 tragos": "Rebutjar i enviar 2 tragos", "Si es rebutja, s’envien 2 tragos.": "Si es rebutja, s’envien 2 tragos.",
+  "Comodí": "Comodí", "Guarda aquest comodí i cancel·la una penalització que rebis.": "Guarda aquest comodí i cancel·la una penalització que rebis.",
+  "Entorn": "Entorn", "Intensitat de penalització": "Intensitat de penalització", "Criteri de victòria": "Criteri de victòria",
   "Comprova la connexió i torna-ho a provar.": "Comprova la connexió i torna-ho a provar.",
   "Estàs utilitzant la versió més recent.": "Estàs utilitzant la versió més recent.",
   "Tornar a provar": "Tornar-ho a provar",
