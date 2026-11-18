@@ -1,3 +1,8 @@
+## v2.2.2
+- Fixed Statistics content clipping by removing stale fixed-height constraints and allowing each active section to size to its content.
+- Added bottom safe-area and navigation clearance so player rows and long lists remain reachable.
+- Hardened the bottom navigation layout on narrow Android screens.
+ 
 ## v2.2.1
 - Fixed Statistics panel sizing so each section fits its content without clipping.
 - God Mode now assigns box benefits to a single selected player.
